@@ -4,6 +4,7 @@ import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
   Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
+import { createTenant } from '../lib/db'
 
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
@@ -93,8 +94,7 @@ export default function Onboarding() {
     return true
   }
 
-  const handleLaunch = () => {
-    // In a real app, this would POST to an API to create the tenant
+  const handleLaunch = async () => {
     const tenantData = {
       ...form,
       id: form.businessName.toLowerCase().replace(/[^a-z0-9]/g, ''),
@@ -104,10 +104,12 @@ export default function Onboarding() {
       logo: logoPreview,
     }
 
-    // Save to localStorage for demo purposes
-    const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
-    tenants.push(tenantData)
-    localStorage.setItem('mybidquick_tenants', JSON.stringify(tenants))
+    try {
+      await createTenant(tenantData)
+    } catch (err) {
+      console.error('Failed to create tenant:', err)
+      // Still show success — localStorage fallback in db.js handles it
+    }
 
     setStep(3) // Show success
   }

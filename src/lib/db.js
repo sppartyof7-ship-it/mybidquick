@@ -1,0 +1,202 @@
+// ============================================================================
+// DATABASE LAYER — Supabase with localStorage fallback
+// ============================================================================
+// This file is the ONLY place that talks to the database or localStorage.
+// Every page imports from here instead of touching storage directly.
+// When Supabase env vars are set, it uses the real database.
+// Otherwise, it falls back to localStorage so the app still works in demo mode.
+
+import { supabase, isSupabaseConnected } from './supabase'
+
+// ============================================================================
+// TENANTS
+// ============================================================================
+
+/**
+ * Get all tenants (for admin dashboard)
+ */
+export async function getAllTenants() {
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data.map(rowToTenant)
+  }
+  // Fallback: localStorage
+  return JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
+}
+
+/**
+ * Find a tenant by email (for login)
+ */
+export async function getTenantByEmail(email) {
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .ilike('email', email)
+      .single()
+    if (error && error.code !== 'PGRST116') throw error // PGRST116 = no rows
+    return data ? rowToTenant(data) : null
+  }
+  // Fallback: localStorage
+  const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
+  return tenants.find(t => t.email?.toLowerCase() === email.toLowerCase()) || null
+}
+
+/**
+ * Create a new tenant (from onboarding wizard)
+ */
+export async function createTenant(tenantData) {
+  if (isSupabaseConnected()) {
+    const row = tenantToRow(tenantData)
+    const { data, error } = await supabase
+      .from('tenants')
+      .insert(row)
+      .select()
+      .single()
+    if (error) throw error
+    return rowToTenant(data)
+  }
+  // Fallback: localStorage
+  const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
+  tenants.push(tenantData)
+  localStorage.setItem('mybidquick_tenants', JSON.stringify(tenants))
+  return tenantData
+}
+
+/**
+ * Update a tenant's config (from tenant dashboard "Save Changes")
+ */
+export async function updateTenantConfig(tenantId, config) {
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .update({ config, updated_at: new Date().toISOString() })
+      .eq('id', tenantId)
+      .select()
+      .single()
+    if (error) throw error
+    return rowToTenant(data)
+  }
+  // Fallback: localStorage
+  const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
+  const idx = tenants.findIndex(t => t.id === tenantId)
+  if (idx >= 0) {
+    tenants[idx] = { ...tenants[idx], config }
+  } else {
+    tenants.push({ id: tenantId, config })
+  }
+  localStorage.setItem('mybidquick_tenants', JSON.stringify(tenants))
+  return tenants[idx] || { id: tenantId, config }
+}
+
+// ============================================================================
+// LEADS
+// ============================================================================
+
+/**
+ * Get all leads for a tenant
+ */
+export async function getLeads(tenantId) {
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data.map(rowToLead)
+  }
+  // Fallback: return empty (demo leads are hardcoded in component)
+  return null // null = "use demo leads"
+}
+
+/**
+ * Update a lead's status (won/lost/pending)
+ */
+export async function updateLeadStatus(leadId, status) {
+  if (isSupabaseConnected()) {
+    const { error } = await supabase
+      .from('leads')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', leadId)
+    if (error) throw error
+  }
+  // localStorage leads are managed in component state (not persisted in demo)
+}
+
+/**
+ * Create a new lead (from customer quote submission)
+ */
+export async function createLead(leadData) {
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('leads')
+      .insert(leadData)
+      .select()
+      .single()
+    if (error) throw error
+    return rowToLead(data)
+  }
+  return leadData
+}
+
+// ============================================================================
+// ROW CONVERTERS
+// ============================================================================
+// Supabase rows use snake_case, our React components use camelCase.
+// These helpers convert between the two so components don't need to care.
+
+function rowToTenant(row) {
+  return {
+    id: row.id,
+    businessName: row.business_name,
+    ownerName: row.owner_name,
+    email: row.email,
+    phone: row.phone,
+    city: row.city,
+    state: row.state,
+    website: row.website,
+    plan: row.plan || 'starter',
+    logo: row.logo_url,
+    primaryColor: row.primary_color,
+    config: row.config || {},
+    createdAt: row.created_at,
+  }
+}
+
+function tenantToRow(tenant) {
+  return {
+    business_name: tenant.businessName,
+    owner_name: tenant.ownerName,
+    email: tenant.email,
+    phone: tenant.phone,
+    city: tenant.city,
+    state: tenant.state,
+    website: tenant.website,
+    plan: tenant.plan || 'starter',
+    logo_url: tenant.logo,
+    primary_color: tenant.primaryColor,
+    config: tenant.config || {},
+  }
+}
+
+function rowToLead(row) {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    services: row.services || [],
+    package: row.package,
+    date: row.created_at?.split('T')[0],
+    source: row.source,
+    total: row.total,
+    status: row.status || 'pending',
+    notes: row.notes,
+  }
+}

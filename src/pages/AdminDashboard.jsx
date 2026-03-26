@@ -6,6 +6,7 @@ import {
   MoreVertical, ChevronRight, Zap, Clock, AlertCircle,
   CheckCircle2, XCircle, ExternalLink, ArrowRight
 } from 'lucide-react'
+import { getAllTenants } from '../lib/db'
 
 // Demo data for tenants
 const DEMO_TENANTS = [
@@ -218,22 +219,36 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
 
-  // Merge demo data with any user-created tenants from localStorage
-  const [tenants, setTenants] = useState(() => {
-    const stored = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
-    return [...DEMO_TENANTS, ...stored.map(t => ({
-      ...t,
-      quotesThisMonth: t.quotesUsed || 0,
-      quotesTotal: t.quotesUsed || 0,
-      revenue: (t.quotesUsed || 0) * 2,
-      revenueTotal: (t.quotesUsed || 0) * 2,
-      lastQuote: t.createdAt,
-      plan: t.plan || 'growth',
-      status: t.status || 'active',
-      primaryColor: t.primaryColor || '#2563eb',
-      secondaryColor: t.secondaryColor || '#60a5fa',
-    }))]
-  })
+  // Load tenants from Supabase (or localStorage fallback), merge with demo data
+  const [tenants, setTenants] = useState(DEMO_TENANTS)
+
+  useEffect(() => {
+    async function loadTenants() {
+      try {
+        const dbTenants = await getAllTenants()
+        // Merge DB tenants with demo data, avoiding duplicates by email
+        const demoEmails = new Set(DEMO_TENANTS.map(t => t.email?.toLowerCase()))
+        const extraTenants = dbTenants
+          .filter(t => !demoEmails.has(t.email?.toLowerCase()))
+          .map(t => ({
+            ...t,
+            quotesThisMonth: t.quotesUsed || 0,
+            quotesTotal: t.quotesUsed || 0,
+            revenue: (t.quotesUsed || 0) * 2,
+            revenueTotal: (t.quotesUsed || 0) * 2,
+            lastQuote: t.createdAt,
+            plan: t.plan || 'growth',
+            status: t.status || 'active',
+            primaryColor: t.primaryColor || '#2563eb',
+            secondaryColor: t.secondaryColor || '#60a5fa',
+          }))
+        setTenants([...DEMO_TENANTS, ...extraTenants])
+      } catch (err) {
+        console.error('Failed to load tenants:', err)
+      }
+    }
+    loadTenants()
+  }, [])
 
   const totalQuotesMonth = tenants.reduce((s, t) => s + t.quotesThisMonth, 0)
   const totalRevenueMonth = tenants.reduce((s, t) => s + t.revenue, 0)

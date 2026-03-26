@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Save, DollarSign, Settings, Mail, Phone, LogOut, Check, Plus, X,
   Eye, Trash2, AlertCircle, Clock, MessageSquare, Home, Zap, TrendingUp,
-  ChevronDown, MapPin, Heart
+  ChevronDown, MapPin, Heart, Loader
 } from 'lucide-react'
+import { getTenantByEmail, updateTenantConfig, getLeads, updateLeadStatus } from '../lib/db'
 
 // ============================================================================
 // DEFAULTS & DATA
@@ -242,31 +243,49 @@ export default function TenantDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loginEmail, setLoginEmail] = useState('')
   const [loginError, setLoginError] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
   const [tenant, setTenant] = useState(null)
   const [config, setConfig] = useState(null)
   const [activeTab, setActiveTab] = useState('leads')
   const [adminTab, setAdminTab] = useState('pricing')
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [leadsFilter, setLeadsFilter] = useState('all')
   const [expandedLead, setExpandedLead] = useState(null)
   const [leads, setLeads] = useState(DEMO_LEADS)
 
   // ========================================================================
-  // LOGIN
+  // LOGIN — checks Supabase first, then falls back to demo tenants
   // ========================================================================
 
-  const handleLogin = () => {
-    const storedTenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
-    const allTenants = [...DEMO_TENANTS, ...storedTenants]
-    const found = allTenants.find(t => t.email?.toLowerCase() === loginEmail.toLowerCase())
+  const handleLogin = async () => {
+    setLoginLoading(true)
+    setLoginError('')
+    try {
+      // Try Supabase / localStorage via the db layer
+      let found = await getTenantByEmail(loginEmail)
 
-    if (found) {
-      setTenant(found)
-      setConfig(found.config || deepClone(DEFAULT_CONFIG))
-      setIsLoggedIn(true)
-      setLoginError('')
-    } else {
-      setLoginError('No account found with that email.')
+      // If not found in DB, check hardcoded demo tenants
+      if (!found) {
+        found = DEMO_TENANTS.find(t => t.email?.toLowerCase() === loginEmail.toLowerCase())
+      }
+
+      if (found) {
+        setTenant(found)
+        setConfig(found.config || deepClone(DEFAULT_CONFIG))
+        setIsLoggedIn(true)
+
+        // Load leads from Supabase if available
+        const dbLeads = await getLeads(found.id)
+        if (dbLeads) setLeads(dbLeads)
+      } else {
+        setLoginError('No account found with that email.')
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setLoginError('Something went wrong. Please try again.')
+    } finally {
+      setLoginLoading(false)
     }
   }
 
@@ -287,21 +306,21 @@ export default function TenantDashboard() {
     setSaved(false)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (tenant && config) {
-      const updated = { ...tenant, config }
-      setTenant(updated)
-
-      const storedTenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
-      const idx = storedTenants.findIndex(t => t.id === tenant.id)
-      if (idx >= 0) {
-        storedTenants[idx] = updated
-      } else {
-        storedTenants.push(updated)
+      setSaving(true)
+      try {
+        await updateTenantConfig(tenant.id, config)
+        const updated = { ...tenant, config }
+        setTenant(updated)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      } catch (err) {
+        console.error('Save error:', err)
+        alert('Failed to save. Please try again.')
+      } finally {
+        setSaving(false)
       }
-      localStorage.setItem('mybidquick_tenants', JSON.stringify(storedTenants))
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
     }
   }
 
@@ -311,8 +330,13 @@ export default function TenantDashboard() {
 
   const filteredLeads = leadsFilter === 'all' ? leads : leads.filter(l => l.status === leadsFilter)
 
-  const handleLeadStatus = (leadId, newStatus) => {
+  const handleLeadStatus = async (leadId, newStatus) => {
     setLeads(leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l))
+    try {
+      await updateLeadStatus(leadId, newStatus)
+    } catch (err) {
+      console.error('Lead status update error:', err)
+    }
   }
 
   const totalRevenue = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + l.total, 0)
@@ -386,20 +410,24 @@ export default function TenantDashboard() {
 
             <button
               onClick={handleLogin}
-              disabled={!loginEmail}
+              disabled={!loginEmail || loginLoading}
               style={{
                 width: '100%',
                 padding: '14px 24px',
                 borderRadius: 10,
-                background: loginEmail ? '#3b9cff' : '#a78bfa',
+                background: (loginEmail && !loginLoading) ? '#3b9cff' : '#a78bfa',
                 color: 'white',
                 border: 'none',
-                cursor: loginEmail ? 'pointer' : 'not-allowed',
+                cursor: (loginEmail && !loginLoading) ? 'pointer' : 'not-allowed',
                 fontWeight: 700,
                 fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
               }}
             >
-              Log In
+              {loginLoading ? <><Loader size={18} style={{ animation: 'spin 1s linear infinite' }} /> Logging in...</> : 'Log In'}
             </button>
 
             <div style={{
@@ -492,7 +520,7 @@ export default function TenantDashboard() {
               transition: 'background 0.3s',
             }}
           >
-            {saved ? <><Check size={16} /> Saved!</> : <><Save size={16} /> Save Changes</>}
+            {saving ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</> : saved ? <><Check size={16} /> Saved!</> : <><Save size={16} /> Save Changes</>}
           </button>
           <button
             onClick={handleLogout}
