@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Save, DollarSign, Settings, Mail, Phone, LogOut, Check, Plus, X,
   Eye, Trash2, AlertCircle, Clock, MessageSquare, Home, Zap, TrendingUp,
-  ChevronDown, MapPin, Heart, Loader
+  ChevronDown, MapPin, Heart, Loader, CreditCard, ShoppingCart, ExternalLink, Gift
 } from 'lucide-react'
 import { getTenantByEmail, updateTenantConfig, getLeads, updateLeadStatus } from '../lib/db'
+import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS } from '../lib/billing'
 
 // ============================================================================
 // DEFAULTS & DATA
@@ -253,6 +254,10 @@ export default function TenantDashboard() {
   const [leadsFilter, setLeadsFilter] = useState('all')
   const [expandedLead, setExpandedLead] = useState(null)
   const [leads, setLeads] = useState(DEMO_LEADS)
+  // Billing state
+  const [billing, setBilling] = useState(null)
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [buyingPack, setBuyingPack] = useState(null)
 
   // ========================================================================
   // LOGIN — checks Supabase first, then falls back to demo tenants
@@ -278,6 +283,11 @@ export default function TenantDashboard() {
         // Load leads from Supabase if available
         const dbLeads = await getLeads(found.id)
         if (dbLeads) setLeads(dbLeads)
+
+        // Load billing status (non-blocking)
+        getBillingStatus(found.id)
+          .then(b => setBilling(b))
+          .catch(() => setBilling(null))
       } else {
         setLoginError('No account found with that email.')
       }
@@ -585,6 +595,35 @@ export default function TenantDashboard() {
             }}
           >
             Admin
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('billing')
+              if (tenant?.id && !billing) {
+                setBillingLoading(true)
+                getBillingStatus(tenant.id)
+                  .then(b => setBilling(b))
+                  .catch(() => setBilling(null))
+                  .finally(() => setBillingLoading(false))
+              }
+            }}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: 10,
+              background: activeTab === 'billing' ? '#3b9cff' : 'transparent',
+              color: activeTab === 'billing' ? 'white' : '#4a6d94',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+            }}
+          >
+            <CreditCard size={14} /> Billing
           </button>
         </div>
 
@@ -1862,6 +1901,267 @@ export default function TenantDashboard() {
                   >
                     <Check size={14} /> Copy Config JSON
                   </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* BILLING TAB                                                       */}
+        {/* ================================================================ */}
+        {activeTab === 'billing' && (
+          <div>
+            {/* Credits Banner */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1e3a5f, #3b9cff)',
+              borderRadius: 16,
+              padding: 32,
+              color: 'white',
+              marginBottom: 24,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 16,
+            }}>
+              <div>
+                <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 4 }}>Lead Credits Remaining</div>
+                <div style={{ fontSize: 48, fontWeight: 800, lineHeight: 1 }}>
+                  {billingLoading ? '...' : (billing?.credits ?? '—')}
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.7, marginTop: 8 }}>
+                  Each lead from your quote form uses 1 credit
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {billing?.hasStripeCustomer && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const url = await openCustomerPortal(tenant.id)
+                        window.open(url, '_blank')
+                      } catch (e) { alert(e.message) }
+                    }}
+                    style={{
+                      padding: '12px 20px',
+                      borderRadius: 10,
+                      background: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <ExternalLink size={14} /> Manage Billing
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Credit Warning */}
+            {billing && billing.credits <= 3 && billing.credits > 0 && (
+              <div style={{
+                background: '#fff7ed',
+                border: '1px solid #fed7aa',
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 24,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <AlertCircle size={20} color="#ea580c" />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#9a3412', fontSize: 14 }}>Low credits!</div>
+                  <div style={{ fontSize: 13, color: '#c2410c' }}>
+                    You have {billing.credits} lead{billing.credits !== 1 ? 's' : ''} remaining. Buy more below to keep receiving leads.
+                  </div>
+                </div>
+              </div>
+            )}
+            {billing && billing.credits === 0 && (
+              <div style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: 12,
+                padding: 16,
+                marginBottom: 24,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <AlertCircle size={20} color="#dc2626" />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#991b1b', fontSize: 14 }}>No credits remaining!</div>
+                  <div style={{ fontSize: 13, color: '#b91c1c' }}>
+                    New leads will not be delivered until you purchase more credits.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Lead Credit Packs */}
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1e3a5f', marginBottom: 16 }}>
+                Buy Lead Credits
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                {LEAD_PACKS.map(pack => (
+                  <div key={pack.id} style={{
+                    background: 'white',
+                    borderRadius: 16,
+                    padding: 24,
+                    border: pack.popular ? '2px solid #3b9cff' : '1px solid #d4e4f7',
+                    boxShadow: pack.popular ? '0 4px 20px rgba(59, 156, 255, 0.15)' : '0 2px 8px rgba(59, 156, 255, 0.08)',
+                    position: 'relative',
+                    textAlign: 'center',
+                  }}>
+                    {pack.popular && (
+                      <div style={{
+                        position: 'absolute',
+                        top: -10,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: '#3b9cff',
+                        color: 'white',
+                        padding: '3px 12px',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}>
+                        BEST VALUE
+                      </div>
+                    )}
+                    <div style={{ fontSize: 36, fontWeight: 800, color: '#1e3a5f', marginBottom: 4 }}>
+                      {pack.credits}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#7a9bbc', marginBottom: 12 }}>lead credits</div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: '#1e3a5f', marginBottom: 4 }}>
+                      ${pack.price}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#a0b4c8', marginBottom: 16 }}>
+                      ${pack.pricePerLead.toFixed(2)} per lead
+                    </div>
+                    <button
+                      disabled={buyingPack === pack.id}
+                      onClick={async () => {
+                        setBuyingPack(pack.id)
+                        try {
+                          const url = await buyLeadCredits(tenant.id, pack.id)
+                          window.location.href = url
+                        } catch (e) {
+                          alert('Error: ' + e.message)
+                          setBuyingPack(null)
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: 10,
+                        background: pack.popular ? '#3b9cff' : '#e8f1fb',
+                        color: pack.popular ? 'white' : '#1e3a5f',
+                        border: 'none',
+                        cursor: buyingPack === pack.id ? 'wait' : 'pointer',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        opacity: buyingPack === pack.id ? 0.6 : 1,
+                      }}
+                    >
+                      {buyingPack === pack.id ? (
+                        <><Loader size={14} className="spin" /> Processing...</>
+                      ) : (
+                        <><ShoppingCart size={14} /> Buy {pack.label}</>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* How It Works */}
+            <div style={{
+              background: '#f0f7ff',
+              borderRadius: 16,
+              padding: 24,
+              marginBottom: 32,
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 16 }}>
+                How Per-Lead Billing Works
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                {[
+                  { icon: <Gift size={20} color="#3b9cff" />, title: '3 Free Leads', desc: 'Every new account starts with 3 free lead credits to try it out.' },
+                  { icon: <ShoppingCart size={20} color="#3b9cff" />, title: 'Buy Packs', desc: 'Purchase lead credit packs above. The more you buy, the cheaper per lead.' },
+                  { icon: <Zap size={20} color="#3b9cff" />, title: 'Auto-Deduct', desc: 'Each time a customer submits a quote through your form, 1 credit is used.' },
+                  { icon: <CreditCard size={20} color="#3b9cff" />, title: 'Manage Billing', desc: 'View invoices, update payment methods, and track spending in the portal.' },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10,
+                      background: 'white', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1e3a5f', marginBottom: 4 }}>{item.title}</div>
+                      <div style={{ fontSize: 13, color: '#5a7d9e', lineHeight: 1.4 }}>{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Purchase History */}
+            {billing?.purchases?.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 12 }}>
+                  Purchase History
+                </h3>
+                <div style={{ background: 'white', borderRadius: 16, border: '1px solid #d4e4f7', overflow: 'hidden' }}>
+                  {billing.purchases.map((p, i) => (
+                    <div key={p.id || i} style={{
+                      padding: '14px 20px',
+                      borderBottom: i < billing.purchases.length - 1 ? '1px solid #e8f1fb' : 'none',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: '#1e3a5f' }}>
+                          +{p.credits_purchased} Lead Credits
+                        </div>
+                        <div style={{ fontSize: 12, color: '#7a9bbc' }}>
+                          {new Date(p.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontWeight: 700, color: '#1e3a5f' }}>
+                          ${(p.amount_cents / 100).toFixed(2)}
+                        </span>
+                        <span style={{
+                          padding: '3px 10px',
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: p.status === 'completed' ? '#dcfce7' : '#fef3c7',
+                          color: p.status === 'completed' ? '#166534' : '#92400e',
+                        }}>
+                          {p.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

@@ -130,15 +130,48 @@ export async function updateLeadStatus(leadId, status) {
 
 /**
  * Create a new lead (from customer quote submission)
+ * Also deducts 1 lead credit from the tenant and logs the charge.
  */
 export async function createLead(leadData) {
   if (isSupabaseConnected()) {
+    // Check tenant has credits
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('lead_credits')
+      .eq('id', leadData.tenant_id)
+      .single()
+
+    if (tenant && (tenant.lead_credits ?? 0) <= 0) {
+      throw new Error('NO_CREDITS')
+    }
+
+    // Insert the lead
     const { data, error } = await supabase
       .from('leads')
       .insert(leadData)
       .select()
       .single()
     if (error) throw error
+
+    // Deduct 1 credit
+    if (tenant) {
+      await supabase
+        .from('tenants')
+        .update({
+          lead_credits: Math.max(0, (tenant.lead_credits ?? 0) - 1),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', leadData.tenant_id)
+
+      // Log the charge
+      await supabase.from('lead_charges').insert({
+        tenant_id: leadData.tenant_id,
+        lead_id: data.id,
+        amount_cents: 0, // free trial or pre-paid via credit pack
+        status: (tenant.lead_credits ?? 0) > 0 ? 'charged' : 'free',
+      })
+    }
+
     return rowToLead(data)
   }
   return leadData
