@@ -1481,7 +1481,7 @@ export default function TenantDashboard() {
                 border: '1px solid #d4e4f7',
               }}>
                 <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, color: '#1e3a5f' }}>Follow-Up Sequences</h2>
-                <p style={{ color: '#7a9bbc', fontSize: 14, marginBottom: 24 }}>Create email and SMS follow-ups. Template variables: {{name}}, {{business}}, {{total}}, {{services}}</p>
+                <p style={{ color: '#7a9bbc', fontSize: 14, marginBottom: 24 }}>{"Create email and SMS follow-ups. Template variables: {{name}}, {{business}}, {{total}}, {{services}}"}</p>
 
                 {config.followUp.map((step, sidx) => (
                   <div key={step.id} style={{
