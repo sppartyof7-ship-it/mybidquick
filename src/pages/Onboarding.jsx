@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
-  Building2, Mail, Phone, Globe, DollarSign, Sparkles
+  Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
 
 const STEPS = [
@@ -51,6 +51,12 @@ export default function Onboarding() {
     secondaryColor: '#60a5fa',
     services: DEFAULT_SERVICES.map(s => ({ ...s })),
     plan: 'growth',
+    upsell: {
+      enabled: false,
+      triggerService: 'house_washing',
+      offerService: 'window_cleaning',
+      discountPercent: 20,
+    },
   })
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
@@ -67,6 +73,10 @@ export default function Onboarding() {
       ...f,
       services: f.services.map(s => s.id === id ? { ...s, price: Number(price) || 0 } : s)
     }))
+  }
+
+  const updateUpsell = (field, value) => {
+    setForm(f => ({ ...f, upsell: { ...f.upsell, [field]: value } }))
   }
 
   const handleLogoUpload = (e) => {
@@ -368,6 +378,130 @@ export default function Onboarding() {
               }}>
                 <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
                 Tip: These are starting prices. Your customers' actual quotes will vary based on property size, which they'll enter on your quoting page.
+              </div>
+
+              {/* Upsell Configuration */}
+              <div style={{
+                marginTop: 32, padding: 24, borderRadius: 'var(--radius-lg)',
+                border: '2px solid',
+                borderColor: form.upsell.enabled ? 'var(--success)' : 'var(--border)',
+                background: form.upsell.enabled ? '#f0fdf4' : 'transparent',
+                transition: 'all 0.3s ease',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: form.upsell.enabled ? 20 : 0 }}>
+                  {/* Toggle */}
+                  <div
+                    onClick={() => updateUpsell('enabled', !form.upsell.enabled)}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12,
+                      background: form.upsell.enabled ? 'var(--success)' : 'var(--border)',
+                      cursor: 'pointer', position: 'relative',
+                      transition: 'background 0.2s', flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: 'white', position: 'absolute',
+                      top: 2, left: form.upsell.enabled ? 22 : 2,
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Tag size={16} color={form.upsell.enabled ? '#059669' : '#64748b'} />
+                      Window Cleaning Upsell
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                      After a house washing quote, offer windows at a discount to increase your ticket size
+                    </div>
+                  </div>
+                </div>
+
+                {form.upsell.enabled && (
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: 16, background: 'white', borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)',
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                          <Percent size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+                          Discount off window cleaning price
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="range"
+                            min="5"
+                            max="50"
+                            step="5"
+                            value={form.upsell.discountPercent}
+                            onChange={e => updateUpsell('discountPercent', Number(e.target.value))}
+                            style={{ flex: 1, cursor: 'pointer' }}
+                          />
+                          <span style={{
+                            fontWeight: 800, fontSize: 20, color: '#059669',
+                            minWidth: 52, textAlign: 'right',
+                          }}>
+                            {form.upsell.discountPercent}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live preview of what customer sees */}
+                    <div style={{
+                      marginTop: 16, padding: 16, borderRadius: 'var(--radius)',
+                      background: `linear-gradient(135deg, ${form.primaryColor}10, ${form.primaryColor}05)`,
+                      border: `1px dashed ${form.primaryColor}40`,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 0.5 }}>
+                        Preview — what your customer sees after house wash quote
+                      </div>
+                      <div style={{
+                        background: 'white', borderRadius: 'var(--radius)', padding: 16,
+                        border: '1px solid var(--border)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+                          Add Window Cleaning & Save {form.upsell.discountPercent}%!
+                        </div>
+                        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                          Since we're already at your home, get your windows done at a discount. Just pick your window type below.
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {['Single-Hung', 'Double-Hung', 'Casement'].map(type => (
+                            <div key={type} style={{
+                              padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                              border: `1px solid ${form.primaryColor}30`,
+                              color: form.primaryColor, background: `${form.primaryColor}08`,
+                            }}>
+                              {type}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{
+                          marginTop: 12, fontSize: 13, color: '#059669', fontWeight: 600,
+                        }}>
+                          {(() => {
+                            const windowSvc = form.services.find(s => s.id === 'window_cleaning')
+                            const originalPrice = windowSvc ? windowSvc.price : 250
+                            const discounted = Math.round(originalPrice * (1 - form.upsell.discountPercent / 100))
+                            return (
+                              <>
+                                <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: 8 }}>
+                                  ${originalPrice}
+                                </span>
+                                ${discounted} — You save ${originalPrice - discounted}!
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
