@@ -2,7 +2,7 @@
 -- MyBidQuick Database Schema
 -- ============================================================================
 -- Run this in the Supabase SQL Editor to set up your database.
--- Dashboard: https://supabase.com/dashboard → Your Project → SQL Editor
+-- Dashboard: https://supabase.com/dashboard â Your Project â SQL Editor
 -- ============================================================================
 
 -- TENANTS TABLE
@@ -18,6 +18,7 @@ create table if not exists tenants (
   website text,
   plan text default 'starter' check (plan in ('starter', 'growth', 'pro')),
   logo_url text,
+  slug text,
   primary_color text default '#3b82f6',
   config jsonb default '{}'::jsonb,
   created_at timestamptz default now(),
@@ -45,6 +46,7 @@ create table if not exists leads (
 
 -- INDEXES for faster lookups
 create index if not exists idx_tenants_email on tenants(email);
+create unique index if not exists idx_tenants_slug on tenants(slug) where slug is not null;
 create index if not exists idx_leads_tenant_id on leads(tenant_id);
 create index if not exists idx_leads_status on leads(status);
 
@@ -80,7 +82,7 @@ create policy "Allow public update on leads"
   using (true);
 
 -- SEED DATA: Add the two demo tenants
-insert into tenants (id, business_name, owner_name, email, phone, city, state, plan, config) values
+insert into tenants (id, business_name, owner_name, email, phone, city, state, plan, slug, config) values
   (
     'a1b2c3d4-e5f6-7890-abcd-111111111111',
     'Cloute Cleaning',
@@ -90,6 +92,7 @@ insert into tenants (id, business_name, owner_name, email, phone, city, state, p
     'Madison',
     'WI',
     'pro',
+    'cloute-cleaning',
     '{
       "businessName": "Cloute Cleaning",
       "adminPassword": "",
@@ -131,6 +134,7 @@ insert into tenants (id, business_name, owner_name, email, phone, city, state, p
     'Madison',
     'WI',
     'growth',
+    'cornerstone-exterior',
     '{
       "businessName": "Cornerstone Exterior",
       "adminPassword": "",
