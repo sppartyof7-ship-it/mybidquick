@@ -114,7 +114,85 @@ export default function Onboarding() {
 
     try {
       await createTenant(tenantData)
-    } >Your Name *</label>
+    } catch (err) {
+      console.error('Failed to create tenant:', err)
+      // Still show success â localStorage fallback in db.js handles it
+    }
+
+    setStep(3) // Show success
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(180deg, #f0f7ff 0%, #ffffff 50%)',
+    }}>
+      {/* Top bar */}
+      <div style={{
+        padding: '16px 24px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid var(--border)', background: 'white',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+          onClick={() => navigate('/')}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', fontWeight: 800, fontSize: 13,
+          }}>BQ</div>
+          <span style={{ fontWeight: 700, fontSize: 17 }}>MyBidQuick</span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          Step {Math.min(step + 1, 3)} of 3
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 3, background: 'var(--border)' }}>
+        <div style={{
+          height: '100%', background: 'var(--accent)',
+          width: `${((step + 1) / 4) * 100}%`,
+          transition: 'width 0.4s ease',
+        }} />
+      </div>
+
+      <div style={{ maxWidth: 640, margin: '48px auto', padding: '0 24px' }}>
+        {/* Step indicators */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', gap: 32, marginBottom: 48,
+        }}>
+          {STEPS.slice(0, 3).map((s, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              opacity: i <= step ? 1 : 0.4,
+            }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: i < step ? 'var(--success)' : i === step ? 'var(--accent)' : 'var(--border)',
+                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontWeight: 700,
+              }}>
+                {i < step ? <Check size={14} /> : i + 1}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{s.title}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Step 0: Business Info */}
+        {step === 0 && (
+          <div>
+            <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Let's set up your quoting page</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Tell us about your business so we can personalize your experience.</p>
+
+            <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 32, border: '1px solid var(--border)' }}>
+              <div className="form-group">
+                <label><Building2 size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Business Name *</label>
+                <input placeholder="e.g., Sparkle Clean LLC" value={form.businessName} onChange={e => update('businessName', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Your Name *</label>
                 <input placeholder="e.g., John Smith" value={form.ownerName} onChange={e => update('ownerName', e.target.value)} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -510,4 +588,8 @@ export default function Onboarding() {
               {step === 2 ? 'Launch My Page' : 'Continue'} <ArrowRight size={16} />
             </button>
           </div>
-       
+        )}
+      </div>
+    </div>
+  )
+}
