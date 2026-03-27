@@ -13,7 +13,7 @@ import { ArrowLeft, Home, Droplets, Check, Tag, X, Waves } from 'lucide-react'
   - Gutter linear footage is auto-estimated from house square footage
 
   This is a preview/demo so Tim can see the full flow.
-  The real quoting engine lives in the Cleanbid repo.
+  The real quoting engine lives in the mybidquick-engine repo.
 */
 
 const WINDOW_TYPES = [

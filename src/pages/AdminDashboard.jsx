@@ -14,7 +14,7 @@ const DEMO_TENANTS = [
     id: 'cloute-cleaning',
     businessName: 'Cloute Cleaning',
     ownerName: 'Tim Sullivan',
-    email: 'tim@mybidquick.com',
+    email: 'tim.sullivan@clouteinc.com',
     plan: 'pro',
     status: 'active',
     primaryColor: '#2563eb',

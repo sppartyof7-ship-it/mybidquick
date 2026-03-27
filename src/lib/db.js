@@ -1,5 +1,5 @@
 // ============================================================================
-// DATABASE LAYER â Supabase with localStorage fallback
+// DATABASE LAYER — Supabase with localStorage fallback
 // ============================================================================
 // This file is the ONLY place that talks to the database or localStorage.
 // Every page imports from here instead of touching storage directly.
@@ -26,6 +26,24 @@ export async function getAllTenants() {
   }
   // Fallback: localStorage
   return JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
+}
+
+/**
+ * Find a tenant by slug (for duplicate check during onboarding)
+ */
+export async function getTenantBySlug(slug) {
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('id, slug')
+      .eq('slug', slug)
+      .single()
+    if (error && error.code !== 'PGRST116') throw error
+    return data || null
+  }
+  // Fallback: localStorage
+  const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
+  return tenants.find(t => t.slug === slug) || null
 }
 
 /**
@@ -197,6 +215,7 @@ function rowToTenant(row) {
     plan: row.plan || 'starter',
     logo: row.logo_url,
     primaryColor: row.primary_color,
+    secondaryColor: row.secondary_color,
     config: row.config || {},
     createdAt: row.created_at,
   }
@@ -215,6 +234,7 @@ function tenantToRow(tenant) {
     plan: tenant.plan || 'starter',
     logo_url: tenant.logo,
     primary_color: tenant.primaryColor,
+    secondary_color: tenant.secondaryColor,
     config: tenant.config || {},
   }
 }

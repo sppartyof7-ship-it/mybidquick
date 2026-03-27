@@ -11,6 +11,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/signup" element={<Onboarding />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/admin/*" element={<AdminDashboard />} />
       <Route path="/demo/quote" element={<QuoteDemo />} />
       <Route path="/dashboard" element={<TenantDashboard />} />

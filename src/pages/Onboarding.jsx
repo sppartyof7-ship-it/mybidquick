@@ -4,7 +4,7 @@ import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
   Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
-import { createTenant } from '../lib/db'
+import { createTenant, getTenantBySlug } from '../lib/db'
 
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
@@ -89,36 +89,102 @@ export default function Onboarding() {
     }
   }
 
+  const [launchError, setLaunchError] = useState('')
+  const [launching, setLaunching] = useState(false)
+
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
   const canProceed = () => {
-    if (step === 0) return form.businessName && form.email && form.ownerName
+    if (step === 0) return form.businessName && form.ownerName && form.email && isValidEmail(form.email)
     return true
   }
 
   const handleLaunch = async () => {
-    // Generate URL-safe slug from business name (e.g., "Cloute Cleaning" â "cloute-cleaning")
-    const slug = form.businessName
+    setLaunching(true)
+    setLaunchError('')
+
+    // Generate URL-safe slug from business name (e.g., "ABC Cleaning" → "abc-cleaning")
+    let slug = form.businessName
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
 
+    // Check for duplicate slug and make unique if needed
+    try {
+      const existing = await getTenantBySlug(slug)
+      if (existing) {
+        // Append a number to make it unique (abc-cleaning-2, abc-cleaning-3, etc.)
+        let counter = 2
+        while (true) {
+          const candidate = `${slug}-${counter}`
+          const check = await getTenantBySlug(candidate)
+          if (!check) { slug = candidate; break }
+          counter++
+          if (counter > 20) break // safety valve
+        }
+      }
+    } catch (err) {
+      // If slug check fails, proceed anyway — insert will catch true duplicates
+      console.warn('Slug check failed, proceeding:', err)
+    }
+
+    // Build the config object with all service/pricing/upsell data
+    // This is what the TenantDashboard reads from tenant.config
+    const config = {
+      businessName: form.businessName,
+      services: form.services.map(svc => ({
+        id: svc.id,
+        name: svc.name,
+        enabled: svc.enabled,
+        icon: 'Home',
+        basePrice: svc.price || 0,
+        perSqFt: 0,
+        perWindow: svc.id === 'window_cleaning' ? 8 : 0,
+        perLinFt: svc.id === 'gutter_cleaning' ? 1.5 : svc.id === 'gutter_guard' ? 14.99 : 0,
+        extras: [],
+      })),
+      upsell: form.upsell,
+      packages: {
+        basic: { multiplier: 1, tagline: 'Best for single services' },
+        standard: { multiplier: 1.35, tagline: 'Most popular choice' },
+        premium: { multiplier: 1.75, tagline: 'Complete solution' },
+      },
+      bundleDiscounts: { twoServices: 10, threeServices: 15 },
+      priceAdjustment: 0,
+    }
+
     const tenantData = {
-      ...form,
-      id: form.businessName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+      businessName: form.businessName,
+      ownerName: form.ownerName,
+      email: form.email,
+      phone: form.phone,
+      website: form.website,
+      city: form.city,
+      state: form.state,
       slug,
       createdAt: new Date().toISOString(),
       status: 'active',
-      quotesUsed: 0,
+      plan: form.plan || 'growth',
       logo: logoPreview,
+      primaryColor: form.primaryColor,
+      secondaryColor: form.secondaryColor,
+      config,
     }
 
     try {
       await createTenant(tenantData)
     } catch (err) {
       console.error('Failed to create tenant:', err)
-      // Still show success â localStorage fallback in db.js handles it
+      if (err.message?.includes('duplicate')) {
+        setLaunchError('A business with this name already exists. Please use a different name.')
+        setLaunching(false)
+        return
+      }
+      // Still show success — localStorage fallback in db.js handles it
     }
 
+    setLaunching(false)
     setStep(3) // Show success
   }
 
@@ -198,7 +264,11 @@ export default function Onboarding() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div className="form-group">
                   <label><Mail size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Email *</label>
-                  <input type="email" placeholder="you@business.com" value={form.email} onChange={e => update('email', e.target.value)} />
+                  <input type="email" placeholder="you@business.com" value={form.email} onChange={e => update('email', e.target.value)}
+                    style={form.email && !isValidEmail(form.email) ? { borderColor: '#dc2626' } : {}} />
+                  {form.email && !isValidEmail(form.email) && (
+                    <span style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>Please enter a valid email address</span>
+                  )}
                 </div>
                 <div className="form-group">
                   <label><Phone size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Phone</label>
@@ -467,7 +537,7 @@ export default function Onboarding() {
                       border: `1px dashed ${form.primaryColor}40`,
                     }}>
                       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 0.5 }}>
-                        Preview â what your customer sees after house wash quote
+                        Preview — what your customer sees after house wash quote
                       </div>
                       <div style={{
                         background: 'white', borderRadius: 'var(--radius)', padding: 16,
@@ -503,7 +573,7 @@ export default function Onboarding() {
                                 <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: 8 }}>
                                   ${originalPrice}
                                 </span>
-                                ${discounted} â You save ${originalPrice - discounted}!
+                                ${discounted} — You save ${originalPrice - discounted}!
                               </>
                             )
                           })()}
@@ -528,7 +598,7 @@ export default function Onboarding() {
             }}>
               <Check size={40} color="#059669" />
             </div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! ð</h2>
+            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! 🎉</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 17, marginBottom: 32, maxWidth: 440, margin: '0 auto 32px' }}>
               Your branded quoting page is ready. Share the link with customers or embed it on your website.
             </p>
@@ -558,13 +628,24 @@ export default function Onboarding() {
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary btn-lg" onClick={() => navigate('/admin')}>
+              <button className="btn btn-primary btn-lg" onClick={() => navigate('/dashboard')}>
                 Open Dashboard <ArrowRight size={16} />
               </button>
               <button className="btn btn-outline btn-lg" onClick={() => navigate('/')}>
                 Back to Home
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Launch error message */}
+        {launchError && (
+          <div style={{
+            marginTop: 16, padding: '12px 16px', borderRadius: 8,
+            background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
+            fontSize: 14, fontWeight: 500,
+          }}>
+            {launchError}
           </div>
         )}
 
@@ -582,10 +663,10 @@ export default function Onboarding() {
             <button
               onClick={() => step === 2 ? handleLaunch() : setStep(s => s + 1)}
               className="btn btn-primary btn-lg"
-              disabled={!canProceed()}
-              style={{ opacity: canProceed() ? 1 : 0.5 }}
+              disabled={!canProceed() || launching}
+              style={{ opacity: (canProceed() && !launching) ? 1 : 0.5 }}
             >
-              {step === 2 ? 'Launch My Page' : 'Continue'} <ArrowRight size={16} />
+              {launching ? 'Setting up...' : step === 2 ? 'Launch My Page' : 'Continue'} {!launching && <ArrowRight size={16} />}
             </button>
           </div>
         )}

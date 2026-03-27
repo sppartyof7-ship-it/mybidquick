@@ -201,7 +201,7 @@ const DEMO_TENANTS = [
   {
     id: 'cloute-cleaning',
     businessName: 'Cloute Cleaning',
-    email: 'tim@clouteinc.com',
+    email: 'tim.sullivan@clouteinc.com',
     plan: 'pro',
     config: { ...DEFAULT_CONFIG, businessName: 'Cloute Cleaning' },
   },
@@ -449,7 +449,7 @@ export default function TenantDashboard() {
               color: '#3b9cff',
             }}>
               <strong>Demo accounts:</strong><br />
-              tim@clouteinc.com<br />
+              tim.sullivan@clouteinc.com<br />
               noah@cornerstoneexterior.com
             </div>
           </div>
