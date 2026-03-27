@@ -95,9 +95,17 @@ export default function Onboarding() {
   }
 
   const handleLaunch = async () => {
+    // Generate URL-safe slug from business name (e.g., "Cloute Cleaning" â "cloute-cleaning")
+    const slug = form.businessName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
     const tenantData = {
       ...form,
       id: form.businessName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+      slug,
       createdAt: new Date().toISOString(),
       status: 'active',
       quotesUsed: 0,
@@ -106,85 +114,7 @@ export default function Onboarding() {
 
     try {
       await createTenant(tenantData)
-    } catch (err) {
-      console.error('Failed to create tenant:', err)
-      // Still show success — localStorage fallback in db.js handles it
-    }
-
-    setStep(3) // Show success
-  }
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(180deg, #f0f7ff 0%, #ffffff 50%)',
-    }}>
-      {/* Top bar */}
-      <div style={{
-        padding: '16px 24px', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '1px solid var(--border)', background: 'white',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-          onClick={() => navigate('/')}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 800, fontSize: 13,
-          }}>BQ</div>
-          <span style={{ fontWeight: 700, fontSize: 17 }}>MyBidQuick</span>
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          Step {Math.min(step + 1, 3)} of 3
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 3, background: 'var(--border)' }}>
-        <div style={{
-          height: '100%', background: 'var(--accent)',
-          width: `${((step + 1) / 4) * 100}%`,
-          transition: 'width 0.4s ease',
-        }} />
-      </div>
-
-      <div style={{ maxWidth: 640, margin: '48px auto', padding: '0 24px' }}>
-        {/* Step indicators */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 32, marginBottom: 48,
-        }}>
-          {STEPS.slice(0, 3).map((s, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              opacity: i <= step ? 1 : 0.4,
-            }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%',
-                background: i < step ? 'var(--success)' : i === step ? 'var(--accent)' : 'var(--border)',
-                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 700,
-              }}>
-                {i < step ? <Check size={14} /> : i + 1}
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{s.title}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Step 0: Business Info */}
-        {step === 0 && (
-          <div>
-            <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Let's set up your quoting page</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Tell us about your business so we can personalize your experience.</p>
-
-            <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 32, border: '1px solid var(--border)' }}>
-              <div className="form-group">
-                <label><Building2 size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Business Name *</label>
-                <input placeholder="e.g., Sparkle Clean LLC" value={form.businessName} onChange={e => update('businessName', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Your Name *</label>
+    } >Your Name *</label>
                 <input placeholder="e.g., John Smith" value={form.ownerName} onChange={e => update('ownerName', e.target.value)} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -459,7 +389,7 @@ export default function Onboarding() {
                       border: `1px dashed ${form.primaryColor}40`,
                     }}>
                       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 0.5 }}>
-                        Preview — what your customer sees after house wash quote
+                        Preview â what your customer sees after house wash quote
                       </div>
                       <div style={{
                         background: 'white', borderRadius: 'var(--radius)', padding: 16,
@@ -495,7 +425,7 @@ export default function Onboarding() {
                                 <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: 8 }}>
                                   ${originalPrice}
                                 </span>
-                                ${discounted} — You save ${originalPrice - discounted}!
+                                ${discounted} â You save ${originalPrice - discounted}!
                               </>
                             )
                           })()}
@@ -520,7 +450,7 @@ export default function Onboarding() {
             }}>
               <Check size={40} color="#059669" />
             </div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! 🎉</h2>
+            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! ð</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 17, marginBottom: 32, maxWidth: 440, margin: '0 auto 32px' }}>
               Your branded quoting page is ready. Share the link with customers or embed it on your website.
             </p>
@@ -535,7 +465,7 @@ export default function Onboarding() {
               }}>
                 <input
                   readOnly
-                  value={`mybidquick.com/${form.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                  value={`${form.businessName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.mybidquick.com`}
                   style={{
                     flex: 1, padding: '12px 16px', borderRadius: 'var(--radius)',
                     border: '2px solid var(--border)', fontSize: 15, fontWeight: 600,
@@ -543,7 +473,8 @@ export default function Onboarding() {
                   }}
                 />
                 <button className="btn btn-primary btn-sm" onClick={() => {
-                  navigator.clipboard?.writeText(`mybidquick.com/${form.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`)
+                  const slug = form.businessName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                  navigator.clipboard?.writeText(`${slug}.mybidquick.com`)
                 }}>Copy</button>
               </div>
             </div>
@@ -579,8 +510,4 @@ export default function Onboarding() {
               {step === 2 ? 'Launch My Page' : 'Continue'} <ArrowRight size={16} />
             </button>
           </div>
-        )}
-      </div>
-    </div>
-  )
-}
+       
