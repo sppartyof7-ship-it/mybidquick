@@ -15,7 +15,7 @@ const FEATURES = [
   {
     icon: MapPin,
     title: "Satellite Property View",
-    desc: "Google Maps integration shows customers a satellite image of their property — builds instant trust and wow factor."
+    desc: "Google Maps integration shows customers a satellite image of their property â builds instant trust and wow factor."
   },
   {
     icon: BarChart3,
@@ -162,6 +162,7 @@ export default function LandingPage() {
             <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)' }}>MyBidQuick</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <a href="#demo" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Demo</a>
             <a href="#features" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Features</a>
             <a href="#pricing" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Pricing</a>
             <a href="#testimonials" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Reviews</a>
@@ -202,7 +203,7 @@ export default function LandingPage() {
             fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-secondary)',
             maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6,
           }}>
-            Give your cleaning customers instant, professional quotes — branded
+            Give your cleaning customers instant, professional quotes â branded
             with your logo and colors. No code needed. Set up in 5 minutes.
           </p>
 
@@ -241,62 +242,54 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Demo preview */}
-      <section style={{ padding: '0 0 80px', marginTop: -20 }}>
+      {/* Live Cornerstone Demo */}
+      <section id="demo" style={{ padding: '0 0 80px', marginTop: -20 }}>
         <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 16px', borderRadius: 'var(--radius-full)',
+              background: 'rgba(16,185,129,0.1)', color: '#059669',
+              fontSize: 13, fontWeight: 600, marginBottom: 12,
+            }}>
+              <Sparkles size={14} /> Live Demo
+            </div>
+            <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
+              See it in action â Cornerstone Exterior
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', maxWidth: 550, margin: '12px auto 0', fontSize: 16 }}>
+              This is a real MyBidQuick-powered quoting page. Try it yourself â pick services, enter a square footage, and watch the instant quote appear.
+            </p>
+          </div>
           <div style={{
             borderRadius: 20, overflow: 'hidden',
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
-            background: 'linear-gradient(135deg, #1e293b, #334155)',
-            padding: 20,
+            background: 'linear-gradient(135deg, #1a2e4a, #5cb8e4)',
+            padding: 16,
           }}>
-            <div style={{
-              background: '#f8fafc', borderRadius: 12, padding: 40,
-              textAlign: 'center',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: 'linear-gradient(135deg, #10b981, #34d399)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontWeight: 800, fontSize: 14,
-                }}>YB</div>
-                <span style={{ fontWeight: 700, fontSize: 18 }}>Your Brand Here</span>
-              </div>
-              <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>This is what your customers see — fully branded with your colors and logo</p>
-
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                gap: 12, maxWidth: 600, margin: '0 auto',
-              }}>
-                {['House Washing', 'Gutter Cleaning', 'Roof Cleaning', 'Window Cleaning'].map(svc => (
-                  <div key={svc} style={{
-                    padding: '16px 12px', borderRadius: 10,
-                    border: '2px solid var(--border)', background: 'white',
-                    fontSize: 14, fontWeight: 600, color: 'var(--text)',
-                    cursor: 'default',
-                  }}>
-                    {svc}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{
-                marginTop: 24, padding: 16, borderRadius: 12,
-                background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(52,211,153,0.1))',
-                border: '1px solid rgba(16,185,129,0.2)',
-              }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color: '#059669' }}>$347</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Instant quote generated</div>
-              </div>
-            </div>
+            <iframe
+              src="https://cleanbid.vercel.app/?tenant=cornerstone-exterior"
+              title="Cornerstone Exterior â Live Quote Demo"
+              style={{
+                width: '100%', height: 700, border: 'none',
+                borderRadius: 12, background: '#f0f4f8',
+              }}
+            />
           </div>
-          <p style={{
-            textAlign: 'center', marginTop: 16, fontSize: 13,
-            color: 'var(--text-muted)',
-          }}>
-            Live demo — this is exactly what your customers see
-          </p>
+          <div style={{ textAlign: 'center', marginTop: 20, display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <button onClick={handleGetStarted} className="btn btn-primary btn-lg">
+              Get Your Own Quoting Page <ArrowRight size={18} />
+            </button>
+            <a
+              href="https://cleanbid.vercel.app/?tenant=cornerstone-exterior"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-lg"
+              style={{ background: 'var(--bg-card)', border: '2px solid var(--border)', color: 'var(--text)' }}
+            >
+              Open Full Demo <Globe size={16} />
+            </a>
+          </div>
         </div>
       </section>
 
@@ -401,7 +394,7 @@ export default function LandingPage() {
               Only pay when you get quotes
             </h2>
             <p style={{ color: 'var(--text-secondary)', maxWidth: 550, margin: '16px auto 0', fontSize: 17 }}>
-              No monthly fees on our Growth plan. You pay per quote — if MyBidQuick isn't making you money, it costs you nothing.
+              No monthly fees on our Growth plan. You pay per quote â if MyBidQuick isn't making you money, it costs you nothing.
             </p>
           </div>
 
@@ -450,7 +443,7 @@ export default function LandingPage() {
                   ))}
                   {tier.notIncluded.map((f, j) => (
                     <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, opacity: 0.4 }}>
-                      <span style={{ width: 16, textAlign: 'center', fontSize: 14 }}>—</span>
+                      <span style={{ width: 16, textAlign: 'center', fontSize: 14 }}>â</span>
                       <span style={{ fontSize: 14 }}>{f}</span>
                     </div>
                   ))}
@@ -488,7 +481,7 @@ export default function LandingPage() {
                 </p>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{t.name}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t.company} · {t.location}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t.company} Â· {t.location}</div>
                 </div>
               </div>
             ))}
@@ -534,9 +527,30 @@ export default function LandingPage() {
             <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>MyBidQuick</span>
           </div>
           <p>Proudly made in Wisconsin</p>
-          <p style={{ marginTop: 8 }}>© {new Date().getFullYear()} MyBidQuick All rights reserved.</p>
+          <p style={{ marginTop: 8 }}>Â© {new Date().getFullYear()} MyBidQuick All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Floating "Try a Quote" button â visible on every page scroll */}
+      <a
+        href="https://cleanbid.vercel.app/?tenant=cornerstone-exterior"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 999,
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '14px 24px', borderRadius: 'var(--radius-full)',
+          background: 'linear-gradient(135deg, #1a2e4a, #5cb8e4)',
+          color: 'white', fontWeight: 700, fontSize: 15,
+          boxShadow: '0 8px 30px rgba(26,46,74,0.35)',
+          textDecoration: 'none',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(26,46,74,0.45)' }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(26,46,74,0.35)' }}
+      >
+        <Zap size={18} /> Try a Quote
+      </a>
     </div>
   )
 }
