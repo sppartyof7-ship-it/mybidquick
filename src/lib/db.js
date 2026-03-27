@@ -1,5 +1,5 @@
 // ============================================================================
-// DATABASE LAYER — Supabase with localStorage fallback
+// DATABASE LAYER â Supabase with localStorage fallback
 // ============================================================================
 // This file is the ONLY place that talks to the database or localStorage.
 // Every page imports from here instead of touching storage directly.
@@ -186,6 +186,7 @@ export async function createLead(leadData) {
 function rowToTenant(row) {
   return {
     id: row.id,
+    slug: row.slug,
     businessName: row.business_name,
     ownerName: row.owner_name,
     email: row.email,
@@ -205,6 +206,7 @@ function tenantToRow(tenant) {
   return {
     business_name: tenant.businessName,
     owner_name: tenant.ownerName,
+    slug: tenant.slug,
     email: tenant.email,
     phone: tenant.phone,
     city: tenant.city,
