@@ -4,7 +4,7 @@ import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
   Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
-import { createTenant, getTenantBySlug } from '../lib/db'
+import { createTenant, getTenantBySlug, signUp, linkAuthToTenant } from '../lib/db'
 
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
@@ -48,6 +48,7 @@ export default function Onboarding() {
     website: '',
     city: '',
     state: '',
+    password: '',
     primaryColor: '#2563eb',
     secondaryColor: '#60a5fa',
     services: DEFAULT_SERVICES.map(s => ({ ...s })),
@@ -95,7 +96,7 @@ export default function Onboarding() {
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
   const canProceed = () => {
-    if (step === 0) return form.businessName && form.ownerName && form.email && isValidEmail(form.email)
+    if (step === 0) return form.businessName && form.ownerName && form.email && isValidEmail(form.email) && form.password.length >= 6
     return true
   }
 
@@ -173,7 +174,25 @@ export default function Onboarding() {
     }
 
     try {
-      await createTenant(tenantData)
+      // 1. Create the tenant in Supabase
+      const tenant = await createTenant(tenantData)
+
+      // 2. Create auth user with email + password
+      try {
+        const authUser = await signUp(form.email, form.password, {
+          business_name: form.businessName,
+          owner_name: form.ownerName,
+        })
+
+        // 3. Link auth user to tenant
+        if (authUser && tenant?.id) {
+          await linkAuthToTenant(tenant.id, authUser.id)
+        }
+      } catch (authErr) {
+        // Auth creation failed but tenant was created â log but don't block
+        // They can use "forgot password" flow later to set up auth
+        console.warn('Auth user creation failed (tenant still created):', authErr)
+      }
     } catch (err) {
       console.error('Failed to create tenant:', err)
       if (err.message?.includes('duplicate')) {
@@ -275,6 +294,15 @@ export default function Onboarding() {
                   <label><Phone size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Phone</label>
                   <input type="tel" placeholder="(555) 123-4567" value={form.phone} onChange={e => update('phone', e.target.value)} />
                 </div>
+              </div>
+              <div className="form-group">
+                <label>Password * <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>(min 6 characters â for your dashboard login)</span></label>
+                <input type="password" placeholder="Create a password" value={form.password}
+                  onChange={e => update('password', e.target.value)}
+                  style={form.password && form.password.length < 6 ? { borderColor: '#dc2626' } : {}} />
+                {form.password && form.password.length < 6 && (
+                  <span style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>Password must be at least 6 characters</span>
+                )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div className="form-group">
@@ -626,6 +654,18 @@ export default function Onboarding() {
                   navigator.clipboard?.writeText(`${slug}.mybidquick.com`)
                 }}>Copy</button>
               </div>
+            </div>
+
+            <div style={{
+              background: '#f0f7ff', borderRadius: 12, padding: 16,
+              maxWidth: 480, margin: '0 auto 24px',
+              border: '1px solid #dbeafe', fontSize: 13, color: '#1e40af',
+            }}>
+              <strong>Your login:</strong> {form.email} + the password you just created.
+              <br />
+              <span style={{ fontSize: 12, color: '#3b82f6' }}>
+                Use these to log into your dashboard anytime at mybidquick.com/login
+              </span>
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
