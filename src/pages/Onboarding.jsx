@@ -103,7 +103,7 @@ export default function Onboarding() {
     setLaunching(true)
     setLaunchError('')
 
-    // Generate URL-safe slug from business name (e.g., "ABC Cleaning" → "abc-cleaning")
+    // Generate URL-safe slug from business name (e.g., "ABC Cleaning" â "abc-cleaning")
     let slug = form.businessName
       .toLowerCase()
       .trim()
@@ -125,7 +125,7 @@ export default function Onboarding() {
         }
       }
     } catch (err) {
-      // If slug check fails, proceed anyway — insert will catch true duplicates
+      // If slug check fails, proceed anyway â insert will catch true duplicates
       console.warn('Slug check failed, proceeding:', err)
     }
 
@@ -178,10 +178,11 @@ export default function Onboarding() {
       console.error('Failed to create tenant:', err)
       if (err.message?.includes('duplicate')) {
         setLaunchError('A business with this name already exists. Please use a different name.')
-        setLaunching(false)
-        return
+      } else {
+        setLaunchError('Something went wrong creating your page. Please try again or contact support.')
       }
-      // Still show success — localStorage fallback in db.js handles it
+      setLaunching(false)
+      return
     }
 
     setLaunching(false)
@@ -537,7 +538,7 @@ export default function Onboarding() {
                       border: `1px dashed ${form.primaryColor}40`,
                     }}>
                       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 0.5 }}>
-                        Preview — what your customer sees after house wash quote
+                        Preview â what your customer sees after house wash quote
                       </div>
                       <div style={{
                         background: 'white', borderRadius: 'var(--radius)', padding: 16,
@@ -573,7 +574,7 @@ export default function Onboarding() {
                                 <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: 8 }}>
                                   ${originalPrice}
                                 </span>
-                                ${discounted} — You save ${originalPrice - discounted}!
+                                ${discounted} â You save ${originalPrice - discounted}!
                               </>
                             )
                           })()}
@@ -598,7 +599,7 @@ export default function Onboarding() {
             }}>
               <Check size={40} color="#059669" />
             </div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! 🎉</h2>
+            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! ð</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 17, marginBottom: 32, maxWidth: 440, margin: '0 auto 32px' }}>
               Your branded quoting page is ready. Share the link with customers or embed it on your website.
             </p>
