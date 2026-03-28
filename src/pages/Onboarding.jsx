@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
@@ -32,16 +32,40 @@ const COLOR_PRESETS = [
   { name: "Crimson", primary: "#dc2626", secondary: "#f87171" },
 ]
 
+// ââ Session persistence helpers ââ
+const STORAGE_KEY = 'mbq_onboarding_progress'
+
+function loadSavedProgress() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch { return null }
+}
+
+function saveProgress(step, form, logoPreview) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, form, logoPreview }))
+  } catch { /* storage full or unavailable â silent fail */ }
+}
+
+function clearProgress() {
+  try { sessionStorage.removeItem(STORAGE_KEY) } catch {}
+}
+
 export default function Onboarding() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const fileInputRef = useRef(null)
 
-  const [step, setStep] = useState(0)
-  const [logoPreview, setLogoPreview] = useState(null)
-  const [logoFile, setLogoFile] = useState(null) // actual File for upload
+  // ââ Restore from session if available ââ
+  const saved = loadSavedProgress()
 
-  const [form, setForm] = useState({
+  const [step, setStep] = useState(saved?.step ?? 0)
+  const [logoPreview, setLogoPreview] = useState(saved?.logoPreview ?? null)
+  const [logoFile, setLogoFile] = useState(null) // File objects can't be serialized â user re-uploads if needed
+
+  const [form, setForm] = useState(saved?.form ?? {
     businessName: '',
     ownerName: '',
     email: searchParams.get('email') || '',
@@ -61,6 +85,11 @@ export default function Onboarding() {
       discountPercent: 20,
     },
   })
+
+  // ââ Auto-save progress on every change ââ
+  useEffect(() => {
+    saveProgress(step, form, logoPreview)
+  }, [step, form, logoPreview])
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
@@ -215,6 +244,7 @@ export default function Onboarding() {
 
     setLaunching(false)
     setStep(3) // Show success
+    clearProgress() // Clean up â onboarding complete
   }
 
   return (
