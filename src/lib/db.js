@@ -31,15 +31,15 @@ export async function getAllTenants() {
 /**
  * Find a tenant by slug (for duplicate check during onboarding)
  */
-export async function getTenantBySlug(slug) {
+export async function getTenantBySlug(slug, fullData = false) {
   if (isSupabaseConnected()) {
     const { data, error } = await supabase
       .from('tenants')
-      .select('id, slug')
+      .select(fullData ? '*' : 'id, slug')
       .eq('slug', slug)
       .single()
     if (error && error.code !== 'PGRST116') throw error
-    return data || null
+    return data ? (fullData ? rowToTenant(data) : data) : null
   }
   // Fallback: localStorage
   const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
@@ -338,6 +338,39 @@ function tenantToRow(tenant) {
     secondary_color: tenant.secondaryColor,
     config: tenant.config || {},
   }
+}
+
+// ============================================================================
+// STORAGE (Logo uploads)
+// ============================================================================
+
+/**
+ * Upload a logo file to Supabase Storage and return the public URL.
+ * Falls back to base64 data URL if Supabase Storage isn't available.
+ */
+export async function uploadLogo(file, slug) {
+  if (!isSupabaseConnected()) return null
+
+  const ext = file.name.split('.').pop().toLowerCase()
+  const filePath = `logos/${slug}.${ext}`
+
+  const { error } = await supabase.storage
+    .from('tenant-assets')
+    .upload(filePath, file, {
+      upsert: true,
+      contentType: file.type,
+    })
+
+  if (error) {
+    console.warn('Logo upload failed, falling back to base64:', error)
+    return null // caller will fall back to base64
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('tenant-assets')
+    .getPublicUrl(filePath)
+
+  return urlData.publicUrl
 }
 
 function rowToLead(row) {
