@@ -5,7 +5,7 @@ import {
   Eye, Trash2, AlertCircle, Clock, MessageSquare, Home, Zap, TrendingUp,
   ChevronDown, MapPin, Heart, Loader, CreditCard, ShoppingCart, ExternalLink, Gift
 } from 'lucide-react'
-import { getTenantByEmail, updateTenantConfig, getLeads, updateLeadStatus } from '../lib/db'
+import { getTenantByEmail, updateTenantConfig, getLeads, updateLeadStatus, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
 import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS } from '../lib/billing'
 
 // ============================================================================
@@ -245,6 +245,7 @@ export default function TenantDashboard() {
   const [loginEmail, setLoginEmail] = useState('')
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
+  const [authChecking, setAuthChecking] = useState(true) // checking for existing session
   const [tenant, setTenant] = useState(null)
   const [config, setConfig] = useState(null)
   const [activeTab, setActiveTab] = useState('leads')
@@ -260,7 +261,51 @@ export default function TenantDashboard() {
   const [buyingPack, setBuyingPack] = useState(null)
 
   // ========================================================================
-  // LOGIN — checks Supabase first, then falls back to demo tenants
+  // AUTH — Check for existing Supabase session on mount
+  // ========================================================================
+
+  useEffect(() => {
+    let cancelled = false
+    const checkAuth = async () => {
+      try {
+        const myTenant = await getMyTenant()
+        if (!cancelled && myTenant) {
+          setTenant(myTenant)
+          setConfig(myTenant.config || deepClone(DEFAULT_CONFIG))
+          setIsLoggedIn(true)
+
+          // Load leads
+          const dbLeads = await getLeads(myTenant.id)
+          if (dbLeads) setLeads(dbLeads)
+
+          // Load billing (non-blocking)
+          getBillingStatus(myTenant.id)
+            .then(b => setBilling(b))
+            .catch(() => setBilling(null))
+        }
+      } catch (err) {
+        console.warn('Auth check failed:', err)
+      } finally {
+        if (!cancelled) setAuthChecking(false)
+      }
+    }
+    checkAuth()
+
+    // Listen for auth changes (e.g., token refresh, logout from another tab)
+    const unsub = onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setIsLoggedIn(false)
+        setTenant(null)
+        setConfig(null)
+      }
+    })
+
+    return () => { cancelled = true; unsub() }
+  }, [])
+
+  // ========================================================================
+  // LOGIN — fallback for demo tenants / email-only lookup
+  // (For tenants that signed up before auth was added)
   // ========================================================================
 
   const handleLogin = async () => {
@@ -299,7 +344,8 @@ export default function TenantDashboard() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await signOut() } catch (e) { console.warn('Signout error:', e) }
     setIsLoggedIn(false)
     setTenant(null)
     setConfig(null)
@@ -352,6 +398,25 @@ export default function TenantDashboard() {
   const totalRevenue = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + l.total, 0)
 
   // ========================================================================
+  // AUTH CHECKING (loading state while checking session)
+  // ========================================================================
+
+  if (authChecking) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(180deg, #e8f4ff, #f0f7ff)',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader size={32} style={{ animation: 'spin 1s linear infinite', color: '#3b9cff' }} />
+          <p style={{ color: '#7a9bbc', marginTop: 12, fontSize: 14 }}>Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+    // ========================================================================
   // LOGIN SCREEN
   // ========================================================================
 
@@ -445,12 +510,20 @@ export default function TenantDashboard() {
               padding: 12,
               borderRadius: 8,
               background: '#f0f7ff',
-              fontSize: 12,
+              fontSize: 13,
               color: '#3b9cff',
+              textAlign: 'center',
             }}>
-              <strong>Demo accounts:</strong><br />
-              tim.sullivan@clouteinc.com<br />
-              noah@cornerstoneexterior.com
+              <span
+                onClick={() => navigate('/login')}
+                style={{ cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+              >
+                Log in with password instead
+              </span>
+              <br />
+              <span style={{ fontSize: 11, color: '#7a9bbc', marginTop: 4, display: 'inline-block' }}>
+                New accounts use email + password login
+              </span>
             </div>
           </div>
 
