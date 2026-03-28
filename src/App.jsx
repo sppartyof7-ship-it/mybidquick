@@ -6,6 +6,7 @@ import QuoteDemo from './pages/QuoteDemo'
 import TenantDashboard from './pages/TenantDashboard'
 import TenantPublicPage from './pages/TenantPublicPage'
 import Login from './pages/Login'
+import { BlogIndex, BlogPost } from './pages/BlogPost'
 import './App.css'
 
 /**
@@ -65,6 +66,8 @@ function App() {
       <Route path="/admin/*" element={<AdminDashboard />} />
       <Route path="/demo/quote" element={<QuoteDemo />} />
       <Route path="/dashboard" element={<TenantDashboard />} />
+      <Route path="/blog" element={<BlogIndex />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/q/:slug" element={<SlugRoute />} />
     </Routes>
   )
