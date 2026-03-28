@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getTenantBySlug } from '../lib/db'
 
 /**
- * TenantPublicPage â the customer-facing page for a tenant's subdomain.
+ * TenantPublicPage - the customer-facing page for a tenant's subdomain.
  * When someone visits abc-cleaning.mybidquick.com, this page loads.
  * It shows the tenant's branding and embeds their quote engine.
  */
@@ -64,7 +64,7 @@ export default function TenantPublicPage({ slug }) {
           <a href="https://mybidquick.com" style={{
             color: '#2563eb', fontSize: 14, textDecoration: 'none', fontWeight: 500,
           }}>
-            Get your own quote page â
+            Get your own quote page &rarr;
           </a>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function TenantPublicPage({ slug }) {
             marginLeft: 'auto', color: 'white', textDecoration: 'none',
             fontSize: 14, fontWeight: 600, opacity: 0.9,
           }}>
-            ð {tenant.phone}
+            {'\u{1F4DE}'} {tenant.phone}
           </a>
         )}
       </header>
