@@ -155,7 +155,7 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 - Self-contained component with inline styles, blue theme (#3b9cff primary)
 
 ## Demo Tenants (Hardcoded)
-| Company | Owner | Plan | Quotes/Month|
+| Company | Owner | Plan | Quotes/Month |
 |---------|-------|------|-------------|
 | Cloute Cleaning | Tim Sullivan | Pro | 147 |
 | Cornerstone Exterior | Noah Baldry | Growth | 63 |
@@ -206,16 +206,16 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
 
 **Critical (must fix before soft launch):**
-- [ ] Fix success page navigation: `/admin` â `/dashboard` (Onboarding.jsx line 561)
-- [ ] Pack onboarding services/upsell data into config JSONB before createTenant()
-- [ ] Add duplicate slug check before tenant creation
-- [x] Add `/onboarding` route alias (both /s-ignup and /onboarding now work)
-- [ ] Save secondaryColor to Supabase (add to tenantToRow or config JSONB)
-- [ ] Transform onboarding service format to match dashboard format
+- [x] Fix success page navigation: `/admin` â `/dashboard` (Onboarding.jsx)
+- [x] Pack onboarding services/upsell data into config JSONB before createTenant()
+- [x] Add duplicate slug check before tenant creation (appends -2, -3, etc.)
+- [x] Add `/onboarding` route alias (both /signup and /onboarding now work)
+- [x] Save secondaryColor to Supabase (secondary_color column + tenantToRow mapping)
+- [x] Transform onboarding service format to match dashboard format (basePrice, perSqFt, perWindow, perLinFt, extras)
 - [ ] Upload logos to Supabase Storage instead of storing base64 in DB
 
 **Medium:**
-- [ ] Add email format validation in onboarding
+- [x] Add email format validation in onboarding (regex check + red border feedback)
 - [ ] Deploy billing API endpoints to Vercel (or show "coming soon" message)
 
 ### PHASE 4 â Growth Features
@@ -269,6 +269,7 @@ See Notion: [Exterior Cleaning Expansion â Product & Marketing Research](ht
 | 2026-03-27 | Brand consolidation: everything is now under **MyBidQuick**. Removed all ClouteBid/Cleanbid branding from PROJECT-BRAIN.md. Quoting engine repo rebranded as "mybidquick-engine" (code-level rename still pending). |
 | 2026-03-27 | **Supabase Auth**: Real authentication replacing admin123. Onboarding creates auth user (email+password), Login.jsx page with forgot password, TenantDashboard auto-detects session, auth_user_id column + RLS policies on tenants table. **Engine upsell discount**: wired tenant's `upsell.discountPercent` into CustomerFlow.jsx â shows "Save X%!" badges, applies discount to upselled service pricing. |
 | 2026-03-27 | **Soft launch QA audit**: Full code walkthrough identified 15 issues across 4 severity levels (3 critical, 4 high, 5 medium, 3 low). Created SOFT-LAUNCH-ISSUES.md with fixes and readiness assessment. Verdict: not ready for self-serve launch, but White-Glove path viable. Created MyBidQuick-Onboarding-SOP.docx for manual tenant onboarding. Added `/onboarding` route alias in App.jsx. |
+| 2026-03-28 | **Engine deploy**: Pushed tiered pricing defaults.js + CustomerFlow.jsx (smart cascade upsell with tenant config) to mybidquick-engine. Fixed base64 injection corruption on line 473. Both Vercel deploys GREEN. **Soft launch audit**: Verified all 5 critical QA fixes already shipped â success nav, config JSONB packing, duplicate slug check, secondaryColor column, service format transform. Also confirmed email validation already added. Updated PROJECT-BRAIN.md checklist. |
 
 ## Environment Variables
 ### In `.env` (committed to repo â client-side, publishable only)
