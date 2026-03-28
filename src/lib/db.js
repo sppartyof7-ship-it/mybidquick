@@ -1,5 +1,5 @@
 // ============================================================================
-// DATABASE LAYER — Supabase with localStorage fallback
+// DATABASE LAYER â Supabase with localStorage fallback
 // ============================================================================
 // This file is the ONLY place that talks to the database or localStorage.
 // Every page imports from here instead of touching storage directly.
@@ -193,6 +193,107 @@ export async function createLead(leadData) {
     return rowToLead(data)
   }
   return leadData
+}
+
+// ============================================================================
+// AUTH â Supabase Authentication
+// ============================================================================
+
+/**
+ * Sign up a new user with email + password.
+ * Returns the auth user (with user.id that links to tenants.auth_user_id).
+ */
+export async function signUp(email, password, metadata = {}) {
+  if (!isSupabaseConnected()) return null
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: metadata },
+  })
+  if (error) throw error
+  return data.user
+}
+
+/**
+ * Sign in with email + password.
+ */
+export async function signIn(email, password) {
+  if (!isSupabaseConnected()) return null
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Sign out the current user.
+ */
+export async function signOut() {
+  if (!isSupabaseConnected()) return
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+/**
+ * Get the current logged-in user (or null).
+ */
+export async function getCurrentUser() {
+  if (!isSupabaseConnected()) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
+/**
+ * Listen for auth state changes (login, logout, token refresh).
+ * Returns an unsubscribe function.
+ */
+export function onAuthStateChange(callback) {
+  if (!isSupabaseConnected()) return () => {}
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (event, session) => callback(event, session)
+  )
+  return () => subscription.unsubscribe()
+}
+
+/**
+ * Link an auth user to a tenant (called right after signup).
+ */
+export async function linkAuthToTenant(tenantId, authUserId) {
+  if (!isSupabaseConnected()) return
+  const { error } = await supabase
+    .from('tenants')
+    .update({ auth_user_id: authUserId })
+    .eq('id', tenantId)
+  if (error) throw error
+}
+
+/**
+ * Get the tenant for the currently logged-in auth user.
+ */
+export async function getMyTenant() {
+  if (!isSupabaseConnected()) return null
+  const user = await getCurrentUser()
+  if (!user) return null
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('auth_user_id', user.id)
+    .single()
+  if (error && error.code !== 'PGRST116') throw error
+  return data ? rowToTenant(data) : null
+}
+
+/**
+ * Send password reset email.
+ */
+export async function resetPassword(email) {
+  if (!isSupabaseConnected()) return
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/#/dashboard`,
+  })
+  if (error) throw error
 }
 
 // ============================================================================
