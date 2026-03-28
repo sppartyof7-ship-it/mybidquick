@@ -4,7 +4,7 @@ import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
   Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
-import { createTenant, getTenantBySlug, signUp, linkAuthToTenant } from '../lib/db'
+import { createTenant, getTenantBySlug, signUp, linkAuthToTenant, uploadLogo } from '../lib/db'
 
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
@@ -39,6 +39,7 @@ export default function Onboarding() {
 
   const [step, setStep] = useState(0)
   const [logoPreview, setLogoPreview] = useState(null)
+  const [logoFile, setLogoFile] = useState(null) // actual File for upload
 
   const [form, setForm] = useState({
     businessName: '',
@@ -84,6 +85,7 @@ export default function Onboarding() {
   const handleLogoUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
+      setLogoFile(file) // keep the actual file for Supabase Storage upload
       const reader = new FileReader()
       reader.onload = (ev) => setLogoPreview(ev.target.result)
       reader.readAsDataURL(file)
@@ -155,6 +157,13 @@ export default function Onboarding() {
       priceAdjustment: 0,
     }
 
+    // Upload logo to Supabase Storage (falls back to base64 if upload fails)
+    let logoUrl = logoPreview // default: base64 preview
+    if (logoFile) {
+      const uploaded = await uploadLogo(logoFile, slug)
+      if (uploaded) logoUrl = uploaded // use the Storage URL instead of base64
+    }
+
     const tenantData = {
       businessName: form.businessName,
       ownerName: form.ownerName,
@@ -167,7 +176,7 @@ export default function Onboarding() {
       createdAt: new Date().toISOString(),
       status: 'active',
       plan: form.plan || 'growth',
-      logo: logoPreview,
+      logo: logoUrl,
       primaryColor: form.primaryColor,
       secondaryColor: form.secondaryColor,
       config,
