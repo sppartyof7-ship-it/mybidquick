@@ -2,8 +2,9 @@ import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
-  Building2, Mail, Phone, Globe, DollarSign, Sparkles
+  Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
+import { createTenant, getTenantBySlug } from '../lib/db'
 
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
@@ -51,6 +52,12 @@ export default function Onboarding() {
     secondaryColor: '#60a5fa',
     services: DEFAULT_SERVICES.map(s => ({ ...s })),
     plan: 'growth',
+    upsell: {
+      enabled: false,
+      triggerService: 'house_washing',
+      offerService: 'window_cleaning',
+      discountPercent: 20,
+    },
   })
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
@@ -69,6 +76,10 @@ export default function Onboarding() {
     }))
   }
 
+  const updateUpsell = (field, value) => {
+    setForm(f => ({ ...f, upsell: { ...f.upsell, [field]: value } }))
+  }
+
   const handleLogoUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
@@ -78,27 +89,102 @@ export default function Onboarding() {
     }
   }
 
+  const [launchError, setLaunchError] = useState('')
+  const [launching, setLaunching] = useState(false)
+
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
   const canProceed = () => {
-    if (step === 0) return form.businessName && form.email && form.ownerName
+    if (step === 0) return form.businessName && form.ownerName && form.email && isValidEmail(form.email)
     return true
   }
 
-  const handleLaunch = () => {
-    // In a real app, this would POST to an API to create the tenant
-    const tenantData = {
-      ...form,
-      id: form.businessName.toLowerCase().replace(/[^a-z0-9]/g, ''),
-      createdAt: new Date().toISOString(),
-      status: 'active',
-      quotesUsed: 0,
-      logo: logoPreview,
+  const handleLaunch = async () => {
+    setLaunching(true)
+    setLaunchError('')
+
+    // Generate URL-safe slug from business name (e.g., "ABC Cleaning" → "abc-cleaning")
+    let slug = form.businessName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    // Check for duplicate slug and make unique if needed
+    try {
+      const existing = await getTenantBySlug(slug)
+      if (existing) {
+        // Append a number to make it unique (abc-cleaning-2, abc-cleaning-3, etc.)
+        let counter = 2
+        while (true) {
+          const candidate = `${slug}-${counter}`
+          const check = await getTenantBySlug(candidate)
+          if (!check) { slug = candidate; break }
+          counter++
+          if (counter > 20) break // safety valve
+        }
+      }
+    } catch (err) {
+      // If slug check fails, proceed anyway — insert will catch true duplicates
+      console.warn('Slug check failed, proceeding:', err)
     }
 
-    // Save to localStorage for demo purposes
-    const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
-    tenants.push(tenantData)
-    localStorage.setItem('mybidquick_tenants', JSON.stringify(tenants))
+    // Build the config object with all service/pricing/upsell data
+    // This is what the TenantDashboard reads from tenant.config
+    const config = {
+      businessName: form.businessName,
+      services: form.services.map(svc => ({
+        id: svc.id,
+        name: svc.name,
+        enabled: svc.enabled,
+        icon: 'Home',
+        basePrice: svc.price || 0,
+        perSqFt: 0,
+        perWindow: svc.id === 'window_cleaning' ? 8 : 0,
+        perLinFt: svc.id === 'gutter_cleaning' ? 1.5 : svc.id === 'gutter_guard' ? 14.99 : 0,
+        extras: [],
+      })),
+      upsell: form.upsell,
+      packages: {
+        basic: { multiplier: 1, tagline: 'Best for single services' },
+        standard: { multiplier: 1.35, tagline: 'Most popular choice' },
+        premium: { multiplier: 1.75, tagline: 'Complete solution' },
+      },
+      bundleDiscounts: { twoServices: 10, threeServices: 15 },
+      priceAdjustment: 0,
+    }
 
+    const tenantData = {
+      businessName: form.businessName,
+      ownerName: form.ownerName,
+      email: form.email,
+      phone: form.phone,
+      website: form.website,
+      city: form.city,
+      state: form.state,
+      slug,
+      createdAt: new Date().toISOString(),
+      status: 'active',
+      plan: form.plan || 'growth',
+      logo: logoPreview,
+      primaryColor: form.primaryColor,
+      secondaryColor: form.secondaryColor,
+      config,
+    }
+
+    try {
+      await createTenant(tenantData)
+    } catch (err) {
+      console.error('Failed to create tenant:', err)
+      if (err.message?.includes('duplicate')) {
+        setLaunchError('A business with this name already exists. Please use a different name.')
+        setLaunching(false)
+        return
+      }
+      // Still show success — localStorage fallback in db.js handles it
+    }
+
+    setLaunching(false)
     setStep(3) // Show success
   }
 
@@ -178,7 +264,11 @@ export default function Onboarding() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div className="form-group">
                   <label><Mail size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Email *</label>
-                  <input type="email" placeholder="you@business.com" value={form.email} onChange={e => update('email', e.target.value)} />
+                  <input type="email" placeholder="you@business.com" value={form.email} onChange={e => update('email', e.target.value)}
+                    style={form.email && !isValidEmail(form.email) ? { borderColor: '#dc2626' } : {}} />
+                  {form.email && !isValidEmail(form.email) && (
+                    <span style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>Please enter a valid email address</span>
+                  )}
                 </div>
                 <div className="form-group">
                   <label><Phone size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Phone</label>
@@ -369,6 +459,130 @@ export default function Onboarding() {
                 <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
                 Tip: These are starting prices. Your customers' actual quotes will vary based on property size, which they'll enter on your quoting page.
               </div>
+
+              {/* Upsell Configuration */}
+              <div style={{
+                marginTop: 32, padding: 24, borderRadius: 'var(--radius-lg)',
+                border: '2px solid',
+                borderColor: form.upsell.enabled ? 'var(--success)' : 'var(--border)',
+                background: form.upsell.enabled ? '#f0fdf4' : 'transparent',
+                transition: 'all 0.3s ease',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: form.upsell.enabled ? 20 : 0 }}>
+                  {/* Toggle */}
+                  <div
+                    onClick={() => updateUpsell('enabled', !form.upsell.enabled)}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12,
+                      background: form.upsell.enabled ? 'var(--success)' : 'var(--border)',
+                      cursor: 'pointer', position: 'relative',
+                      transition: 'background 0.2s', flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: 'white', position: 'absolute',
+                      top: 2, left: form.upsell.enabled ? 22 : 2,
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Tag size={16} color={form.upsell.enabled ? '#059669' : '#64748b'} />
+                      Window Cleaning Upsell
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                      After a house washing quote, offer windows at a discount to increase your ticket size
+                    </div>
+                  </div>
+                </div>
+
+                {form.upsell.enabled && (
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: 16, background: 'white', borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)',
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                          <Percent size={12} style={{ marginRight: 4, verticalAlign: -1 }} />
+                          Discount off window cleaning price
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="range"
+                            min="5"
+                            max="50"
+                            step="5"
+                            value={form.upsell.discountPercent}
+                            onChange={e => updateUpsell('discountPercent', Number(e.target.value))}
+                            style={{ flex: 1, cursor: 'pointer' }}
+                          />
+                          <span style={{
+                            fontWeight: 800, fontSize: 20, color: '#059669',
+                            minWidth: 52, textAlign: 'right',
+                          }}>
+                            {form.upsell.discountPercent}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live preview of what customer sees */}
+                    <div style={{
+                      marginTop: 16, padding: 16, borderRadius: 'var(--radius)',
+                      background: `linear-gradient(135deg, ${form.primaryColor}10, ${form.primaryColor}05)`,
+                      border: `1px dashed ${form.primaryColor}40`,
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 0.5 }}>
+                        Preview — what your customer sees after house wash quote
+                      </div>
+                      <div style={{
+                        background: 'white', borderRadius: 'var(--radius)', padding: 16,
+                        border: '1px solid var(--border)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+                          Add Window Cleaning & Save {form.upsell.discountPercent}%!
+                        </div>
+                        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                          Since we're already at your home, get your windows done at a discount. Just pick your window type below.
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {['Single-Hung', 'Double-Hung', 'Casement'].map(type => (
+                            <div key={type} style={{
+                              padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                              border: `1px solid ${form.primaryColor}30`,
+                              color: form.primaryColor, background: `${form.primaryColor}08`,
+                            }}>
+                              {type}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{
+                          marginTop: 12, fontSize: 13, color: '#059669', fontWeight: 600,
+                        }}>
+                          {(() => {
+                            const windowSvc = form.services.find(s => s.id === 'window_cleaning')
+                            const originalPrice = windowSvc ? windowSvc.price : 250
+                            const discounted = Math.round(originalPrice * (1 - form.upsell.discountPercent / 100))
+                            return (
+                              <>
+                                <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: 8 }}>
+                                  ${originalPrice}
+                                </span>
+                                ${discounted} — You save ${originalPrice - discounted}!
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -399,7 +613,7 @@ export default function Onboarding() {
               }}>
                 <input
                   readOnly
-                  value={`mybidquick.com/${form.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                  value={`${form.businessName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.mybidquick.com`}
                   style={{
                     flex: 1, padding: '12px 16px', borderRadius: 'var(--radius)',
                     border: '2px solid var(--border)', fontSize: 15, fontWeight: 600,
@@ -407,19 +621,31 @@ export default function Onboarding() {
                   }}
                 />
                 <button className="btn btn-primary btn-sm" onClick={() => {
-                  navigator.clipboard?.writeText(`mybidquick.com/${form.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`)
+                  const slug = form.businessName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                  navigator.clipboard?.writeText(`${slug}.mybidquick.com`)
                 }}>Copy</button>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary btn-lg" onClick={() => navigate('/admin')}>
+              <button className="btn btn-primary btn-lg" onClick={() => navigate('/dashboard')}>
                 Open Dashboard <ArrowRight size={16} />
               </button>
               <button className="btn btn-outline btn-lg" onClick={() => navigate('/')}>
                 Back to Home
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Launch error message */}
+        {launchError && (
+          <div style={{
+            marginTop: 16, padding: '12px 16px', borderRadius: 8,
+            background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
+            fontSize: 14, fontWeight: 500,
+          }}>
+            {launchError}
           </div>
         )}
 
@@ -437,10 +663,10 @@ export default function Onboarding() {
             <button
               onClick={() => step === 2 ? handleLaunch() : setStep(s => s + 1)}
               className="btn btn-primary btn-lg"
-              disabled={!canProceed()}
-              style={{ opacity: canProceed() ? 1 : 0.5 }}
+              disabled={!canProceed() || launching}
+              style={{ opacity: (canProceed() && !launching) ? 1 : 0.5 }}
             >
-              {step === 2 ? 'Launch My Page' : 'Continue'} <ArrowRight size={16} />
+              {launching ? 'Setting up...' : step === 2 ? 'Launch My Page' : 'Continue'} {!launching && <ArrowRight size={16} />}
             </button>
           </div>
         )}
