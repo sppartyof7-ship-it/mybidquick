@@ -1,10 +1,46 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight, ArrowLeft, Check, Upload, Palette,
   Building2, Mail, Phone, Globe, DollarSign, Sparkles, Tag, Percent
 } from 'lucide-react'
-import { createTenant, getTenantBySlug } from '../lib/db'
+import { createTenant, getTenantBySlug, signUp, linkAuthToTenant, uploadLogo, getLaunchCustomerCount } from '../lib/db'
+
+// Notify Tim when a new tenant signs up (Web3Forms → email)
+async function notifyNewSignup(form, slug, isLaunchCustomer) {
+  try {
+    await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: '6cf87767-154f-42e1-8920-4988ef3cf5a3',
+        subject: `🎉 New MyBidQuick Signup: ${form.businessName}`,
+        from_name: 'MyBidQuick Signups',
+        message: [
+          `========================================`,
+          `  NEW TENANT SIGNUP`,
+          `========================================`,
+          ``,
+          `Business:  ${form.businessName}`,
+          `Owner:     ${form.ownerName}`,
+          `Email:     ${form.email}`,
+          `Phone:     ${form.phone || 'N/A'}`,
+          `Location:  ${form.city || ''}, ${form.state || ''}`,
+          `Website:   ${form.website || 'N/A'}`,
+          ``,
+          `Slug:      ${slug}`,
+          `Quote URL: https://www.mybidquick.com/${slug}`,
+          `Dashboard: https://www.mybidquick.com/dashboard`,
+          ``,
+          `Launch Customer (LAUNCH20): ${isLaunchCustomer ? 'YES ✅' : 'No'}`,
+          `Signed up: ${new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })}`,
+        ].join('\n'),
+      }),
+    })
+  } catch (err) {
+    console.warn('Signup notification email failed (non-blocking):', err)
+  }
+}
 
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
@@ -32,15 +68,40 @@ const COLOR_PRESETS = [
   { name: "Crimson", primary: "#dc2626", secondary: "#f87171" },
 ]
 
+// -- Session persistence helpers --
+const STORAGE_KEY = 'mbq_onboarding_progress'
+
+function loadSavedProgress() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch { return null }
+}
+
+function saveProgress(step, form, logoPreview) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, form, logoPreview }))
+  } catch { /* storage full or unavailable - silent fail */ }
+}
+
+function clearProgress() {
+  try { sessionStorage.removeItem(STORAGE_KEY) } catch {}
+}
+
 export default function Onboarding() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const fileInputRef = useRef(null)
 
-  const [step, setStep] = useState(0)
-  const [logoPreview, setLogoPreview] = useState(null)
+  // -- Restore from session if available --
+  const saved = loadSavedProgress()
 
-  const [form, setForm] = useState({
+  const [step, setStep] = useState(saved?.step ?? 0)
+  const [logoPreview, setLogoPreview] = useState(saved?.logoPreview ?? null)
+  const [logoFile, setLogoFile] = useState(null) // File objects can't be serialized - user re-uploads if needed
+
+  const [form, setForm] = useState(saved?.form ?? {
     businessName: '',
     ownerName: '',
     email: searchParams.get('email') || '',
@@ -48,6 +109,7 @@ export default function Onboarding() {
     website: '',
     city: '',
     state: '',
+    password: '',
     primaryColor: '#2563eb',
     secondaryColor: '#60a5fa',
     services: DEFAULT_SERVICES.map(s => ({ ...s })),
@@ -58,7 +120,13 @@ export default function Onboarding() {
       offerService: 'window_cleaning',
       discountPercent: 20,
     },
+    discountCode: '',
   })
+
+  // -- Auto-save progress on every change --
+  useEffect(() => {
+    saveProgress(step, form, logoPreview)
+  }, [step, form, logoPreview])
 
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
@@ -83,6 +151,7 @@ export default function Onboarding() {
   const handleLogoUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
+      setLogoFile(file) // keep the actual file for Supabase Storage upload
       const reader = new FileReader()
       reader.onload = (ev) => setLogoPreview(ev.target.result)
       reader.readAsDataURL(file)
@@ -95,7 +164,7 @@ export default function Onboarding() {
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
   const canProceed = () => {
-    if (step === 0) return form.businessName && form.ownerName && form.email && isValidEmail(form.email)
+    if (step === 0) return form.businessName && form.ownerName && form.email && isValidEmail(form.email) && form.password.length >= 6
     return true
   }
 
@@ -103,7 +172,7 @@ export default function Onboarding() {
     setLaunching(true)
     setLaunchError('')
 
-    // Generate URL-safe slug from business name (e.g., "ABC Cleaning" → "abc-cleaning")
+    // Generate URL-safe slug from business name (e.g., "ABC Cleaning" -> "abc-cleaning")
     let slug = form.businessName
       .toLowerCase()
       .trim()
@@ -125,7 +194,7 @@ export default function Onboarding() {
         }
       }
     } catch (err) {
-      // If slug check fails, proceed anyway — insert will catch true duplicates
+      // If slug check fails, proceed anyway - insert will catch true duplicates
       console.warn('Slug check failed, proceeding:', err)
     }
 
@@ -154,6 +223,30 @@ export default function Onboarding() {
       priceAdjustment: 0,
     }
 
+    // Upload logo to Supabase Storage (falls back to base64 if upload fails)
+    let logoUrl = logoPreview // default: base64 preview
+    if (logoFile) {
+      const uploaded = await uploadLogo(logoFile, slug)
+      if (uploaded) logoUrl = uploaded // use the Storage URL instead of base64
+    }
+
+    // Validate LAUNCH20 discount code (first 20 customers get $1/lead for life)
+    let isLaunchCustomer = false
+    if (form.discountCode === 'LAUNCH20') {
+      try {
+        const { isFull, spotsLeft } = await getLaunchCustomerCount()
+        if (isFull) {
+          setLaunchError('Sorry, the LAUNCH20 code has reached its limit of 20 customers. You can still sign up at regular pricing!')
+          setLaunching(false)
+          return
+        }
+        isLaunchCustomer = true
+      } catch (err) {
+        console.warn('Could not verify launch spots, proceeding with discount:', err)
+        isLaunchCustomer = true // give benefit of the doubt if check fails
+      }
+    }
+
     const tenantData = {
       businessName: form.businessName,
       ownerName: form.ownerName,
@@ -166,26 +259,51 @@ export default function Onboarding() {
       createdAt: new Date().toISOString(),
       status: 'active',
       plan: form.plan || 'growth',
-      logo: logoPreview,
+      logo: logoUrl,
       primaryColor: form.primaryColor,
       secondaryColor: form.secondaryColor,
       config,
+      discountCode: form.discountCode || null,
+      isLaunchCustomer,
     }
 
     try {
-      await createTenant(tenantData)
+      // 1. Create the tenant in Supabase
+      const tenant = await createTenant(tenantData)
+
+      // 2. Notify Tim about the new signup (non-blocking)
+      notifyNewSignup(form, slug, isLaunchCustomer)
+
+      // 3. Create auth user with email + password
+      try {
+        const authUser = await signUp(form.email, form.password, {
+          business_name: form.businessName,
+          owner_name: form.ownerName,
+        })
+
+        // 3. Link auth user to tenant
+        if (authUser && tenant?.id) {
+          await linkAuthToTenant(tenant.id, authUser.id)
+        }
+      } catch (authErr) {
+        // Auth creation failed but tenant was created - log but don't block
+        // They can use "forgot password" flow later to set up auth
+        console.warn('Auth user creation failed (tenant still created):', authErr)
+      }
     } catch (err) {
       console.error('Failed to create tenant:', err)
       if (err.message?.includes('duplicate')) {
         setLaunchError('A business with this name already exists. Please use a different name.')
-        setLaunching(false)
-        return
+      } else {
+        setLaunchError('Something went wrong creating your page. Please try again or contact support.')
       }
-      // Still show success — localStorage fallback in db.js handles it
+      setLaunching(false)
+      return
     }
 
     setLaunching(false)
     setStep(3) // Show success
+    clearProgress() // Clean up - onboarding complete
   }
 
   return (
@@ -275,6 +393,15 @@ export default function Onboarding() {
                   <input type="tel" placeholder="(555) 123-4567" value={form.phone} onChange={e => update('phone', e.target.value)} />
                 </div>
               </div>
+              <div className="form-group">
+                <label>Password * <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>(min 6 characters - for your dashboard login)</span></label>
+                <input type="password" placeholder="Create a password" value={form.password}
+                  onChange={e => update('password', e.target.value)}
+                  style={form.password && form.password.length < 6 ? { borderColor: '#dc2626' } : {}} />
+                {form.password && form.password.length < 6 && (
+                  <span style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>Password must be at least 6 characters</span>
+                )}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div className="form-group">
                   <label>City</label>
@@ -293,6 +420,29 @@ export default function Onboarding() {
               <div className="form-group">
                 <label><Globe size={14} style={{ marginRight: 6, verticalAlign: -2 }} />Website (optional)</label>
                 <input placeholder="https://yourbusiness.com" value={form.website} onChange={e => update('website', e.target.value)} />
+              </div>
+
+              {/* Discount Code */}
+              <div style={{ marginTop: 24, padding: '20px 24px', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', borderRadius: 12, border: '1px solid #fde68a' }}>
+                <label style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: '#92400e' }}>
+                  <Tag size={14} /> Have a discount code?
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    placeholder="Enter code (e.g., LAUNCH20)"
+                    value={form.discountCode}
+                    onChange={e => update('discountCode', e.target.value.toUpperCase())}
+                    style={{ flex: 1, padding: '10px 12px', border: '2px solid #fde68a', borderRadius: 8, fontSize: 14, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}
+                  />
+                </div>
+                {form.discountCode === 'LAUNCH20' && (
+                  <div style={{ marginTop: 10, padding: '10px 14px', background: '#ecfdf5', borderRadius: 8, border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Sparkles size={16} color="#059669" />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#065f46' }}>
+                      Launch Customer pricing: $1.00/lead for life! (Limited to first 20 customers)
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -537,7 +687,7 @@ export default function Onboarding() {
                       border: `1px dashed ${form.primaryColor}40`,
                     }}>
                       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8, letterSpacing: 0.5 }}>
-                        Preview — what your customer sees after house wash quote
+                        Preview - what your customer sees after house wash quote
                       </div>
                       <div style={{
                         background: 'white', borderRadius: 'var(--radius)', padding: 16,
@@ -573,7 +723,7 @@ export default function Onboarding() {
                                 <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: 8 }}>
                                   ${originalPrice}
                                 </span>
-                                ${discounted} — You save ${originalPrice - discounted}!
+                                ${discounted} - You save ${originalPrice - discounted}!
                               </>
                             )
                           })()}
@@ -598,7 +748,7 @@ export default function Onboarding() {
             }}>
               <Check size={40} color="#059669" />
             </div>
-            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! 🎉</h2>
+            <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 8 }}>You're live! {'\u{1F389}'}</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 17, marginBottom: 32, maxWidth: 440, margin: '0 auto 32px' }}>
               Your branded quoting page is ready. Share the link with customers or embed it on your website.
             </p>
@@ -625,6 +775,36 @@ export default function Onboarding() {
                   navigator.clipboard?.writeText(`${slug}.mybidquick.com`)
                 }}>Copy</button>
               </div>
+            </div>
+
+            {form.discountCode === 'LAUNCH20' && (
+              <div style={{
+                background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', borderRadius: 12, padding: 16,
+                maxWidth: 480, margin: '0 auto 24px',
+                border: '1px solid #6ee7b7', fontSize: 14, color: '#065f46',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <Sparkles size={20} color="#059669" />
+                <div>
+                  <strong>Launch Customer discount applied!</strong>
+                  <br />
+                  <span style={{ fontSize: 12, color: '#047857' }}>
+                    You're locked in at $1.00/lead for life. This never expires.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div style={{
+              background: '#f0f7ff', borderRadius: 12, padding: 16,
+              maxWidth: 480, margin: '0 auto 24px',
+              border: '1px solid #dbeafe', fontSize: 13, color: '#1e40af',
+            }}>
+              <strong>Your login:</strong> {form.email} + the password you just created.
+              <br />
+              <span style={{ fontSize: 12, color: '#3b82f6' }}>
+                Use these to log into your dashboard anytime at mybidquick.com/login
+              </span>
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

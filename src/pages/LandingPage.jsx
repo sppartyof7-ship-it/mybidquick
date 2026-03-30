@@ -165,6 +165,10 @@ export default function LandingPage() {
             <a href="#features" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Features</a>
             <a href="#pricing" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Pricing</a>
             <a href="#testimonials" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Reviews</a>
+            <span
+              onClick={() => navigate('/login')}
+              style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+            >Log In</span>
             <button onClick={handleGetStarted} className="btn btn-primary btn-sm">
               Get Started <ArrowRight size={14} />
             </button>

@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Home, Droplets, Check, Tag, X, Waves } from 'lucide-react'
 
 /*
-  QuoteDemo — A working demo of the customer-facing quoting experience,
+  QuoteDemo - A working demo of the customer-facing quoting experience,
   showing the smart cascade upsell flow:
-    House Washing quote → Window Cleaning upsell → Gutter Cleaning upsell
+    House Washing quote -> Window Cleaning upsell -> Gutter Cleaning upsell
 
   Smart cascade logic:
   - After house wash quote, show window cleaning upsell
@@ -26,12 +26,12 @@ const WINDOW_TYPES = [
 
 const SQ_FT_OPTIONS = [
   { label: 'Under 1,500 sq ft', value: 1200, tier: 'small' },
-  { label: '1,500 – 2,500 sq ft', value: 2000, tier: 'medium' },
-  { label: '2,500 – 3,500 sq ft', value: 3000, tier: 'large' },
+  { label: '1,500 - 2,500 sq ft', value: 2000, tier: 'medium' },
+  { label: '2,500 - 3,500 sq ft', value: 3000, tier: 'large' },
   { label: '3,500+ sq ft', value: 4000, tier: 'xlarge' },
 ]
 
-// Demo config — in production this comes from the tenant's MyBidQuick config
+// Demo config - in production this comes from the tenant's MyBidQuick config
 const DEMO_CONFIG = {
   businessName: 'Cloute Cleaning',
   primaryColor: '#2563eb',
@@ -67,7 +67,7 @@ function calculateWindowPrice(sqft, windowType, discountPercent) {
 }
 
 // Estimate gutter linear footage from house square footage
-// Industry standard: perimeter ≈ 4 × √(sqft), gutters run ~1.1x perimeter
+// Industry standard: perimeter ~= 4 * sqrt(sqft), gutters run ~1.1x perimeter
 function estimateGutterLinearFt(sqft) {
   return Math.round(1.1 * Math.sqrt(sqft) * 4)
 }
@@ -88,7 +88,7 @@ function calculateGutterPrice(sqft, discountPercent) {
 
 export default function QuoteDemo() {
   const navigate = useNavigate()
-  // Phases: select_size → show_quote → upsell_windows → upsell_gutters → final
+  // Phases: select_size -> show_quote -> upsell_windows -> upsell_gutters -> final
   const [phase, setPhase] = useState('select_size')
   const [selectedSqft, setSelectedSqft] = useState(null)
   const [houseWashPrice, setHouseWashPrice] = useState(0)
@@ -171,7 +171,7 @@ export default function QuoteDemo() {
         fontSize: 13, fontWeight: 600, color: '#92400e',
         borderBottom: '1px solid #fde68a',
       }}>
-        Demo Preview — This is what your customers will see on your quoting page
+        Demo Preview - This is what your customers will see on your quoting page
       </div>
 
       {/* Header */}
@@ -211,7 +211,7 @@ export default function QuoteDemo() {
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white' }}
                 >
                   <span>{opt.label}</span>
-                  <span style={{ color: primaryColor, fontSize: 14 }}>Select →</span>
+                  <span style={{ color: primaryColor, fontSize: 14 }}>Select {'->'}</span>
                 </button>
               ))}
             </div>
@@ -317,7 +317,7 @@ export default function QuoteDemo() {
                       }}>
                         <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>
                           <span style={{ textDecoration: 'line-through' }}>${windowPricing.fullPrice}</span>
-                          {' '}→ Bundle price:
+                          {' \u2192 '}Bundle price:
                         </div>
                         <div style={{ fontSize: 36, fontWeight: 900, color: '#059669' }}>
                           ${windowPricing.discountedPrice}
@@ -416,7 +416,7 @@ export default function QuoteDemo() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Waves size={18} />
                       <span style={{ fontWeight: 800, fontSize: 16 }}>
-                        Add Gutter Cleaning — Save {DEMO_CONFIG.upsellDiscountPercent}%!
+                        Add Gutter Cleaning - Save {DEMO_CONFIG.upsellDiscountPercent}%!
                       </span>
                     </div>
                     <button
@@ -467,7 +467,7 @@ export default function QuoteDemo() {
                     }}>
                       <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>
                         <span style={{ textDecoration: 'line-through' }}>${gutterPricing.fullPrice}</span>
-                        {' '}→ Bundle price:
+                        {' \u2192 '}Bundle price:
                       </div>
                       <div style={{ fontSize: 36, fontWeight: 900, color: '#7c3aed' }}>
                         ${gutterPricing.discountedPrice}
@@ -530,7 +530,7 @@ export default function QuoteDemo() {
 
             {/* Line items */}
             <div style={{ borderTop: '1px solid #e2e8f0' }}>
-              {/* House Washing — always shown */}
+              {/* House Washing - always shown */}
               <div style={{
                 display: 'flex', justifyContent: 'space-between',
                 padding: '16px 0', borderBottom: '1px solid #f1f5f9',
@@ -542,7 +542,7 @@ export default function QuoteDemo() {
                 <div style={{ fontWeight: 800, fontSize: 18, color: primaryColor }}>${houseWashPrice}</div>
               </div>
 
-              {/* Window Cleaning — if accepted */}
+              {/* Window Cleaning - if accepted */}
               {windowUpsellAccepted && windowPricing && (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',
@@ -570,7 +570,7 @@ export default function QuoteDemo() {
                 </div>
               )}
 
-              {/* Gutter Cleaning — if accepted */}
+              {/* Gutter Cleaning - if accepted */}
               {gutterUpsellAccepted && gutterPricing && (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',

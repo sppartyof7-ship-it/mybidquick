@@ -1,5 +1,5 @@
 // ============================================================================
-// DATABASE LAYER — Supabase with localStorage fallback
+// DATABASE LAYER - Supabase with localStorage fallback
 // ============================================================================
 // This file is the ONLY place that talks to the database or localStorage.
 // Every page imports from here instead of touching storage directly.
@@ -31,15 +31,15 @@ export async function getAllTenants() {
 /**
  * Find a tenant by slug (for duplicate check during onboarding)
  */
-export async function getTenantBySlug(slug) {
+export async function getTenantBySlug(slug, fullData = false) {
   if (isSupabaseConnected()) {
     const { data, error } = await supabase
       .from('tenants')
-      .select('id, slug')
+      .select(fullData ? '*' : 'id, slug')
       .eq('slug', slug)
       .single()
     if (error && error.code !== 'PGRST116') throw error
-    return data || null
+    return data ? (fullData ? rowToTenant(data) : data) : null
   }
   // Fallback: localStorage
   const tenants = JSON.parse(localStorage.getItem('mybidquick_tenants') || '[]')
@@ -109,6 +109,27 @@ export async function updateTenantConfig(tenantId, config) {
   }
   localStorage.setItem('mybidquick_tenants', JSON.stringify(tenants))
   return tenants[idx] || { id: tenantId, config }
+}
+
+// ============================================================================
+// LAUNCH CUSTOMER DISCOUNT
+// ============================================================================
+
+/**
+ * Check how many LAUNCH20 customers have signed up (cap is 20)
+ * Returns { count, spotsLeft, isFull }
+ */
+export async function getLaunchCustomerCount() {
+  if (isSupabaseConnected()) {
+    const { count, error } = await supabase
+      .from('tenants')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_launch_customer', true)
+    if (error) throw error
+    const used = count || 0
+    return { count: used, spotsLeft: Math.max(0, 20 - used), isFull: used >= 20 }
+  }
+  return { count: 0, spotsLeft: 20, isFull: false }
 }
 
 // ============================================================================
@@ -196,6 +217,107 @@ export async function createLead(leadData) {
 }
 
 // ============================================================================
+// AUTH - Supabase Authentication
+// ============================================================================
+
+/**
+ * Sign up a new user with email + password.
+ * Returns the auth user (with user.id that links to tenants.auth_user_id).
+ */
+export async function signUp(email, password, metadata = {}) {
+  if (!isSupabaseConnected()) return null
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: metadata },
+  })
+  if (error) throw error
+  return data.user
+}
+
+/**
+ * Sign in with email + password.
+ */
+export async function signIn(email, password) {
+  if (!isSupabaseConnected()) return null
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Sign out the current user.
+ */
+export async function signOut() {
+  if (!isSupabaseConnected()) return
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
+}
+
+/**
+ * Get the current logged-in user (or null).
+ */
+export async function getCurrentUser() {
+  if (!isSupabaseConnected()) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
+/**
+ * Listen for auth state changes (login, logout, token refresh).
+ * Returns an unsubscribe function.
+ */
+export function onAuthStateChange(callback) {
+  if (!isSupabaseConnected()) return () => {}
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (event, session) => callback(event, session)
+  )
+  return () => subscription.unsubscribe()
+}
+
+/**
+ * Link an auth user to a tenant (called right after signup).
+ */
+export async function linkAuthToTenant(tenantId, authUserId) {
+  if (!isSupabaseConnected()) return
+  const { error } = await supabase
+    .from('tenants')
+    .update({ auth_user_id: authUserId })
+    .eq('id', tenantId)
+  if (error) throw error
+}
+
+/**
+ * Get the tenant for the currently logged-in auth user.
+ */
+export async function getMyTenant() {
+  if (!isSupabaseConnected()) return null
+  const user = await getCurrentUser()
+  if (!user) return null
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('auth_user_id', user.id)
+    .single()
+  if (error && error.code !== 'PGRST116') throw error
+  return data ? rowToTenant(data) : null
+}
+
+/**
+ * Send password reset email.
+ */
+export async function resetPassword(email) {
+  if (!isSupabaseConnected()) return
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/#/dashboard`,
+  })
+  if (error) throw error
+}
+
+// ============================================================================
 // ROW CONVERTERS
 // ============================================================================
 // Supabase rows use snake_case, our React components use camelCase.
@@ -218,11 +340,14 @@ function rowToTenant(row) {
     secondaryColor: row.secondary_color,
     config: row.config || {},
     createdAt: row.created_at,
+    discountCode: row.discount_code || null,
+    isLaunchCustomer: row.is_launch_customer || false,
+    leadPriceCents: row.lead_price_cents ?? 500,
   }
 }
 
 function tenantToRow(tenant) {
-  return {
+  const row = {
     business_name: tenant.businessName,
     owner_name: tenant.ownerName,
     slug: tenant.slug,
@@ -237,6 +362,46 @@ function tenantToRow(tenant) {
     secondary_color: tenant.secondaryColor,
     config: tenant.config || {},
   }
+  // LAUNCH20 discount code support ($1/lead for life)
+  if (tenant.discountCode) row.discount_code = tenant.discountCode
+  if (tenant.isLaunchCustomer) {
+    row.is_launch_customer = true
+    row.lead_price_cents = 100 // $1.00 per lead instead of default $5.00
+  }
+  return row
+}
+
+// ============================================================================
+// STORAGE (Logo uploads)
+// ============================================================================
+
+/**
+ * Upload a logo file to Supabase Storage and return the public URL.
+ * Falls back to base64 data URL if Supabase Storage isn't available.
+ */
+export async function uploadLogo(file, slug) {
+  if (!isSupabaseConnected()) return null
+
+  const ext = file.name.split('.').pop().toLowerCase()
+  const filePath = `logos/${slug}.${ext}`
+
+  const { error } = await supabase.storage
+    .from('tenant-assets')
+    .upload(filePath, file, {
+      upsert: true,
+      contentType: file.type,
+    })
+
+  if (error) {
+    console.warn('Logo upload failed, falling back to base64:', error)
+    return null // caller will fall back to base64
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('tenant-assets')
+    .getPublicUrl(filePath)
+
+  return urlData.publicUrl
 }
 
 function rowToLead(row) {

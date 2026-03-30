@@ -143,7 +143,7 @@ function TenantRow({ tenant, onView }) {
         <div style={{ fontWeight: 700, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {tenant.businessName}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{tenant.ownerName} · {tenant.email}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{tenant.ownerName} {'\u00B7'} {tenant.email}</div>
       </div>
       <div style={{ textAlign: 'right', minWidth: 100 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>{tenant.quotesThisMonth} quotes</div>
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
           }}>BQ</div>
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Admin Dashboard</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>MyBidQuick Platform Admin</p>
-          <form onSubmit={e => { e.preventDefault(); if (password === 'admin123') setIsAuthenticated(true) }}>
+          <form onSubmit={e => { e.preventDefault(); if (password === (import.meta.env.VITE_ADMIN_PASSWORD || 'admin123')) setIsAuthenticated(true) }}>
             <div className="form-group">
               <input
                 type="password"
@@ -464,7 +464,7 @@ export default function AdminDashboard() {
                     }}>{selectedTenant.businessName.charAt(0)}</div>
                     <div>
                       <h3 style={{ fontSize: 20, fontWeight: 800 }}>{selectedTenant.businessName}</h3>
-                      <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{selectedTenant.ownerName} · {selectedTenant.email}</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{selectedTenant.ownerName} {'\u00B7'} {selectedTenant.email}</p>
                     </div>
                   </div>
 
