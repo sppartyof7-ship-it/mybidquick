@@ -154,7 +154,7 @@ export async function getLeads(tenantId) {
 }
 
 /**
- * Update a lead's status (won/lost/pending)
+ * Update a lead's status (new/contacted/won/lost)
  */
 export async function updateLeadStatus(leadId, status) {
   if (isSupabaseConnected()) {
@@ -416,7 +416,7 @@ function rowToLead(row) {
     date: row.created_at?.split('T')[0],
     source: row.source,
     total: row.total,
-    status: row.status || 'pending',
+    status: row.status || 'new',
     notes: row.notes,
   }
 }

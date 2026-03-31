@@ -319,12 +319,7 @@ export default function Onboarding() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
           onClick={() => navigate('/')}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 800, fontSize: 13,
-          }}>BQ</div>
+          <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 36 }} />
           <span style={{ fontWeight: 700, fontSize: 17 }}>MyBidQuick</span>
         </div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>

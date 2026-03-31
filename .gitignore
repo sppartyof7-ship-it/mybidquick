@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Lock files (LibreOffice, etc.)
+.~lock.*
+
+# OS files
+Thumbs.db

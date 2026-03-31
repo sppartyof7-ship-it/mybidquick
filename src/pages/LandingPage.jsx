@@ -153,13 +153,7 @@ export default function LandingPage() {
           height: 64,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 800, fontSize: 16,
-            }}>BQ</div>
-            <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)' }}>MyBidQuick</span>
+            <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 40 }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <a href="#features" style={{ color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500 }}>Features</a>
@@ -470,13 +464,7 @@ export default function LandingPage() {
       }}>
         <div className="container">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 800, fontSize: 12,
-            }}>BQ</div>
-            <span style={{ color: 'white', fontWeight: 700, fontSize: 16 }}>MyBidQuick</span>
+            <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 32, filter: 'brightness(0) invert(1)' }} />
           </div>
           <p>Proudly made in Wisconsin</p>
           <p style={{ marginTop: 8 }}>{"\u00A9"} {new Date().getFullYear()} MyBidQuick All rights reserved.</p>

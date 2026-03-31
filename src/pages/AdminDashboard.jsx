@@ -272,12 +272,7 @@ export default function AdminDashboard() {
           background: 'white', borderRadius: 'var(--radius-lg)', padding: 40,
           border: '1px solid var(--border)', maxWidth: 400, width: '100%', textAlign: 'center',
         }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 14,
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 20px', color: 'white', fontWeight: 800, fontSize: 20,
-          }}>BQ</div>
+          <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 56, margin: '0 auto 20px', display: 'block' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Admin Dashboard</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>MyBidQuick Platform Admin</p>
           <form onSubmit={e => { e.preventDefault(); if (password === (import.meta.env.VITE_ADMIN_PASSWORD || 'admin123')) setIsAuthenticated(true) }}>
@@ -309,12 +304,7 @@ export default function AdminDashboard() {
       }}>
         <div style={{ padding: '0 20px', marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 800, fontSize: 13,
-            }}>BQ</div>
+            <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 32, filter: 'brightness(0) invert(1)' }} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>MyBidQuick</div>
               <div style={{ fontSize: 11, opacity: 0.5 }}>Platform Admin</div>

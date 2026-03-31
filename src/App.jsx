@@ -7,7 +7,6 @@ import TenantDashboard from './pages/TenantDashboard'
 import TenantPublicPage from './pages/TenantPublicPage'
 import Login from './pages/Login'
 import { BlogIndex, BlogPost } from './pages/BlogPost'
-import './App.css'
 
 /**
  * Detect if we're on a tenant subdomain.

@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Save, DollarSign, Settings, Mail, Phone, LogOut, Check, Plus, X,
   Eye, Trash2, AlertCircle, Clock, MessageSquare, Home, Zap, TrendingUp,
   ChevronDown, MapPin, Heart, Loader, CreditCard, ShoppingCart, ExternalLink, Gift,
-  BarChart3, Users, Target, Calendar
+  BarChart3, Users, Target, Calendar, GripVertical
 } from 'lucide-react'
 import { getTenantByEmail, updateTenantConfig, getLeads, updateLeadStatus, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
 import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS, LAUNCH_PACKS, getPacksForTenant } from '../lib/billing'
@@ -12,6 +12,14 @@ import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS, LAUNC
 // ============================================================================
 // DEFAULTS & DATA
 // ============================================================================
+
+// Pipeline stages for the Kanban board
+const PIPELINE_STAGES = [
+  { id: 'new', label: 'New', color: '#3b9cff', bg: '#f0f7ff', icon: 'Plus' },
+  { id: 'contacted', label: 'Contacted', color: '#ffa500', bg: '#fff8ef', icon: 'MessageSquare' },
+  { id: 'won', label: 'Won', color: '#22c55e', bg: '#f0fdf4', icon: 'Check' },
+  { id: 'lost', label: 'Lost', color: '#ef4444', bg: '#fef2f2', icon: 'X' },
+]
 
 const DEMO_LEADS = [
   {
@@ -24,7 +32,7 @@ const DEMO_LEADS = [
     date: '2026-03-24',
     source: 'Google',
     total: 850,
-    status: 'pending', // pending, won, lost
+    status: 'new', // new, contacted, won, lost
     notes: 'Interested in spring cleaning special',
   },
   {
@@ -50,8 +58,34 @@ const DEMO_LEADS = [
     date: '2026-03-20',
     source: 'Facebook',
     total: 520,
-    status: 'pending',
-    notes: 'Waiting on property inspection',
+    status: 'contacted',
+    notes: 'Called — waiting on property inspection schedule',
+  },
+  {
+    id: 'lead-4',
+    name: 'Robert Williams',
+    email: 'rob@example.com',
+    phone: '(608) 555-0321',
+    services: ['Deck Cleaning'],
+    package: 'Standard',
+    date: '2026-03-19',
+    source: 'Website',
+    total: 275,
+    status: 'new',
+    notes: 'Submitted via quoting tool',
+  },
+  {
+    id: 'lead-5',
+    name: 'Lisa Park',
+    email: 'lisa@example.com',
+    phone: '(608) 555-0654',
+    services: ['House Washing', 'Gutter Cleaning'],
+    package: 'Premium',
+    date: '2026-03-18',
+    source: 'Google',
+    total: 680,
+    status: 'lost',
+    notes: 'Went with a cheaper competitor',
   },
 ]
 
@@ -254,8 +288,12 @@ export default function TenantDashboard() {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [leadsFilter, setLeadsFilter] = useState('all')
+  const [selectedQrSource, setSelectedQrSource] = useState('yard-sign')
   const [expandedLead, setExpandedLead] = useState(null)
   const [leads, setLeads] = useState(DEMO_LEADS)
+  const [kanbanView, setKanbanView] = useState('board') // 'board' or 'list'
+  const [draggedLead, setDraggedLead] = useState(null)
+  const [dragOverStage, setDragOverStage] = useState(null)
   // Billing state
   const [billing, setBilling] = useState(null)
   const [billingLoading, setBillingLoading] = useState(false)
@@ -400,7 +438,45 @@ export default function TenantDashboard() {
     }
   }
 
-  const totalRevenue = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + l.total, 0)
+  // Kanban drag-and-drop handlers
+  const handleDragStart = useCallback((e, lead) => {
+    setDraggedLead(lead)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', lead.id)
+    // Make the drag ghost slightly transparent
+    setTimeout(() => { e.target.style.opacity = '0.5' }, 0)
+  }, [])
+
+  const handleDragEnd = useCallback((e) => {
+    e.target.style.opacity = '1'
+    setDraggedLead(null)
+    setDragOverStage(null)
+  }, [])
+
+  const handleDragOver = useCallback((e, stageId) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverStage(stageId)
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverStage(null)
+  }, [])
+
+  const handleDrop = useCallback((e, stageId) => {
+    e.preventDefault()
+    setDragOverStage(null)
+    if (draggedLead && draggedLead.status !== stageId) {
+      handleLeadStatus(draggedLead.id, stageId)
+    }
+    setDraggedLead(null)
+  }, [draggedLead, handleLeadStatus])
+
+  const totalRevenue = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + (Number(l.total) || 0), 0)
+  const leadsPerStage = PIPELINE_STAGES.reduce((acc, stage) => {
+    acc[stage.id] = leads.filter(l => l.status === stage.id)
+    return acc
+  }, {})
 
   // ========================================================================
   // AUTH CHECKING (loading state while checking session)
@@ -436,19 +512,7 @@ export default function TenantDashboard() {
       }}>
         <div style={{ maxWidth: 420, width: '100%', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{
-              width: 56,
-              height: 56,
-              borderRadius: 16,
-              background: 'linear-gradient(135deg, #3b9cff, #6dd19e)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 800,
-              fontSize: 20,
-              margin: '0 auto 16px',
-            }}>BQ</div>
+            <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 56, margin: '0 auto 16px', display: 'block' }} />
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1e3a5f' }}>Tenant Dashboard</h1>
             <p style={{ color: '#7a9bbc', fontSize: 15, marginTop: 4 }}>
               Admin panel for your quoting system
@@ -725,163 +789,316 @@ export default function TenantDashboard() {
           </button>
         </div>
 
-        {/* LEADS TAB */}
+        {/* LEADS TAB — KANBAN PIPELINE BOARD */}
         {activeTab === 'leads' && (
           <div>
             {/* Stats Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-              {[
-                { label: 'Total Leads', value: leads.length, icon: 'TrendingUp', color: '#3b9cff' },
-                { label: 'Pending', value: leads.filter(l => l.status === 'pending').length, icon: 'Clock', color: '#ffa500' },
-                { label: 'Won', value: leads.filter(l => l.status === 'won').length, icon: 'Heart', color: '#6dd19e' },
-                { label: 'Revenue', value: `$${totalRevenue}`, icon: 'DollarSign', color: '#a78bfa' },
-              ].map((stat, i) => (
-                <div key={i} style={{
-                  background: 'white',
-                  borderRadius: 16,
-                  padding: 24,
-                  border: '1px solid #d4e4f7',
-                  boxShadow: '0 2px 8px rgba(59, 156, 255, 0.08)',
-                }}>
-                  <div style={{ fontSize: 12, color: '#7a9bbc', fontWeight: 600, marginBottom: 8 }}>{stat.label}</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: stat.color }}>{stat.value}</div>
-                </div>
-              ))}
+              {PIPELINE_STAGES.map(stage => {
+                const count = leadsPerStage[stage.id]?.length || 0
+                const value = stage.id === 'won'
+                  ? `$${totalRevenue.toLocaleString()}`
+                  : count
+                return (
+                  <div key={stage.id} style={{
+                    background: 'white',
+                    borderRadius: 16,
+                    padding: 24,
+                    border: '1px solid #d4e4f7',
+                    boxShadow: '0 2px 8px rgba(59, 156, 255, 0.08)',
+                  }}>
+                    <div style={{ fontSize: 12, color: '#7a9bbc', fontWeight: 600, marginBottom: 8 }}>
+                      {stage.id === 'won' ? 'Revenue (Won)' : stage.label}
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: stage.color }}>{value}</div>
+                    {stage.id !== 'won' && (
+                      <div style={{ fontSize: 11, color: '#7a9bbc', marginTop: 4 }}>{count} lead{count !== 1 ? 's' : ''}</div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
-            {/* Filter Buttons */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-              {['all', 'pending', 'won', 'lost'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setLeadsFilter(f)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 8,
-                    background: leadsFilter === f ? '#3b9cff' : 'transparent',
-                    color: leadsFilter === f ? 'white' : '#4a6d94',
-                    border: `1px solid ${leadsFilter === f ? '#3b9cff' : '#d4e4f7'}`,
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    fontSize: 13,
-                  }}
-                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
+            {/* View Toggle: Board / List */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 18, color: '#1e3a5f' }}>
+                Lead Pipeline
+                <span style={{ fontSize: 13, fontWeight: 400, color: '#7a9bbc', marginLeft: 8 }}>{leads.length} total</span>
+              </div>
+              <div style={{ display: 'flex', gap: 4, background: '#f0f7ff', borderRadius: 8, padding: 2 }}>
+                {['board', 'list'].map(v => (
+                  <button key={v} onClick={() => setKanbanView(v)} style={{
+                    padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: kanbanView === v ? '#3b9cff' : 'transparent',
+                    color: kanbanView === v ? 'white' : '#4a6d94',
+                    fontWeight: 600, fontSize: 12,
+                  }}>
+                    {v === 'board' ? 'Board' : 'List'}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Lead Cards */}
-            <div style={{ display: 'grid', gap: 12 }}>
-              {filteredLeads.map(lead => (
-                <div key={lead.id} style={{
-                  background: 'white',
-                  borderRadius: 16,
-                  border: '1px solid #d4e4f7',
-                  boxShadow: '0 2px 8px rgba(59, 156, 255, 0.08)',
-                }}>
-                  <div
-                    onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
-                    style={{
-                      padding: 24,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                        <div style={{ fontWeight: 700, fontSize: 16, color: '#1e3a5f' }}>{lead.name}</div>
+            {/* ── KANBAN BOARD VIEW ── */}
+            {kanbanView === 'board' && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 12,
+                minHeight: 400,
+              }}>
+                {PIPELINE_STAGES.map(stage => {
+                  const stageLeads = leadsPerStage[stage.id] || []
+                  const isOver = dragOverStage === stage.id
+                  return (
+                    <div
+                      key={stage.id}
+                      onDragOver={(e) => handleDragOver(e, stage.id)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, stage.id)}
+                      style={{
+                        background: isOver ? stage.bg : '#f8fbff',
+                        borderRadius: 16,
+                        border: `2px ${isOver ? 'dashed' : 'solid'} ${isOver ? stage.color : '#e2ecf5'}`,
+                        padding: 12,
+                        transition: 'all 0.2s ease',
+                        minHeight: 300,
+                      }}
+                    >
+                      {/* Column Header */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '8px 4px', marginBottom: 8,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 10, height: 10, borderRadius: '50%',
+                            background: stage.color,
+                          }} />
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#1e3a5f' }}>{stage.label}</span>
+                        </div>
                         <span style={{
-                          padding: '4px 12px',
-                          borderRadius: 20,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: lead.status === 'pending' ? '#fff3cd' : lead.status === 'won' ? '#d4edda' : '#f8d7da',
-                          color: lead.status === 'pending' ? '#856404' : lead.status === 'won' ? '#155724' : '#721c24',
+                          background: stage.bg, color: stage.color,
+                          padding: '2px 8px', borderRadius: 10,
+                          fontSize: 11, fontWeight: 700,
                         }}>
-                          {lead.status.toUpperCase()}
+                          {stageLeads.length}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#7a9bbc', marginBottom: 8 }}>
-                        <span><Mail size={12} style={{ marginRight: 4, verticalAlign: -2 }} />{lead.email}</span>
-                        <span><Phone size={12} style={{ marginRight: 4, verticalAlign: -2 }} />{lead.phone}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                        {lead.services.map(s => (
-                          <span key={s} style={{
-                            padding: '3px 10px',
-                            borderRadius: 12,
-                            background: '#f0f7ff',
-                            color: '#3b9cff',
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}>
-                            {s}
-                          </span>
+
+                      {/* Lead Cards in Column */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {stageLeads.map(lead => (
+                          <div
+                            key={lead.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, lead)}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
+                            style={{
+                              background: 'white',
+                              borderRadius: 12,
+                              border: '1px solid #e2ecf5',
+                              padding: 12,
+                              cursor: 'grab',
+                              boxShadow: draggedLead?.id === lead.id
+                                ? '0 8px 24px rgba(59, 156, 255, 0.2)'
+                                : '0 1px 4px rgba(59, 156, 255, 0.06)',
+                              transition: 'box-shadow 0.2s, transform 0.2s',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                              <GripVertical size={14} color="#c0d0e0" style={{ marginTop: 2, flexShrink: 0 }} />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 700, fontSize: 13, color: '#1e3a5f', marginBottom: 4 }}>
+                                  {lead.name}
+                                </div>
+                                <div style={{ fontSize: 11, color: '#7a9bbc' }}>
+                                  {lead.email}
+                                </div>
+                              </div>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: '#3b9cff', whiteSpace: 'nowrap' }}>
+                                ${lead.total}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                              {lead.services.map(s => (
+                                <span key={s} style={{
+                                  padding: '2px 6px', borderRadius: 6,
+                                  background: '#f0f7ff', color: '#3b9cff',
+                                  fontSize: 10, fontWeight: 600,
+                                }}>
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ fontSize: 10, color: '#a0b5cc' }}>
+                                {lead.package} · {lead.date}
+                              </div>
+                              <div style={{ fontSize: 10, color: '#a0b5cc' }}>
+                                {lead.source}
+                              </div>
+                            </div>
+
+                            {/* Expanded Details */}
+                            {expandedLead === lead.id && (
+                              <div style={{
+                                marginTop: 10, paddingTop: 10,
+                                borderTop: '1px solid #e2ecf5',
+                              }}>
+                                <div style={{ fontSize: 11, color: '#7a9bbc', marginBottom: 4 }}>
+                                  <Phone size={10} style={{ marginRight: 4, verticalAlign: -1 }} />{lead.phone}
+                                </div>
+                                {lead.notes && (
+                                  <div style={{ fontSize: 11, color: '#4a6d94', marginBottom: 8, fontStyle: 'italic' }}>
+                                    {lead.notes}
+                                  </div>
+                                )}
+                                {/* Quick-move buttons */}
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                  {PIPELINE_STAGES.filter(s => s.id !== lead.status).map(s => (
+                                    <button
+                                      key={s.id}
+                                      onClick={(e) => { e.stopPropagation(); handleLeadStatus(lead.id, s.id) }}
+                                      style={{
+                                        padding: '4px 8px', borderRadius: 6,
+                                        background: s.bg, color: s.color,
+                                        border: `1px solid ${s.color}30`,
+                                        cursor: 'pointer', fontWeight: 600, fontSize: 10,
+                                      }}
+                                    >
+                                      → {s.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         ))}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#4a6d94', display: 'flex', gap: 16 }}>
-                        <span>{lead.package} {'\u2022'} {lead.date}</span>
-                        <span>Source: {lead.source}</span>
-                        <span style={{ fontWeight: 700, color: '#3b9cff' }}>${lead.total}</span>
-                      </div>
-                    </div>
-                    <div style={{ marginLeft: 16 }}>
-                      <ChevronDown size={20} color="#7a9bbc" style={{
-                        transform: expandedLead === lead.id ? 'rotate(180deg)' : 'rotate(0)',
-                        transition: 'transform 0.2s',
-                      }} />
-                    </div>
-                  </div>
 
-                  {expandedLead === lead.id && (
-                    <div style={{ borderTop: '1px solid #d4e4f7', padding: 24, background: '#f8fbff' }}>
-                      <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: '#1e3a5f', marginBottom: 8 }}>Notes</div>
-                        <p style={{ color: '#4a6d94', fontSize: 13 }}>{lead.notes}</p>
+                        {stageLeads.length === 0 && (
+                          <div style={{
+                            padding: 24, textAlign: 'center',
+                            color: '#b0c4d8', fontSize: 12,
+                            border: '2px dashed #e2ecf5', borderRadius: 12,
+                          }}>
+                            Drag leads here
+                          </div>
+                        )}
                       </div>
-
-                      {lead.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button
-                            onClick={() => handleLeadStatus(lead.id, 'won')}
-                            style={{
-                              padding: '8px 16px',
-                              borderRadius: 8,
-                              background: '#6dd19e',
-                              color: 'white',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              fontSize: 13,
-                            }}
-                          >
-                            Mark Won
-                          </button>
-                          <button
-                            onClick={() => handleLeadStatus(lead.id, 'lost')}
-                            style={{
-                              padding: '8px 16px',
-                              borderRadius: 8,
-                              background: '#f87171',
-                              color: 'white',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              fontSize: 13,
-                            }}
-                          >
-                            Mark Lost
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  )}
+                  )
+                })}
+              </div>
+            )}
+
+            {/* ── LIST VIEW (classic) ── */}
+            {kanbanView === 'list' && (
+              <div>
+                {/* Filter Buttons */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  {['all', ...PIPELINE_STAGES.map(s => s.id)].map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setLeadsFilter(f)}
+                      style={{
+                        padding: '8px 16px', borderRadius: 8,
+                        background: leadsFilter === f ? '#3b9cff' : 'transparent',
+                        color: leadsFilter === f ? 'white' : '#4a6d94',
+                        border: `1px solid ${leadsFilter === f ? '#3b9cff' : '#d4e4f7'}`,
+                        cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                      }}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+
+                {/* Lead Cards - List Style */}
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {filteredLeads.map(lead => {
+                    const stage = PIPELINE_STAGES.find(s => s.id === lead.status) || PIPELINE_STAGES[0]
+                    return (
+                      <div key={lead.id} style={{
+                        background: 'white', borderRadius: 16,
+                        border: '1px solid #d4e4f7',
+                        boxShadow: '0 2px 8px rgba(59, 156, 255, 0.08)',
+                      }}>
+                        <div
+                          onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
+                          style={{ padding: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                              <div style={{ fontWeight: 700, fontSize: 16, color: '#1e3a5f' }}>{lead.name}</div>
+                              <span style={{
+                                padding: '4px 12px', borderRadius: 20,
+                                fontSize: 11, fontWeight: 700,
+                                background: stage.bg, color: stage.color,
+                              }}>
+                                {stage.label.toUpperCase()}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#7a9bbc', marginBottom: 8 }}>
+                              <span><Mail size={12} style={{ marginRight: 4, verticalAlign: -2 }} />{lead.email}</span>
+                              <span><Phone size={12} style={{ marginRight: 4, verticalAlign: -2 }} />{lead.phone}</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                              {lead.services.map(s => (
+                                <span key={s} style={{
+                                  padding: '3px 10px', borderRadius: 12,
+                                  background: '#f0f7ff', color: '#3b9cff',
+                                  fontSize: 12, fontWeight: 600,
+                                }}>{s}</span>
+                              ))}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#4a6d94', display: 'flex', gap: 16 }}>
+                              <span>{lead.package} {'\u2022'} {lead.date}</span>
+                              <span>Source: {lead.source}</span>
+                              <span style={{ fontWeight: 700, color: '#3b9cff' }}>${lead.total}</span>
+                            </div>
+                          </div>
+                          <ChevronDown size={20} color="#7a9bbc" style={{
+                            transform: expandedLead === lead.id ? 'rotate(180deg)' : 'rotate(0)',
+                            transition: 'transform 0.2s', marginLeft: 16,
+                          }} />
+                        </div>
+
+                        {expandedLead === lead.id && (
+                          <div style={{ borderTop: '1px solid #d4e4f7', padding: 24, background: '#f8fbff' }}>
+                            {lead.notes && (
+                              <div style={{ marginBottom: 16 }}>
+                                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e3a5f', marginBottom: 8 }}>Notes</div>
+                                <p style={{ color: '#4a6d94', fontSize: 13 }}>{lead.notes}</p>
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              {PIPELINE_STAGES.filter(s => s.id !== lead.status).map(s => (
+                                <button
+                                  key={s.id}
+                                  onClick={() => handleLeadStatus(lead.id, s.id)}
+                                  style={{
+                                    padding: '8px 16px', borderRadius: 8,
+                                    background: s.color, color: 'white',
+                                    border: 'none', cursor: 'pointer',
+                                    fontWeight: 600, fontSize: 13,
+                                  }}
+                                >
+                                  Move to {s.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1633,6 +1850,142 @@ export default function TenantDashboard() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* QR Code Generator */}
+                <div style={{ padding: 20, border: '1px solid #d4e4f7', borderRadius: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #3b9cff, #6dd19e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 18 }}>&#9638;</span>
+                    </div>
+                    <div>
+                      <label style={{ fontWeight: 700, fontSize: 15, color: '#1e3a5f', display: 'block' }}>QR Code Generator</label>
+                      <span style={{ fontSize: 12, color: '#7a9bbc' }}>For yard signs, flyers, door hangers & truck wraps</span>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const tenantSlug = tenant?.slug || tenant?.business_name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'demo'
+                    const quoteUrl = `https://${tenantSlug}.mybidquick.com#quote`
+                    const utmBase = `${quoteUrl}?utm_source=`
+                    const sources = [
+                      { id: 'yard-sign', label: 'Yard Sign', utm: `${utmBase}yard_sign&utm_medium=qr&utm_campaign=offline` },
+                      { id: 'flyer', label: 'Flyer / Door Hanger', utm: `${utmBase}flyer&utm_medium=qr&utm_campaign=offline` },
+                      { id: 'truck', label: 'Truck Wrap', utm: `${utmBase}truck_wrap&utm_medium=qr&utm_campaign=offline` },
+                      { id: 'business-card', label: 'Business Card', utm: `${utmBase}business_card&utm_medium=qr&utm_campaign=offline` },
+                    ]
+                    const selected = sources.find(s => s.id === selectedQrSource) || sources[0]
+                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&data=${encodeURIComponent(selected.utm)}`
+
+                    const handleDownload = async (format) => {
+                      try {
+                        const size = format === 'svg' ? '300x300' : '600x600'
+                        const downloadUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}&format=${format}&data=${encodeURIComponent(selected.utm)}`
+                        const resp = await fetch(downloadUrl)
+                        const blob = await resp.blob()
+                        const a = document.createElement('a')
+                        a.href = URL.createObjectURL(blob)
+                        a.download = `mybidquick-qr-${tenantSlug}-${selected.id}.${format}`
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                        URL.revokeObjectURL(a.href)
+                      } catch (err) {
+                        console.error('QR download error:', err)
+                      }
+                    }
+
+                    return (
+                      <div>
+                        {/* Source selector */}
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                          {sources.map(s => (
+                            <button
+                              key={s.id}
+                              onClick={() => setSelectedQrSource(s.id)}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: 8,
+                                border: selectedQrSource === s.id ? '2px solid #3b9cff' : '1px solid #d4e4f7',
+                                background: selectedQrSource === s.id ? '#eef6ff' : 'white',
+                                color: selectedQrSource === s.id ? '#3b9cff' : '#4a6d94',
+                                fontWeight: 600,
+                                fontSize: 12,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* QR Preview + Download */}
+                        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ width: 180, height: 180, border: '2px solid #d4e4f7', borderRadius: 12, overflow: 'hidden', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <img
+                                src={qrApiUrl}
+                                alt={`QR code for ${selected.label}`}
+                                style={{ width: 160, height: 160 }}
+                              />
+                            </div>
+                            <div style={{ marginTop: 10, fontSize: 11, color: '#7a9bbc', fontWeight: 600 }}>{selected.label}</div>
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 200 }}>
+                            <div style={{ marginBottom: 12 }}>
+                              <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 4 }}>Links to:</label>
+                              <div style={{ fontSize: 13, color: '#1e3a5f', fontWeight: 600, wordBreak: 'break-all', background: '#f0f6ff', padding: '8px 12px', borderRadius: 8 }}>
+                                {quoteUrl}
+                              </div>
+                            </div>
+                            <div style={{ marginBottom: 12 }}>
+                              <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 4 }}>UTM tracking:</label>
+                              <div style={{ fontSize: 11, color: '#4a6d94', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                                {selected.utm.split('?')[1]}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                              <button
+                                onClick={() => handleDownload('png')}
+                                style={{
+                                  padding: '10px 20px',
+                                  borderRadius: 10,
+                                  background: 'linear-gradient(135deg, #3b9cff, #6dd19e)',
+                                  color: 'white',
+                                  border: 'none',
+                                  fontWeight: 700,
+                                  fontSize: 13,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Download PNG
+                              </button>
+                              <button
+                                onClick={() => handleDownload('svg')}
+                                style={{
+                                  padding: '10px 20px',
+                                  borderRadius: 10,
+                                  background: 'white',
+                                  color: '#3b9cff',
+                                  border: '2px solid #3b9cff',
+                                  fontWeight: 700,
+                                  fontSize: 13,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Download SVG
+                              </button>
+                            </div>
+                            <p style={{ fontSize: 11, color: '#7a9bbc', marginTop: 8 }}>
+                              PNG for print (600x600px). SVG for large format (scalable).
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             )}

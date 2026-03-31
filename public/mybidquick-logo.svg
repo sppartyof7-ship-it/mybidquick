@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="800" height="240">
+  <defs>
+    <!-- Speed bolt gradient -->
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD166;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6B35;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Icon background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D3B66;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0A2E52;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Subtle shadow -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- ICON MARK: Rounded square with lightning bolt -->
+  <g transform="translate(40, 20)">
+    <!-- Rounded square background -->
+    <rect x="0" y="0" width="200" height="200" rx="44" ry="44" fill="url(#bgGrad)" filter="url(#shadow)"/>
+
+    <!-- Lightning bolt / speed mark - bold and dynamic -->
+    <path d="
+      M 118 30
+      L 68 105
+      L 98 105
+      L 82 170
+      L 142 88
+      L 108 88
+      Z
+    " fill="url(#boltGrad)"/>
+
+    <!-- Small speed lines to the left of bolt for motion feel -->
+    <line x1="38" y1="78" x2="62" y2="78" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+    <line x1="28" y1="100" x2="58" y2="100" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+    <line x1="38" y1="122" x2="62" y2="122" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+  </g>
+
+  <!-- WORDMARK -->
+  <g transform="translate(270, 85)">
+    <!-- "My" in lighter weight -->
+    <text x="0" y="50" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="400" font-size="68" fill="#0A1628" letter-spacing="-1">My</text>
+
+    <!-- "Bid" in bold -->
+    <text x="96" y="50" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="700" font-size="68" fill="#0A1628" letter-spacing="-1">Bid</text>
+
+    <!-- "Quick" in bold with accent color -->
+    <text x="238" y="50" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="700" font-size="68" fill="#FF6B35" letter-spacing="-1">Quick</text>
+  </g>
+
+  <!-- Tagline -->
+  <text x="274" y="170" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="400" font-size="20" fill="#6B7280" letter-spacing="3">INSTANT QUOTES FOR PROS</text>
+</svg>

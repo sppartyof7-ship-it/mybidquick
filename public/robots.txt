@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /dashboard
 
-Sitemap: https://mybidquick.com/sitemap.xml
+Sitemap: https://www.mybidquick.com/sitemap.xml

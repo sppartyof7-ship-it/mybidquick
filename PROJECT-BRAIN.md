@@ -62,17 +62,21 @@ Two repos (both under MyBidQuick):
 | `/q/:slug` | TenantPublicPage.jsx | Fallback tenant quote page for before subdomain DNS is set up |
 | *(subdomain)* | TenantPublicPage.jsx | Auto-detected via `slug.mybidquick.com` — shows tenant's public quote page |
 
-## Key Files
+## Key Files (cleaned up 2026-03-31)
 ```
 mybidquick/
 ├── index.html              # Entry HTML
 ├── .env                    # Client-side env vars (VITE_ prefixed, publishable keys only)
+├── .gitignore              # Ignores: node_modules, dist, .env, lock files, OS files
 ├── vercel.json             # Vercel rewrites (API routes + SPA fallback)
+├── embed-snippet.html      # Drop-in HTML for tenants to embed quote widget on their site
+├── PROJECT-BRAIN.md        # This file — full project documentation
 ├── api/                    # Vercel Serverless Functions
 │   ├── create-checkout.js  # Creates Stripe Checkout sessions for credit packs
 │   ├── create-portal.js    # Creates Stripe Customer Portal sessions
 │   ├── billing-status.js   # GET billing info (credits, purchases, charges)
-│   └── webhook.js          # Stripe webhook (fulfills credit purchases)
+│   └── webhook.js          # Stripe webhook (fulfills credit purchases) — endpoint: /api/webhook
+├── docs/                   # Marketing, planning, and reference docs (not deployed)
 ├── supabase/
 │   ├── schema.sql          # Core schema (tenants, leads tables)
 │   ├── add-slug.sql        # Slug column migration
@@ -80,8 +84,10 @@ mybidquick/
 ├── public/
 │   ├── favicon.svg         # Site favicon
 │   ├── icons.svg           # Icon sprite
-│   ├── robots.txt          # SEO robots file
-│   └── sitemap.xml         # SEO sitemap
+│   ├── mybidquick-logo.svg # Full logo SVG (served at /mybidquick-logo.svg by Vite)
+│   ├── mybidquick-logo.png # Logo PNG version
+│   ├── robots.txt          # SEO robots file (sitemap URL points to www.mybidquick.com)
+│   └── sitemap.xml         # SEO sitemap (all 6 URLs use www.mybidquick.com)
 ├── src/
 │   ├── main.jsx            # React entry with HashRouter
 │   ├── App.jsx             # Router (11 routes + subdomain detection)
@@ -178,6 +184,7 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 - **Followup Tab**: Email/SMS sequence builder — delay (days), type (email/sms), subject, body with template variables ({{name}}, {{business}}, {{total}}, {{services}}), add/remove steps
 - **Settings Tab**: Business name, admin password, lead sources (add/remove tags), lead notification email, Web3Forms API key, export config JSON
 - **Demo accounts**: tim@clouteinc.com, noah@cornerstoneexterior.com
+- **Analytics Tab**: 4 KPI cards (Total Quotes, Conversion Rate, Avg Ticket Size, Total Revenue), bar chart for quote volume by month (last 6 months), revenue by month chart, lead source breakdown with color-coded percentage bars, top services by popularity, revenue by service. Empty state shown when no leads exist yet. All computed client-side from the `leads` array.
 - **Billing Tab**: Credits banner (real-time from Supabase), low/zero credit warnings, 4 lead credit pack cards, "How It Works" section, purchase history table, Manage Billing button (Stripe Customer Portal)
 - Config pattern: `updateConfig(dotPath, value)` with `deepClone` for immutable state, localStorage persistence
 - Self-contained component with inline styles, blue theme (#3b9cff primary)
@@ -191,10 +198,14 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 
 ## Branding
 - Product name: **MyBidQuick**
-- Logo mark: **BQ**
+- Logo: **mybidquick-logo.svg** (lightning bolt + speed lines icon, navy/orange gradient, wordmark: "My" light + "Bid" bold + "Quick" bold orange, tagline: "INSTANT QUOTES FOR PROS", 800x240 viewBox)
+- Logo files: `mybidquick-logo.svg`, `mybidquick-logo.png` (repo root) — also copied to `public/` for Vite serving
+- Logo in code: All pages use `<img src="/mybidquick-logo.svg">` — no more "BQ" placeholder divs
+- Dark backgrounds (footer, sidebar): CSS `filter: 'brightness(0) invert(1)'` for white version
+- Pages with logo: LandingPage.jsx (nav + footer), Login.jsx (nav + card header), Onboarding.jsx (nav), AdminDashboard.jsx (auth screen + sidebar), TenantDashboard.jsx (page header)
 - Tagline: "The #1 Quoting Tool for Cleaning Companies"
 - Footer: "Proudly made in Wisconsin"
-- Copyright: © MyBidQuick
+- Copyright: © 2026 MyBidQuick All rights reserved.
 
 ## Roadmap / TODO
 
@@ -228,7 +239,7 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 - [x] Supabase billing schema (lead_charges + credit_purchases tables)
 - [x] Configure Stripe webhook endpoint URL in Stripe Dashboard (https://www.mybidquick.com/api/webhook)
 - [x] Add STRIPE_WEBHOOK_SECRET env var to Vercel for signature verification
-- [ ] Usage analytics / reporting for tenants
+- [x] Usage analytics / reporting for tenants (Analytics tab in TenantDashboard — quotes, revenue, conversion rate, lead sources, top services)
 
 ### SOFT LAUNCH FIXES (from QA audit — March 27, 2026)
 See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
@@ -247,39 +258,46 @@ See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
 - [ ] Deploy billing API endpoints to Vercel (or show "coming soon" message)
 
 ### PHASE 3.5 — Lead Pipeline CRM (Started March 28, 2026)
-**Goal**: Track every lead coming through MyBidQuick in a simple 4-stage pipeline, then build an AI agent to auto-update status and send follow-up emails.
+**Goal**: Track every lead coming through MyBidQuick in a simple 4-stage pipeline, with AI-powered follow-up emails and a visual Kanban board.
 
-**Pipeline Stages**: New Lead → Contacted → Won → Lost
+**Pipeline Stages**: New → Contacted → Won → Lost (Supabase check constraint updated)
 
-**Tracking Fields**: Lead #, Date, Name, Email, Phone, Tenant, Service Requested, Quote $, Status, Last Contact, Notes
+**Tracking Fields**: Lead #, Date, Name, Email, Phone, Tenant, Service Requested, Quote $, Status, Last Contact, Notes, Follow-ups Sent
 
-**Spreadsheet**: MyBidQuick-Lead-Pipeline.xlsx (in repo root) — has pipeline summary with auto-calculated counts, totals, win rate, avg deal size
+**Google Sheet**: MyBidQuick — Lead Pipeline CRM (ID: 15hinMbA5OhRk2WFrKgPf0Dd9GPk5tYPDyfLNvIvuXkc) — created 2026-03-31
 
-**Phase 1 (Manual — NOW)**:
+**Phase 1 (Manual) — DONE**:
 - [x] Build lead pipeline tracker spreadsheet with formulas + color-coded statuses
-- [ ] Start logging all incoming leads manually (from Supabase `leads` table)
-- [ ] Review pipeline weekly — move leads through stages
+- [x] Created Google Sheet CRM with all Supabase leads synced (2026-03-31)
 
-**Phase 2 (AI Agent — NEXT)**:
-- [ ] Build Supabase → Google Sheet sync agent (auto-pulls new leads from `leads` table)
-- [ ] Auto-update lead status based on follow-up activity
-- [ ] Auto-send follow-up emails (Day 1: thank you, Day 3: check-in, Day 7: last chance)
+**Phase 2 (AI Agent) — DONE**:
+- [x] Supabase DB migration: updated leads status check constraint (pending → new/contacted/won/lost)
+- [x] Migrated all existing 'pending' leads to 'new' status
+- [x] Added follow_ups_sent (int array) and last_follow_up_at columns to leads table
+- [x] Scheduled task `mybidquick-lead-followup` — runs daily at 8am, checks for leads needing Day 1/3/7 follow-ups
+- [x] Follow-up emails created as Gmail DRAFTS (not auto-sent) so Tim can review before sending
+- [ ] Google Sheets auto-sync (blocked by MCP write permissions — manual sync for now)
 - [ ] Weekly pipeline summary email to tenant owners
 
-**Phase 3 (Full CRM — LATER)**:
-- [ ] Build pipeline view into TenantDashboard.jsx (drag-and-drop Kanban board)
+**Phase 3 (Full CRM) — DONE**:
+- [x] In-app Kanban board in TenantDashboard.jsx — 4 columns with drag-and-drop (2026-03-31)
+- [x] Board view + List view toggle
+- [x] Quick-move buttons on expanded lead cards (move to any stage with one click)
+- [x] Stats row showing count per stage + total won revenue
 - [ ] Invoicing integration (generate + send invoices for Won leads)
-- [ ] Marketing source tracking (which leads came from where)
+- [x] Marketing source tracking (lead source field + analytics tab breakdown)
 
 ### PHASE 4 — Growth Features
 - [x] Port cascade upsell flow from QuoteDemo to mybidquick-engine (with tenant discount config)
 - [x] Email notifications for new signups (Web3Forms → Tim's email on every signup)
 - [ ] Tenant self-serve dashboard (companies edit their own settings)
-- [ ] Analytics for tenants (how many quotes, conversion rates)
+- [x] Analytics for tenants (how many quotes, conversion rates) — shipped via Analytics tab in TenantDashboard
+- [x] QR code generator per tenant — links to their quoting page, downloadable PNG/SVG for yard signs, flyers, door hangers, truck wraps
 - [ ] Referral program
 - [x] Blog / SEO content on mybidquick.com (3 SEO-optimized articles, sitemap.xml, robots.txt, meta tags, Open Graph, structured data)
 - [x] SEO audit + www/non-www URL consistency fix (robots.txt, sitemap.xml, index.html canonical/og:url all using www.mybidquick.com)
-- [ ] Google Search Console: verify domain + submit sitemap (Tim must do manually)
+- [x] Google Search Console: www.mybidquick.com property created, verification meta tag in index.html (`uVz2LLgmtmrxIhr1PeowRq9TlUksp-kxqfaG8Ekxxow`), sitemap submitted (2026-03-30)
+- [x] Logo integration: Real MyBidQuick logo SVG replacing all "BQ" placeholder divs across all 5 page components + `public/mybidquick-logo.svg` for Vite serving (2026-03-30)
 - [ ] Google Business Profile: register MyBidQuick as software company
 - [ ] Submit to software directories (Capterra, G2, GetApp, SoftwareAdvice, SourceForge)
 - [ ] Competitor comparison landing pages (vs ResponsiBid, vs QuoteIQ)
@@ -316,11 +334,25 @@ See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
 See Notion: [Exterior Cleaning Expansion — Product & Marketing Research](https://www.notion.so/330006ff1159818e8de5ce87a82c00a4)
 
 ## Subdomain Routing & Tenant Public Pages
-App.jsx includes a `getSubdomainSlug()` function that auto-detects tenant subdomains:
-- `slug.mybidquick.com` → renders TenantPublicPage for that tenant
-- `slug.mybidquick.vercel.app` → also works for Vercel previews
-- `www.mybidquick.com` / `mybidquick.com` → renders the main platform
-- Fallback route: `/q/:slug` for tenants before subdomain DNS is configured
+**Wildcard subdomain routing is LIVE** as of 2026-03-31.
+
+### Platform (mybidquick Vercel project)
+- `www.mybidquick.com` / `mybidquick.com` → main platform (landing, login, dashboard)
+- Also: `mybidquick.io`, `mybidquick.org` + www variants
+- Fallback route: `/q/:slug` for tenant public pages
+
+### Engine (cleanbid Vercel project)
+- `*.mybidquick.com` → wildcard routes to quoting engine (configured 2026-03-31)
+- `cloute-cleaning.mybidquick.com` → Cloute Cleaning quoting page
+- `cornerstone.mybidquick.com` → Cornerstone quoting page
+- `cleanbid.vercel.app` → legacy fallback (still works)
+- Specific domains (`www.mybidquick.com`, etc.) take priority over wildcard on Vercel
+
+### How It Works
+- Engine's `extractSubdomainSlug()` in `tenants/index.js` detects the subdomain
+- `resolveSlug()` orchestrates: query param → subdomain → hostname map → fuzzy → default
+- `fetchTenantBySlug()` loads config from Supabase
+- `configAdapter.js` transforms Supabase row to engine format
 
 ## Blog / SEO
 BlogPost.jsx contains 3 SEO-optimized articles with structured data (JSON-LD), Open Graph meta tags, and a blog index page:
@@ -333,7 +365,8 @@ Also includes `robots.txt` and `sitemap.xml` in `/public/`.
 
 ### Links & Deployment
 - **GitHub**: github.com/sppartyof7-ship-it/Cleanbid
-- **Live URL**: cleanbid.vercel.app (to be rebranded to mybidquick-engine)
+- **Live URL**: `*.mybidquick.com` (wildcard subdomain routing) — e.g., `cloute-cleaning.mybidquick.com`
+- **Legacy URL**: cleanbid.vercel.app (still works as fallback)
 - **Vercel Team**: team_USo8JZXOzfnS4VWoiz03PBW2
 - **Vercel Project ID**: prj_zauduwCgyCqVTCu93aVFljRg3ahD
 - **Google Cloud Project**: CleanBid (project ID: cleanbid-490313)
@@ -350,9 +383,10 @@ Also includes `robots.txt` and `sitemap.xml` in `/public/`.
 
 ### Tenant Routing
 - Slug resolved via `resolveSlug()` from tenants module
-- `cleanbid.vercel.app/cloute#quote` → Cloute Cleaning quote flow
-- `cleanbid.vercel.app/cornerstone#quote` → Cornerstone quote flow
-- Subdomain routing also supported
+- `cloute-cleaning.mybidquick.com#quote` → Cloute Cleaning quote flow
+- `cornerstone.mybidquick.com#quote` → Cornerstone quote flow
+- **Wildcard subdomain routing LIVE** (`*.mybidquick.com` on Vercel cleanbid project, configured 2026-03-31)
+- Legacy path routing (`cleanbid.vercel.app/slug#quote`) still works as fallback
 - **Dynamic Supabase loading**: Engine fetches tenant config from Supabase via `fetchTenantBySlug()`. Any company that signs up on mybidquick.com automatically gets their own engine page — no code change needed. Hardcoded tenant files (cloute.js, cornerstone.js) still work as a backwards-compatible fallback.
 - `configAdapter.js` bridges the gap: mybidquick stores simple JSONB configs; the engine needs a rich pricing structure. The adapter calls `buildDefaultConfig()` then overlays the tenant's custom values.
 
@@ -437,7 +471,7 @@ Each tenant file exports: id, businessName, tagline, phone, email, adminPassword
 
 ### Embed Snippet (for tenant websites)
 File: `embed-snippet.html` in mybidquick repo root. Three integration options:
-1. Full-page iframe: `<iframe src="https://cleanbid.vercel.app/SLUG#quote">`
+1. Full-page iframe: `<iframe src="https://SLUG.mybidquick.com#quote">`
 2. Floating button + slide-up modal (JS + CSS included)
 3. Simple CTA link button
 MyBidQuick gradient: 135deg, #3b9cff → #6dd19e
@@ -457,11 +491,65 @@ MyBidQuick gradient: 135deg, #3b9cff → #6dd19e
 | 2026-03-28 | **Code symbol cleanup + full file push**: Fixed corrupted non-ASCII characters (emojis, special chars) across 10 files pushed via browser-based GitHub workflow: BlogPost.jsx, Login.jsx, TenantPublicPage.jsx, Onboarding.jsx, QuoteDemo.jsx, TenantDashboard.jsx, AdminDashboard.jsx, App.jsx, billing.js, db.js. Fixed 3 Vercel build errors: (1) QuoteDemo.jsx line 214 — literal `->` in JSX parsed as closing tag, escaped to `{'->'}`. (2) TenantDashboard.jsx line 1844 — base64 chunk boundary corruption lost `12 }}>` and newline, restored directly in GitHub editor. (3) QuoteDemo.jsx line 320 — two more `->` literals in bundle price arrows, escaped to `{'→'}`. **Vercel build GREEN** — mybidquick production deployed successfully. Also started Lead Pipeline CRM Phase 1 — built MyBidQuick-Lead-Pipeline.xlsx spreadsheet with 4-stage pipeline (New Lead → Contacted → Won → Lost). |
 | 2026-03-28 | **Soft-launch marketing blitz**: Created community-launch-posts.md with ready-to-post copy for 6 channels (Product Hunt, Reddit r/pressurewashing, r/SaaS, r/EntrepreneurRideAlong, Indie Hackers, Facebook groups). Created marketing-teaser-tonight.md with full "First 50 FREE" hype drop campaign — Facebook group post, Instagram caption + hashtags, TikTok script (30-45 sec), 3 Facebook ad copy versions (A/B/C), 4 Canva graphic options per format, and a 7-step posting game plan for the evening. Staged cleanbid-upsell-patch/ with refactored CustomerFlow.jsx + extracted pricing.js utility for mybidquick-engine. |
 | 2026-03-28 | **Soft launch marketing campaign**: Built full launch content kit targeting exterior cleaning / pressure washing companies. `community-launch-posts.md` — ready-to-post copy for Product Hunt, Reddit (r/pressurewashing, r/SaaS, r/EntrepreneurRideAlong), and Indie Hackers. `marketing-teaser-tonight.md` — tonight's campaign with "First 50 FREE" hype posts for Facebook groups, Instagram, and TikTok; 8 Canva graphic options (pain-point and hype-drop styles); Facebook ad copy in 3 A/B/C versions; full posting game plan (7–8:30 PM). Positioning: pain-point hook ("Stop Losing Jobs to Slow Quotes"), per-lead pricing vs. ResponsiBid/Jobber, 35% avg ticket lift from cascade upsell. |
-| 2026-03-28 | **Tenant embed snippet**: Created `embed-snippet.html` — a drop-in HTML file tenants can share with their web designers (or paste into WordPress/Wix/Squarespace themselves). Offers 3 integration options: (1) full-page iframe for a dedicated "Get a Quote" page, (2) floating "Get Instant Quote" button + slide-up modal, (3) simple CTA link. Currently points to cleanbid.vercel.app with TENANT_SLUG placeholder instructions. |
+| 2026-03-28 | **Tenant embed snippet**: Created `embed-snippet.html` — a drop-in HTML file tenants can share with their web designers (or paste into WordPress/Wix/Squarespace themselves). Offers 3 integration options: (1) full-page iframe for a dedicated "Get a Quote" page, (2) floating "Get Instant Quote" button + slide-up modal, (3) simple CTA link. Now points to `SLUG.mybidquick.com` subdomain URLs. |
 | 2026-03-29 | **Engine pricing update**: Updated all service pricing in defaults.js to competitive national market rates — House Washing $125+$0.12/sqft (was $150+$0.15), Deck $100 base (was $175), Concrete $100+$0.15/sqft (was $125+$0.12), Gutter Cleaning $75 base (was $125), Window cleaning per-window prices lowered across all 3 types and all 3 tiers, Gutter Guard tiers reduced by $2/linft each. Roof cleaning unchanged ($250+$0.18/sqft). Pushed to GitHub, Vercel deployed. |
 | 2026-03-29 | **Google Maps Static API**: Enabled Maps Static API in Google Cloud Console for CleanBid project (cleanbid-490313). Fixed API key mismatch — code had wrong key. Swapped to correct CleanBid project key (AIzaSyAnLy1iRt0_fkMJqyBxrC0meEJD0qpshvU) across all 3 files: defaults.js, cloute.js, cornerstone.js. Pushed all 3 commits to GitHub. Verified satellite map images now load successfully via the API. |
 | 2026-03-29 | **LAUNCH20 promo + onboarding upgrades**: Built LAUNCH20 discount code system — first 20 customers get $1/lead for life. Discount code field in onboarding Step 1, `getLaunchCustomerCount()` in db.js checks cap, stores `is_launch_customer` flag in Supabase. **Logo upload**: `uploadLogo()` in db.js now uploads logos to Supabase Storage (`tenant-assets` bucket) with base64 fallback. **Signup notifications**: `notifyNewSignup()` sends Tim an email via Web3Forms on every new tenant signup with full details. **New assets**: quote-preview.html (mobile mockup of quote results), mybidquick-ops-eval-v2.html (updated ops eval viewer), design-philosophy.md ("Electric Velocity" brand guide), MyBidQuick-Marketing-Playbook.docx, mybidquick-ops.skill. |
 | 2026-03-30 | **SEO audit + fixes**: Ran full SEO audit — discovered mybidquick.com has ZERO pages indexed in Google. Created comprehensive SEO audit report (seo-audit-march2026.html) with keyword opportunities, competitor comparison (ResponsiBid, QuoteIQ), and 12-item prioritized action plan. Fixed critical www vs non-www URL mismatch across 3 files: (1) robots.txt — sitemap URL updated to www (SHA: 4f51c8c). (2) sitemap.xml — all 6 URLs updated to www + lastmod dates refreshed (SHA: 77dfd07). (3) index.html — canonical tag and og:url fixed to www (SHA: b98bcb4). Also fixed Onboarding.jsx stray 'h' character on line 1 causing Vite build failure (SHA: 1cdb7c3). All 4 commits deployed to Vercel successfully. **Pending manual steps**: Tim needs to verify domain in Google Search Console, submit sitemap, create Google Business Profile, and submit to software directories (Capterra, G2, GetApp, etc.). |
+| 2026-03-30 | **Analytics tab in TenantDashboard**: Added full Analytics tab (commit 7c5da1a) — 4 KPI cards (Total Quotes, Conversion Rate, Avg Ticket, Total Revenue with week-over-week trend), bar chart for quote volume by month (last 6 months), revenue by month chart, lead source breakdown with color-coded % bars, top services by popularity, revenue by service breakdown. All computed client-side from leads data. Empty state shown when no leads yet. Also added QR code feature to roadmap TODO. **Vercel build fix** (commit 4eedaf2): Added missing tracked files that were causing Vercel build to fail — supabase.js, billing.js, and related files were not in git. Also brought in final versions of BlogPost.jsx, Login.jsx, TenantPublicPage.jsx, Onboarding.jsx, robots.txt, sitemap.xml. Build GREEN on Vercel. |
+| 2026-03-30 | **Logo integration across entire site**: Replaced ALL "BQ" placeholder divs with actual `<img src="/mybidquick-logo.svg">` tags across 5 JSX files: LandingPage.jsx (nav + footer), Login.jsx (nav + card header), Onboarding.jsx (nav), AdminDashboard.jsx (auth screen + sidebar), TenantDashboard.jsx (page header). Added `mybidquick-logo.svg` to `public/` folder (commit 63ff1ba) for Vite static serving. Footer/sidebar logos use CSS `filter: 'brightness(0) invert(1)'` for white-on-dark rendering. All 6 commits pushed via browser-based GitHub workflow, Vercel auto-deployed. Logo verified live on www.mybidquick.com — nav and footer rendering correctly. Also emailed complete Cloute Cleaning login/page reference to tim.sullivan@clouteinc.com with all URLs for customer pages, engine admin, platform login, and super admin. |
+
+| 2026-03-31 | **Wildcard subdomain routing + QR codes + billing APIs**: (1) Built 4 Stripe billing API endpoints (billing-status.js, create-checkout.js, create-portal.js, webhook.js) and pushed to GitHub. (2) Added QR Code Generator to Marketing tab in TenantDashboard — generates QR codes for 4 source types (yard sign, flyer, truck wrap, business card) with UTM tracking, download as PNG/SVG. (3) Configured wildcard subdomain routing: moved `*.mybidquick.com` from mybidquick (platform) → cleanbid (engine) Vercel project. Every tenant now gets `SLUG.mybidquick.com`. Tested `cloute-cleaning.mybidquick.com` — loads perfectly. (4) Updated all URLs across codebase: TenantDashboard.jsx QR URLs, TenantPublicPage.jsx engine link, embed-snippet.html (now pushed to repo). (5) Updated PROJECT-BRAIN.md and Notion brain with new URL scheme. |
+| 2026-03-31 | **Repo cleanup for scale**: Full audit + cleanup of both local and GitHub repo. **Deleted**: Nested Cleanbid/ engine copy (139MB), cleanbid-upsell-patch/ (old applied patches), src/App.css (empty), src/assets/ boilerplate (react.svg, vite.svg, hero.png), unused icons (mybidquick-icon.svg/png), root logo dupes (kept public/ copies), garbage files (ziFAvEMC, lock files, AI prompt files). **Organized**: Moved 12 marketing/business docs (xlsx, docx, md, png, html) into `docs/` folder. **Code cleanup**: Removed dead `import './App.css'` from App.jsx. Updated .gitignore with .env, lock file, and OS file patterns. All changes pushed to GitHub — 6 commits, all Vercel builds GREEN. Repo root went from 35+ items to 13 clean items. |
+| 2026-03-31 | **Duplicate webhook cleanup + CRM Phase 3.5**: (1) Confirmed Stripe Dashboard points to `/api/webhook` — deleted duplicate `api/stripe-webhook.js`. (2) **Kanban Board**: Replaced flat lead list with full drag-and-drop Kanban board in TenantDashboard.jsx — 4 columns (New/Contacted/Won/Lost), board+list view toggle, quick-move buttons, stats per stage. (3) **DB Migration**: Updated Supabase `leads` table — changed status check constraint from (pending/won/lost) to (new/contacted/won/lost), migrated 2 existing 'pending' leads to 'new', added `follow_ups_sent` (int array) and `last_follow_up_at` columns. (4) **Auto Follow-Up System**: Created scheduled task `mybidquick-lead-followup` — runs daily at 8am, queries Supabase for leads needing Day 1/3/7 follow-ups, creates Gmail DRAFTS for Tim to review before sending. (5) Created Google Sheet "MyBidQuick — Lead Pipeline CRM" (Sheets write blocked by MCP permissions — manual sync for now). Updated db.js default status from 'pending' to 'new'. |
+
+## SEO & Google Search Console
+- **www vs non-www**: All URLs canonicalized to `www.mybidquick.com` (fixed 2026-03-30)
+- **Google Search Console**: www.mybidquick.com property verified via meta tag
+- **Verification tag**: `<meta name="google-site-verification" content="uVz2LLgmtmrxIhr1PeowRq9TlUksp-kxqfaG8Ekxxow" />` (in index.html)
+- **Sitemap**: `www.mybidquick.com/sitemap.xml` — 6 URLs (/, /signup, /login, /dashboard, /blog, /demo/quote)
+- **Canonical tag**: `<link rel="canonical" href="https://www.mybidquick.com/" />` (in index.html)
+- **og:url**: `https://www.mybidquick.com/` (in index.html)
+- **robots.txt**: Points sitemap to `https://www.mybidquick.com/sitemap.xml`
+- **SEO Audit Report**: seo-audit-march2026.html (in repo) — 17 target keywords, competitor comparison, 12-item action plan
+- **Status as of 2026-03-30**: Zero pages indexed in Google. Fixes deployed, waiting for Googlebot to crawl.
+- **Pending**: Google Business Profile, software directory submissions (Capterra, G2, GetApp), competitor comparison landing pages
+
+## Cloute Cleaning — Quick Reference (Tenant)
+Cloute Cleaning is a **customer/tenant** of MyBidQuick. Tim Sullivan is managing partner (NOT owner of Cloute Inc).
+
+### Customer-Facing Pages
+| Page | URL |
+|------|-----|
+| Quoting Page | `cloute-cleaning.mybidquick.com#quote` |
+| Landing Page | `cloute-cleaning.mybidquick.com` |
+| Legacy URL | `cleanbid.vercel.app/cloute#quote` (still works) |
+| Fallback URL | `www.mybidquick.com/#/q/cloute-cleaning` |
+
+### Engine Admin/Leads (Legacy Panels)
+| Page | URL |
+|------|-----|
+| Admin Panel | `cloute-cleaning.mybidquick.com#admin` (password: admin123) |
+| Leads Panel | `cloute-cleaning.mybidquick.com#leads` |
+
+### MyBidQuick Platform Login
+| Page | URL |
+|------|-----|
+| Login Page | `www.mybidquick.com/#/login` |
+| Login Email | tim@clouteinc.com (Supabase Auth) |
+| Tenant Dashboard | `www.mybidquick.com/#/dashboard` |
+
+### Tim's Super Admin (Owner Panel)
+| Page | URL |
+|------|-----|
+| Admin Dashboard | `www.mybidquick.com/#/admin` (password: admin123) |
+| Tabs | Overview, Tenants, Revenue, Analytics, Settings |
+
+### Cornerstone Exterior (Other Tenant)
+| Page | URL |
+|------|-----|
+| Quoting Page | `cornerstone.mybidquick.com#quote` |
+| Demo Login Email | noah@cornerstoneexterior.com |
 
 ## Environment Variables
 ### In `.env` (committed to repo — client-side, publishable only)
