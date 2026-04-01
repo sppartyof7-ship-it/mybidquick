@@ -275,7 +275,7 @@ export default function AdminDashboard() {
           <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 56, margin: '0 auto 20px', display: 'block' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Admin Dashboard</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>MyBidQuick Platform Admin</p>
-          <form onSubmit={e => { e.preventDefault(); if (password === (import.meta.env.VITE_ADMIN_PASSWORD || 'admin123')) setIsAuthenticated(true) }}>
+          <form onSubmit={e => { e.preventDefault(); if (import.meta.env.VITE_ADMIN_PASSWORD && password === import.meta.env.VITE_ADMIN_PASSWORD) setIsAuthenticated(true) }}>
             <div className="form-group">
               <input
                 type="password"
