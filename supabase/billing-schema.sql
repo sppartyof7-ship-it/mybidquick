@@ -57,5 +57,5 @@ create policy "Allow public update on credit_purchases"
   on credit_purchases for update using (true);
 
 -- Give the demo Cloute Cleaning tenant 3 free trial leads
-update tenants set lead_credits = 3 where email = 'tim@clouteinc.com';
+update tenants set lead_credits = 3 where email = 'tim.sullivan@clouteinc.com';
 update tenants set lead_credits = 3 where email = 'noah@cornerstoneexterior.com';

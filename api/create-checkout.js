@@ -88,8 +88,8 @@ export default async function handler(req, res) {
         pack_id: packId,
         credits: String(pack.credits),
       },
-      success_url: `${origin}/#/dashboard?billing=success&credits=${pack.credits}`,
-      cancel_url: `${origin}/#/dashboard?billing=cancelled`,
+      success_url: `${origin}/dashboard?billing=success&credits=${pack.credits}`,
+      cancel_url: `${origin}/dashboard?billing=cancelled`,
     })
 
     // Record the pending purchase

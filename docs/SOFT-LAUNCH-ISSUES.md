@@ -96,7 +96,7 @@
 **Fix:** Add a webhook or email trigger on tenant creation.
 
 ### 14. Demo tenants have different emails across files
-**Files:** `AdminDashboard.jsx` has `tim@mybidquick.com`, `TenantDashboard.jsx` has `tim@clouteinc.com`
+**Files:** `AdminDashboard.jsx` has `tim@mybidquick.com`, `TenantDashboard.jsx` has `tim.sullivan@clouteinc.com`
 **Issue:** The demo email for Tim's Cloute Cleaning tenant is different in the admin dashboard vs tenant dashboard demo data.
 **Impact:** Confusing during demos; login with one email wouldn't match the other page's data.
 **Fix:** Align demo emails across both files.

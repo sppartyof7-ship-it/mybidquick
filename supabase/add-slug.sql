@@ -13,7 +13,7 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS slug text;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug) WHERE slug IS NOT NULL;
 
 -- Set slugs for existing demo tenants
-UPDATE tenants SET slug = 'cloute-cleaning' WHERE email = 'tim@clouteinc.com';
+UPDATE tenants SET slug = 'cloute-cleaning' WHERE email = 'tim.sullivan@clouteinc.com';
 UPDATE tenants SET slug = 'cornerstone-exterior' WHERE email = 'noah@cornerstoneexterior.com';
 
 -- Allow public reads on slug (already covered by existing RLS policy)

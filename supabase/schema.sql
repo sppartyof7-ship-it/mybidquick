@@ -87,7 +87,7 @@ insert into tenants (id, business_name, owner_name, email, phone, city, state, p
     'a1b2c3d4-e5f6-7890-abcd-111111111111',
     'Cloute Cleaning',
     'Tim Sullivan',
-    'tim@clouteinc.com',
+    'tim.sullivan@clouteinc.com',
     '(608) 555-0001',
     'Madison',
     'WI',

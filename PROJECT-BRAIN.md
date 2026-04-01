@@ -3,6 +3,17 @@
 ## What Is This?
 MyBidQuick is a SaaS platform owned by **Tim Sullivan** (personally, NOT Cloute Inc). It's a white-label quoting tool that Tim sells to other cleaning companies. Each cleaning company gets their own branded quote page powered by MyBidQuick's engine.
 
+## Owner Identity — Tim Sullivan
+Tim Sullivan has multiple businesses. These must NEVER be mixed together in any system:
+| Business | Email | Role |
+|----------|-------|------|
+| MyBidQuick (this SaaS) | s.p.partyof7@gmail.com | Owner/founder |
+| Cloute Inc / Cloute Exterior Cleaning | tim.sullivan@clouteinc.com | Managing partner (also a MyBidQuick tenant/client) |
+| Positivity Coaching | tim@wechoosepositivity.com | Coach (separate business, separate Stripe) |
+| My 3D Family | tim@my3dfamily.net | Family 3D printing business |
+
+**Important**: Cloute Exterior Cleaning is a CLIENT of MyBidQuick, not the owner entity. Keep all identities separate across Stripe, Supabase, and all other systems.
+
 ## Business Model — Per-Lead Credit Billing
 Tenants buy lead credit packs upfront. Each quote submission from a customer deducts 1 credit. New accounts get 3 free credits to try it out.
 
@@ -186,7 +197,7 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 - **Marketing Tab**: Toggleable marketing elements — urgency timer, social proof, limited-time offer, review badge
 - **Followup Tab**: Email/SMS sequence builder — delay (days), type (email/sms), subject, body with template variables ({{name}}, {{business}}, {{total}}, {{services}}), add/remove steps
 - **Settings Tab**: Business name, admin password, lead sources (add/remove tags), lead notification email, Web3Forms API key, export config JSON
-- **Demo accounts**: tim@clouteinc.com, noah@cornerstoneexterior.com
+- **Demo accounts**: tim.sullivan@clouteinc.com, noah@cornerstoneexterior.com
 - **Analytics Tab**: 4 KPI cards (Total Quotes, Conversion Rate, Avg Ticket Size, Total Revenue), bar chart for quote volume by month (last 6 months), revenue by month chart, lead source breakdown with color-coded percentage bars, top services by popularity, revenue by service. Empty state shown when no leads exist yet. All computed client-side from the `leads` array.
 - **Billing Tab**: Credits banner (real-time from Supabase), low/zero credit warnings, 4 lead credit pack cards, "How It Works" section, purchase history table, Manage Billing button (Stripe Customer Portal)
 - Config pattern: `updateConfig(dotPath, value)` with `deepClone` for immutable state, localStorage persistence
@@ -540,7 +551,7 @@ Cloute Cleaning is a **customer/tenant** of MyBidQuick. Tim Sullivan is managing
 | Page | URL |
 |------|-----|
 | Login Page | `www.mybidquick.com/#/login` |
-| Login Email | tim@clouteinc.com (Supabase Auth) |
+| Login Email | tim.sullivan@clouteinc.com (Supabase Auth) |
 | Tenant Dashboard | `www.mybidquick.com/#/dashboard` |
 
 ### Tim's Super Admin (Owner Panel)

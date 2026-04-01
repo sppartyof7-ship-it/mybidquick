@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Save, DollarSign, Settings, Mail, Phone, LogOut, Check, Plus, X,
   Eye, Trash2, AlertCircle, Clock, MessageSquare, Home, Zap, TrendingUp,
@@ -298,6 +298,31 @@ export default function TenantDashboard() {
   const [billing, setBilling] = useState(null)
   const [billingLoading, setBillingLoading] = useState(false)
   const [buyingPack, setBuyingPack] = useState(null)
+  const [billingToast, setBillingToast] = useState(null)
+
+  // URL params (for billing success/cancel return from Stripe)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    const billingStatus = searchParams.get('billing')
+    const credits = searchParams.get('credits')
+    if (billingStatus === 'success') {
+      setBillingToast({ type: 'success', message: `Payment received! ${credits ? credits + ' credits' : 'Credits'} will be added shortly.` })
+      setActiveTab('billing')
+      // Clean URL params
+      searchParams.delete('billing')
+      searchParams.delete('credits')
+      setSearchParams(searchParams, { replace: true })
+      // Auto-dismiss after 8 seconds
+      setTimeout(() => setBillingToast(null), 8000)
+    } else if (billingStatus === 'cancelled') {
+      setBillingToast({ type: 'info', message: 'Checkout was cancelled. No charge was made.' })
+      setActiveTab('billing')
+      searchParams.delete('billing')
+      setSearchParams(searchParams, { replace: true })
+      setTimeout(() => setBillingToast(null), 5000)
+    }
+  }, [])
 
   // ========================================================================
   // AUTH - Check for existing Supabase session on mount
@@ -2363,6 +2388,26 @@ export default function TenantDashboard() {
         {/* ================================================================ */}
         {activeTab === 'billing' && (
           <div>
+            {/* Billing Toast (success/cancel from Stripe) */}
+            {billingToast && (
+              <div style={{
+                padding: '14px 20px',
+                borderRadius: 12,
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                background: billingToast.type === 'success' ? '#f0fdf4' : '#f0f7ff',
+                border: `1px solid ${billingToast.type === 'success' ? '#22c55e' : '#3b9cff'}`,
+                color: billingToast.type === 'success' ? '#166534' : '#1e3a5f',
+              }}>
+                {billingToast.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
+                <span style={{ flex: 1, fontWeight: 500 }}>{billingToast.message}</span>
+                <button onClick={() => setBillingToast(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                  <X size={16} />
+                </button>
+              </div>
+            )}
             {/* Credits Banner */}
             <div style={{
               background: 'linear-gradient(135deg, #1e3a5f, #3b9cff)',
