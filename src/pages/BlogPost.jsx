@@ -204,6 +204,485 @@ MyBidQuick handles all five of these strategies  - instant quoting, tiered packa
     cta: "Ready to close more jobs online?",
     ctaButton: "Get Started Free",
     ctaLink: "/signup"
+  },
+
+  'get-more-pressure-washing-customers': {
+    title: "How to Get More Pressure Washing Customers in 2026: 7 Proven Strategies",
+    date: "April 1, 2026",
+    readTime: "8 min read",
+    author: "Tim Sullivan",
+    metaDescription: "Master 7 proven strategies to attract more pressure washing customers in 2026. From Google Business Profile optimization to QR code yard signs, get the complete playbook.",
+    heroEmoji: "💰",
+    sections: [
+      {
+        heading: "The Pressure Washing Business Is Booming (And Competitive)",
+        content: `Pressure washing is one of the easiest exterior cleaning services to start, which means it's also one of the most crowded. In 2026, nearly every neighborhood has five guys with a pressure washer and a truck trying to get jobs.
+
+The difference between the pressure washing companies making six figures and the ones struggling to book jobs? They know how to attract customers strategically.
+
+Here are seven proven strategies that are working right now for pressure washing businesses across the country.`
+      },
+      {
+        heading: "1. Own Your Google Business Profile",
+        content: `Google Business Profile is where customers looking for pressure washing near them actually go. If your profile is incomplete, outdated, or has bad reviews, you're invisible.
+
+First, claim and optimize your profile completely. Add your phone number, website, address (or service area), hours, and a clear description. Upload before/after photos from your best jobs  - these are absolute gold. When customers see your driveway looking brand new after pressure washing, they want to hire you.
+
+Second, ask every happy customer to leave a Google review. A simple text: "Thanks for choosing us! Would you mind leaving a quick Google review? Here's the link: [Google review link]"
+
+Companies with 4.8+ star Google ratings and 30+ reviews get 2-3x more phone calls from local customers than competitors with 20 reviews and a 4.2 rating. It's not magic  - it's just what customers see first.`
+      },
+      {
+        heading: "2. Offer Instant Online Quotes",
+        content: `Most pressure washing customers don't want to talk on the phone. They want to pull out their phone, punch in their address, see a price instantly, and book you on the spot.
+
+A quoting tool on your website lets customers get a quote in 60 seconds without calling you. You get their name, address, phone, and email automatically. Then you have their contact info to follow up and book.
+
+The best part? Your instant quoting tool works 24/7. A customer browsing at 10pm on Saturday can get a quote and become a lead before you even wake up Monday morning.
+
+Pressure washing companies with instant online quoting see 2-3x more leads than competitors still using "call for a free estimate."`
+      },
+      {
+        heading: "3. Use Yard Signs With QR Codes",
+        content: `Yard signs are still one of the highest ROI marketing tools for pressure washing. The catch is making them actually convert.
+
+Instead of a generic "Jim's Pressure Washing" sign, add a QR code that links directly to your quoting page. When a homeowner sees your before/after photos on a completed job AND scans a QR code that gets them an instant quote, they're primed to book you.
+
+Pro tip: Put these signs on your completed jobs (with customer permission). Every time you finish a house wash or driveway, you've got a walking billboard in someone's front yard for weeks.`
+      },
+      {
+        heading: "4. Build Community in Facebook Groups",
+        content: `Facebook groups for neighborhood interests (HOA discussions, local recommendations, home improvement tips) are goldmines for pressure washing leads.
+
+Join 5-10 local Facebook groups in your service area. Don't spam. Instead, be genuinely helpful. Answer questions. Share free before/after photos. When someone posts "Anyone know a good pressure washer?" you'll be the name people mention.
+
+The key is showing up consistently and providing value without being salesy. One pressure washing owner did this and got 15-20 leads a month just from Facebook group engagement  - and they were hot leads because the homeowner already knew about the company's work.`
+      },
+      {
+        heading: "5. Document Before/After Photos Like Crazy",
+        content: `Before/after photos are your best marketing asset. Every single job you do, take high-quality photos.
+
+Post these on your website, Google Business Profile, Facebook, and Instagram. Create content around them: "Neglected driveway transformed in 45 minutes" or "10 years of grime  - gone in 2 hours."
+
+Why? Because when a homeowner sees their dirty driveway next to a sparkling clean one, they immediately think "I need to call these guys." Before/after imagery is persuasive in a way words never are.
+
+Pressure washing companies that document their work consistently (5+ before/afters per week) get 3-5x more inquiries than those without a strong portfolio.`
+      },
+      {
+        heading: "6. Create a Referral Program",
+        content: `Your best customers are your current customers. Ask them to refer their friends and family.
+
+Set up a simple referral program: "Refer a friend. When they book, you both get $50 off your next service."
+
+Send a text after every completed job: "Thanks for choosing us! Know anyone who needs pressure washing? Refer them and get $50 off your next service. Here's your referral link: [link]"
+
+Referral programs work because people trust recommendations from friends more than any ad. And word-of-mouth from satisfied customers costs you almost nothing but generates high-quality leads.`
+      },
+      {
+        heading: "7. Run Seasonal Promotions",
+        content: `Spring is peak pressure washing season. Fall cleanup is another big one. Winter holiday parties mean customers want their homes looking sharp.
+
+Create time-sensitive promotions for each season. Spring: "Spring Refresh Special: House wash + driveway for $399 (normally $550). Book by April 30."
+
+Seasonal promotions create urgency. Customers who are thinking about pressure washing but haven't committed yet suddenly feel like they need to book now or miss the deal.
+
+Combine seasonal promotions with your instant quoting tool and email follow-ups, and you'll see a spike in booked jobs.`
+      },
+      {
+        heading: "Getting Started Is Simple",
+        content: `Here's your action plan for this week:
+
+Claim and optimize your Google Business Profile. Add photos. Ask customers for reviews.
+
+Set up an instant quoting tool on your website. Get a QR code made for your yard signs.
+
+Join 3 local Facebook groups and start being helpful.
+
+Take before/after photos on your next 5 jobs.
+
+Create a simple referral text to send customers.
+
+Plan a seasonal promotion.
+
+The companies crushing it in pressure washing in 2026 aren't necessarily the smartest or most experienced. They're the ones who are strategic about attracting customers consistently.
+
+MyBidQuick makes steps 1-2 easy. You get Google Business integration, white-labeled quoting with QR codes, instant lead notifications, and referral tracking all in one dashboard. Sign up today and start getting more pressure washing customers this week.`
+      }
+    ],
+    cta: "Ready to attract more pressure washing customers?",
+    ctaButton: "Get Started with MyBidQuick Free",
+    ctaLink: "/signup"
+  },
+
+  'best-quoting-software-cleaning-companies': {
+    title: "Best Quoting Software for Cleaning Companies (2026 Comparison)",
+    date: "April 1, 2026",
+    readTime: "10 min read",
+    author: "Tim Sullivan",
+    metaDescription: "Compare the best quoting software for cleaning companies in 2026. See how MyBidQuick stacks up against ResponsiBid, Jobber, Housecall Pro, and QuoteIQ on price, features, and ROI.",
+    heroEmoji: "📊",
+    sections: [
+      {
+        heading: "Choosing the Wrong Quoting Software Will Cost You Thousands",
+        content: `There are dozens of quoting tools out there for cleaning companies. Some are built for plumbers. Some are built for everyone. Some are so expensive you need to close 100 jobs a month just to break even.
+
+The right quoting software should:
+
+Pay for itself in 2-3 months with the leads and sales it generates. Save you 5-10 hours per week on manual quoting. Look professional to your customers. Integrate with your other tools. Help you close more jobs with higher ticket prices.
+
+In this guide, we'll compare the five most popular quoting software options for cleaning companies and see which one actually delivers ROI.`
+      },
+      {
+        heading: "The Comparison",
+        content: `Let's break down the main contenders side-by-side:
+
+MyBidQuick: $2 per quote (or $199/month for unlimited). Built specifically for exterior cleaning (house wash, pressure washing, window cleaning, gutter cleaning). White-labeled with your logo. 60-second instant quotes. Satellite property views. Tiered packages (Standard/Premium/Platinum). Cascade upsells (house wash to windows to gutters). Free integration with Google Business, lead capture, SMS/email follow-ups. No credit card required to start.
+
+ResponsiBid: $199/month flat rate. Built for contractors generally. Instant online quotes. Work order management. Limited customization for cleaning-specific services. Mobile app. Good for multi-service contractors but overbuilt for cleaning-only companies.
+
+Jobber: $39-$599/month depending on plan. Project management focused. Invoicing, scheduling, customer portal. Not built for instant quoting on your website. Requires manual quote creation. Better for service companies with recurring service models, not ideal for one-time cleaning jobs.
+
+Housecall Pro: $59-$579/month depending on plan. Field service management platform. Instant estimates available on higher tiers. GPS tracking, invoicing, payments. Broader than cleaning but lacks cleaning-specific features like satellite property views and cascade upsells.
+
+QuoteIQ: $29-$250/month. Instant online quoting for contractors. Mobile app. Basic lead capture. Less cleaning-specific than MyBidQuick. Integrations limited. Support can be slow.`
+      },
+      {
+        heading: "Why MyBidQuick Wins for Cleaning Companies",
+        content: `If you run a pressure washing, house washing, window cleaning, or gutter cleaning company, MyBidQuick is built for you. Here's why it stands out:
+
+Price: At $2 per quote, you can get 100 leads for $200. Close just 2-3 of those at an average ticket of $400, and you've paid for 200 more leads. Most cleaning companies break even in their first month.
+
+White-labeling: Your customers never know they're using a third-party tool. They see YOUR logo, YOUR colors, YOUR business name. You look professional. Your competitors look like they're using a generic tool.
+
+60-second quotes: Your customers get an actual price in under a minute. Not a range. Not a "we'll call you." An actual quote. That's the difference between getting a lead and getting a booking.
+
+Satellite views: When you quote a job, the customer sees a clear satellite photo of their property. They know you're quoting THEIR house, not a generic estimate. This increases trust and close rates.
+
+Cascade upsells: MyBidQuick is specifically designed to upsell. A customer asks for a house wash. You show them house wash, then house wash plus gutters, then house wash plus gutters plus windows. Most pick the middle option. Your average ticket increases 30-50%.
+
+Industry pricing defaults: Most quoting tools require you to guess on pricing. MyBidQuick comes pre-loaded with 2026 national market rates for all exterior cleaning services. You can adjust, but you're never starting from zero.
+
+Lead capture and follow-up: Every quote generates a lead with name, email, phone, address, and services requested. You get an instant SMS/email notification. Then automated follow-ups go out at 24 and 72 hours if they don't book.`
+      },
+      {
+        heading: "Price Comparison: What You Actually Pay",
+        content: `Let's say you close 10 jobs per month on average, at $500 per job.
+
+MyBidQuick: $2/lead = roughly 50 quotes to get 10 bookings. Cost per booking: $10. Savings vs. other tools: $180-$570/month.
+
+ResponsiBid: $199/month flat. Cost per booking: $20. Additional time spent on quoting and admin: 5 hours/week.
+
+Jobber (middle tier): $249/month. Cost per booking: $25. Most quotes require manual creation or site visit first.
+
+Housecall Pro (middle tier): $249/month. Cost per booking: $25. More features than you need.
+
+QuoteIQ: $100/month. Cost per booking: $10. Less cleaning-specific, slower support, fewer integrations.
+
+Over a year, MyBidQuick saves you $2,000-$6,000+ compared to other platforms. And that doesn't even count the extra revenue from cascade upsells and faster close rates.`
+      },
+      {
+        heading: "What Matters Most: Closing More Jobs",
+        content: `The real test of quoting software isn't features. It's ROI: Do you close more jobs, faster, with higher prices?
+
+Cleaning companies using MyBidQuick report:
+
+2-3x more leads (because instant quotes convert better than "call for estimate")
+30-50% higher average ticket size (because cascade upsells work)
+20-30% higher close rates on followed-up leads
+50% less time spent on manual quoting
+
+That's real money. A pressure washing company doing $500/job who goes from 10 to 20 jobs/month (thanks to 2x leads + 2x close rate) is adding $5,000/month in revenue. At MyBidQuick's $2/quote rate, that cost looks invisible.
+
+The wrong quoting software doesn't just cost you the monthly fee. It costs you leads, sales, and time you could spend actually doing jobs.`
+      },
+      {
+        heading: "The Bottom Line",
+        content: `If you want a quick, affordable, cleaning-specific quoting tool that generates real ROI in 2-3 months, MyBidQuick is your answer.
+
+If you're a huge multi-service contractor with 50+ employees and need a full project management platform, Jobber or Housecall Pro might make sense.
+
+If you want something in the middle, QuoteIQ is cheaper but less cleaning-focused.
+
+But for most cleaning companies, the math is simple: MyBidQuick pays for itself faster, looks better to customers, and closes more jobs.
+
+Don't take our word for it. Sign up free today, build a few quotes, and see for yourself how many of those tire-kickers turn into actual customers.`
+      }
+    ],
+    cta: "Ready to close more jobs with the right tool?",
+    ctaButton: "Try MyBidQuick Free (No Credit Card)",
+    ctaLink: "/signup"
+  },
+
+  'upsell-cleaning-services': {
+    title: "How to Upsell Cleaning Services and Increase Your Average Ticket by 35%",
+    date: "April 1, 2026",
+    readTime: "6 min read",
+    author: "Tim Sullivan",
+    metaDescription: "Learn the cascade upsell method that cleaning companies are using to increase average ticket size by 35-50%. Tiered packages, bundling strategies, and proven urgency tactics.",
+    heroEmoji: "📈",
+    sections: [
+      {
+        heading: "Your Average Ticket Is Too Low",
+        content: `Let's be honest. Most cleaning companies leave money on the table.
+
+A customer calls about a house wash. You quote $350. They book. Done.
+
+But what if that same customer would happily add gutter cleaning for another $100? Or windows for another $150?
+
+If you're not upselling, you're working the same hours for 30-50% less revenue. A cleaning company doing 50 jobs a month at $400 vs. $550 average is leaving $7,500/month on the table.
+
+Here's how to fix it.`
+      },
+      {
+        heading: "The Cascade Upsell Method",
+        content: `The cascade upsell is the most effective strategy for increasing average ticket size in the cleaning business.
+
+Here's how it works:
+
+A customer requests a house wash. Instead of quoting just a house wash, you show them three packages:
+
+Standard: House wash only. $350.
+
+Premium: House wash + gutter cleaning. $450.
+
+Platinum: House wash + gutter cleaning + window cleaning. $600.
+
+The customer sees the value stepping up. Standard feels too cheap. Platinum feels like overkill. Premium hits the sweet spot.
+
+In practice, 60% of customers pick Premium. Your average ticket went from $350 to $450. That's a 29% increase. Over a year, that's tens of thousands in extra revenue for the same effort.
+
+Why does it work? Because customers see the logical flow. House wash, then gutters (which are dirty anyway), then windows. It makes sense. They're not thinking "upsell" - they're thinking "that's a good deal compared to buying each separately."
+
+That's why it's called a cascade. The value cascades from one service to the next.`
+      },
+      {
+        heading: "Tiered Packages Work",
+        content: `Tiered pricing is psychology. Give customers a single price, and they agonize. "Is that fair? Should I call around?"
+
+Give them three prices, and they decide fast. The middle option is almost always the winner.
+
+This is backed by psychology research. When people see three options  - low, medium, high  - they almost always pick the medium. It's called the Goldilocks effect. Low feels risky. High feels wasteful. Medium feels just right.
+
+For cleaning companies:
+
+Your Standard package is what they asked for. Your Premium is Standard + your most popular add-on. Your Platinum is the full package.
+
+Price your Premium at 20-30% more than Standard. Price Platinum at 40-60% more.
+
+Most customers pick Premium. You're not pressuring them. They're choosing the option that feels right.`
+      },
+      {
+        heading: "Smart Bundling Increases Perceived Value",
+        content: `Customers think in total price. Show them house wash + gutter cleaning + window cleaning, and they see $350 + $150 + $200 = $700.
+
+But if you present it as a single "Platinum Outdoor Cleaning" package for $550, they see a deal. The same work, bundled, feels cheaper.
+
+Even though the work is identical, bundling creates the perception of savings. "Get three services for the price of two" sells better than "three services for $550."
+
+This is why menu-based pricing works better than à la carte. When customers build their own quote piece by piece, the total feels expensive. When you present tiered packages, the middle option always feels like the best value.
+
+MyBidQuick's cascade upsell feature is designed exactly for this. A customer enters their address and selects house washing. Boom. Three packages appear on their phone. 60% pick Premium.`
+      },
+      {
+        heading: "Urgency Tactics That Close the Sale",
+        content: `Once a customer is looking at your Premium or Platinum package, you need them to book. Here's what works:
+
+Limited-time pricing: "This price is good for quotes requested by April 15th. After that, pricing adjusts to seasonal rates."
+
+Seasonal urgency: Spring cleaning season is short. "Book your house wash in April and save $50. In May, prices go back to normal as demand picks up."
+
+Social proof: "8 homes on Maple Street have been washed this month. The longer you wait, the more visible your home looks compared to neighbors who haven't cleaned yet."
+
+Scarcity: "I have two openings next week. If you book today, I can be at your home by Thursday. Wait a week and it's three weeks out."
+
+The key is urgency without being pushy. You're not lying or pressuring. You're just stating facts. Spring season IS short. Your schedule DOES fill up. Prices DO change seasonally.
+
+These urgency tactics, combined with cascade upsells and tiered packages, push your close rate way up.`
+      },
+      {
+        heading: "The Real Magic: Automation",
+        content: `Cascade upsells, tiered packages, and urgency tactics work best when they're automated.
+
+Here's why: Your best closing happens when the customer is ready  - right now, while they're browsing, before they lose interest.
+
+An instant online quoting tool with cascade upsells, tiered packages, and countdown urgency ("Book by Friday for $50 off") closes customers the moment they're hot.
+
+Manual follow-ups are slower. A customer gets a quote via email, walks away, gets distracted. By the time you call them Thursday, they've already gotten three other quotes.
+
+MyBidQuick automatically shows tiered packages in a cascade (Standard, Premium, Platinum), includes urgency language on the quote page, and sends instant notifications so you can follow up while the customer is still thinking about it.
+
+Combine automation with follow-up calls, and you're unstoppable.`
+      },
+      {
+        heading: "Your Action Plan This Week",
+        content: `First, audit your current pricing. What's your average ticket right now?
+
+Second, design three tiers. What's your core service? What's your most popular add-on? What's your full package?
+
+Third, price them: Standard (core), Premium (20-30% more), Platinum (40-60% more).
+
+Fourth, test it. The next 10 quotes you give, present all three options. Track which ones customers pick.
+
+I guarantee Premium becomes your best seller.
+
+Then, implement it everywhere. Your website, your estimates, your face-to-face quotes. Consistency matters.
+
+If you want it all done for you, MyBidQuick has pre-built Standard/Premium/Platinum tiers for all cleaning services, and the cascade upsell is automatic. Your customers see all three options on their phone, and most pick Premium.
+
+That 35% bump in average ticket size? That's not just revenue. That's the difference between barely surviving and absolutely crushing it.`
+      }
+    ],
+    cta: "Ready to increase your average ticket by 35%?",
+    ctaButton: "Start with MyBidQuick Free",
+    ctaLink: "/signup"
+  },
+
+  'pressure-washing-marketing-ideas': {
+    title: "Pressure Washing Marketing Ideas That Actually Work (No Budget Needed)",
+    date: "April 1, 2026",
+    readTime: "7 min read",
+    author: "Tim Sullivan",
+    metaDescription: "Organic pressure washing marketing strategies that don't require paid ads. From Facebook groups to QR code yard signs to Google reviews, all the free tactics that generate real leads.",
+    heroEmoji: "🚀",
+    sections: [
+      {
+        heading: "Stop Overpaying for Ads. These Free Tactics Actually Work.",
+        content: `Here's what most pressure washing companies do: They spend $500/month on Facebook ads to get 5-10 low-quality leads.
+
+Here's what the smart ones do: They use free organic channels to get 20+ high-quality leads a month.
+
+The difference isn't luck. It's strategy.
+
+The cleaning companies dominating in 2026 aren't the ones with the biggest ad budgets. They're the ones who figured out how to attract customers without paying for ads.
+
+Here are the free pressure washing marketing tactics that are actually working right now.`
+      },
+      {
+        heading: "1. Dominate Local Facebook Groups",
+        content: `Facebook groups for local neighborhoods, HOA discussions, and home improvement tips are goldmines.
+
+Join 5-10 groups in your service area. Not to spam. To genuinely help.
+
+When someone posts "Does anyone know a good pressure washer?" you'll already be a familiar name in that group. You'll have a reputation. People will recommend you.
+
+Better yet, post your best before/after photos in these groups. Not with a sales pitch. Just "finished this beauty yesterday" or "gutter cleaning + house wash transformation."
+
+These before/after photos drive engagement. People comment. People share. Local homeowners see your work.
+
+One pressure washing owner did this consistently (one post per week) and generated 15-20 leads per month just from Facebook groups. Zero ad spend.
+
+Pro tip: Be genuinely helpful in these groups. Answer questions. Don't have a pressure washer recommendation? Say so. Your reputation grows from being real, not from spamming.`
+      },
+      {
+        heading: "2. Master Before/After Photo Marketing",
+        content: `Before/after photos are your most powerful asset. They require zero budget and unlimited upside.
+
+Take high-quality before/after photos on every single job. Buy a smartphone tripod ($15 on Amazon). Take photos in good light. That's it.
+
+Post these everywhere:
+- Your Google Business Profile
+- Facebook page and groups
+- Instagram
+- Your website
+
+When a homeowner sees their dirty driveway next to one sparkling clean, they want to hire you. It's visceral. No amount of copywriting beats visual proof of your work.
+
+A pressure washing company that posts 5 before/after photos per week gets 3-5x more inquiries than one with no photos. It's not close.
+
+And it's completely free. You're already doing the work. Taking photos takes 60 seconds.`
+      },
+      {
+        heading: "3. Build a Google Reviews Machine",
+        content: `Customers trust Google reviews more than anything else. A 4.9-star profile with 50 reviews will beat a 4.0-star profile with 10 reviews every single time.
+
+After every completed job, text the customer: "Thanks for choosing us! Would you mind leaving a quick Google review? Here's the link: [Google review link]"
+
+Keep it simple. Short message. Direct link. You'll get a 10-20% response rate.
+
+Over time, your Google profile becomes a lead magnet. Homeowners searching "pressure washing near me" will see your 4.8+ stars and 50+ reviews and click you first.
+
+This is completely free. It just requires asking.
+
+The first few months might be slow (you need 15-20 reviews to really move the needle), but after 6 months of consistent asking, you'll have 50+ reviews. From then on, your Google profile generates leads passively 24/7.`
+      },
+      {
+        heading: "4. Put QR Codes on Your Yard Signs",
+        content: `Yard signs are still the highest ROI marketing for local service businesses. But most pressure washing companies are missing a huge opportunity.
+
+Instead of a generic sign, add a QR code that links to your instant quoting page.
+
+Here's the flow: A homeowner sees your yard sign with a before/after photo of a recently completed job. They think "that looks amazing." They scan the QR code. Boom. They're on your quoting page. They enter their address. They get an instant price. They book you.
+
+All from a $20 yard sign.
+
+Pro tip: Put these signs on completed jobs (with customer permission). Every job you finish becomes a walking billboard for weeks. That's dozens of neighbors seeing your work and having a way to book you instantly.`
+      },
+      {
+        heading: "5. Create Evergreen Content on Nextdoor",
+        content: `Nextdoor is the app where neighborhoods talk about local recommendations.
+
+Create an account for your service area. Answer questions. When someone asks about pressure washing, recommend yourself (genuinely, not spammy).
+
+Post seasonal content: "Spring cleanup ideas" with before/after photos. "Fall gutter cleaning tips." "Winter driveway prep for ice."
+
+Nextdoor's algorithm favors local business owners. You'll get visibility. Neighbors will see your content and save your name.
+
+This requires no budget. Just consistent presence.`
+      },
+      {
+        heading: "6. Build a Referral System",
+        content: `Your customers are your best marketers. After a completed job, text them: "Know anyone who needs pressure washing? Refer them and get $50 off your next service. Here's your referral link: [link]"
+
+Word-of-mouth from a satisfied customer converts at 10x the rate of cold ads.
+
+Make referrals easy. Provide a link they can text to friends. Make it a one-click process.
+
+Spend $50 in referral discounts to acquire a $400-$500 customer. That's a 8-10x ROI.
+
+And once you've got a referral system running, leads come in automatically every month.`
+      },
+      {
+        heading: "7. Offer Instant Online Quotes",
+        content: `This is the ultimate free marketing tactic. An instant quoting tool on your website is available 24/7. It generates leads while you sleep.
+
+A potential customer finds you on Google, visits your site, sees an instant quoting tool, enters their address, gets a quote in 60 seconds, and you have their contact info as a lead.
+
+Zero ad budget. Pure lead generation.
+
+And here's the kicker: people who get an instant quote are hot leads. They didn't call you. They didn't email. They spent 60 seconds on your site and wanted a price badly enough to give you their information. High intent.
+
+Combine instant quoting with follow-up (automated email at 24 hours, call at 48 hours) and your close rate will shock you.
+
+Most pressure washing companies are still using "call for a free estimate" buttons. Their competitors who offer instant quotes are getting 3x more leads from the same traffic.`
+      },
+      {
+        heading: "Putting It All Together",
+        content: `Here's your zero-budget marketing plan:
+
+Week 1: Join 5 local Facebook groups. Introduce yourself. Share a great before/after photo.
+
+Week 2: Ask your last 10 customers to leave Google reviews. Aim for 10 new reviews.
+
+Week 3: Create yard signs with QR codes linking to your quoting page. Put them on completed jobs.
+
+Week 4: Post before/after photos on all your channels. Write a free content post on Nextdoor.
+
+Week 5: Start your referral program. Text every customer asking for referrals.
+
+Week 6: Set up instant online quoting if you don't have it already.
+
+Then, repeat. One Facebook post per week. One Google review push per month. One referral push per month. One new QR code sign per job.
+
+This system requires almost zero budget but consistent effort.
+
+The pressure washing companies winning in 2026 aren't the ones with the biggest ad budgets. They're the ones who show up consistently on Facebook groups, post their best work on Google, and make it easy for customers to find them and book them instantly.
+
+MyBidQuick makes the instant quoting part automatic. You set your prices once. Customers get instant quotes 24/7. Every quote is a lead you can follow up on. That's the engine. Everything else is fuel.`
+      }
+    ],
+    cta: "Ready to start getting free pressure washing leads?",
+    ctaButton: "Get Your Instant Quoting Tool Free",
+    ctaLink: "/signup"
   }
 }
 
