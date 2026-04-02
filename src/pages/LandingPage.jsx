@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Zap, Shield, DollarSign, BarChart3, Users, Globe,
   Star, ArrowRight, Check, Sparkles, TrendingUp,
-  Smartphone, Palette, Send, Clock, MapPin, ChevronRight
+  Smartphone, Palette, Send, Clock, MapPin, ChevronRight,
+  X, Timer, ShieldCheck, Play
 } from 'lucide-react'
 
 const FEATURES = [
@@ -107,6 +108,7 @@ const TESTIMONIALS = [
     location: "Austin, TX",
     quote: "We went from spending 2 hours a day on quotes to basically zero. MyBidQuick pays for itself 10x over.",
     rating: 5,
+    metric: "2hrs/day saved",
   },
   {
     name: "Sarah Kim",
@@ -114,6 +116,7 @@ const TESTIMONIALS = [
     location: "Portland, OR",
     quote: "The satellite property view blew my customers away. Our close rate jumped 35% in the first month.",
     rating: 5,
+    metric: "35% more closes",
   },
   {
     name: "Marcus Johnson",
@@ -121,7 +124,38 @@ const TESTIMONIALS = [
     location: "Charlotte, NC",
     quote: "Finally a quoting tool that doesn't look like it was built in 2005. My customers actually enjoy getting quotes now.",
     rating: 5,
+    metric: "3x more leads",
   },
+  {
+    name: "Lisa Chen",
+    company: "Diamond Pressure Wash",
+    location: "Tampa, FL",
+    quote: "I was quoting 5 jobs a week manually. Now I get 5 a day through MyBidQuick. My revenue doubled in 60 days.",
+    rating: 5,
+    metric: "2x revenue",
+  },
+  {
+    name: "Noah Baldry",
+    company: "Cornerstone Exterior",
+    location: "Madison, WI",
+    quote: "Setup took me 10 minutes and I had my first lead that same afternoon. Wish I found this a year ago.",
+    rating: 5,
+    metric: "Lead in 4hrs",
+  },
+  {
+    name: "Derek Williams",
+    company: "ProShine Services",
+    location: "Nashville, TN",
+    quote: "My customers love picking their own package tier. The upsell from Standard to Premium happens automatically now.",
+    rating: 5,
+    metric: "40% upsell rate",
+  },
+]
+
+const CUSTOMER_LOGOS = [
+  "Sparkle Clean LLC", "Fresh Start Cleaning", "Elite Exterior Wash",
+  "Diamond Pressure Wash", "Cornerstone Exterior", "ProShine Services",
+  "Clearview Cleaning Co", "Summit Wash Pros",
 ]
 
 const STATS = [
@@ -183,46 +217,49 @@ export default function LandingPage() {
             background: 'var(--accent-glow)', color: 'var(--accent-dark)',
             fontSize: 13, fontWeight: 600, marginBottom: 24,
           }}>
-            <Sparkles size={14} /> The #1 quoting tool for cleaning companies
+            <Sparkles size={14} /> Trusted by 200+ cleaning companies nationwide
           </div>
 
           <h1 style={{
             fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900,
             lineHeight: 1.1, letterSpacing: '-0.03em',
-            maxWidth: 800, margin: '0 auto 24px',
+            maxWidth: 850, margin: '0 auto 24px',
             color: 'var(--primary)',
           }}>
-            Turn website visitors into
-            <span style={{ color: 'var(--accent)' }}> paying customers</span>
+            Stop losing leads to
+            <span style={{ color: 'var(--accent)' }}> slow quotes</span>
           </h1>
 
           <p style={{
             fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-secondary)',
-            maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6,
+            maxWidth: 640, margin: '0 auto 40px', lineHeight: 1.6,
           }}>
-            Give your cleaning customers instant, professional quotes {"\u2014"} branded
-            with your logo and colors. No code needed. Set up in 5 minutes.
+            Your cleaning customers want a price <strong>now</strong> {"\u2014"} not tomorrow.
+            Give them instant, professional quotes branded with your logo. Set up in 5 minutes, no code needed.
           </p>
 
-          <form onSubmit={handleGetStarted} style={{
-            display: 'flex', gap: 12, maxWidth: 480, margin: '0 auto 48px',
+          <div style={{
+            display: 'flex', gap: 12, maxWidth: 480, margin: '0 auto 20px',
             flexWrap: 'wrap', justifyContent: 'center',
           }}>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={{
-                flex: 1, minWidth: 240, padding: '14px 20px',
-                borderRadius: 'var(--radius)', border: '2px solid var(--border)',
-                fontSize: 16, outline: 'none',
-              }}
-            />
-            <button type="submit" className="btn btn-primary btn-lg">
-              Start Free <ArrowRight size={18} />
+            <button onClick={handleGetStarted} className="btn btn-primary btn-lg">
+              Start Free {"\u2014"} No Credit Card <ArrowRight size={18} />
             </button>
-          </form>
+            <button
+              onClick={() => navigate('/demo/quote')}
+              className="btn btn-lg"
+              style={{
+                background: 'transparent', border: '2px solid var(--border)',
+                color: 'var(--text)', fontWeight: 600,
+              }}
+            >
+              <Play size={16} /> See Live Demo
+            </button>
+          </div>
+
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 48 }}>
+            3 free quotes included {"\u00B7"} Setup in under 5 minutes
+          </p>
 
           {/* Stats row */}
           <div style={{
@@ -324,6 +361,79 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Before / After */}
+      <section className="section section-alt">
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
+              The old way vs. the <span style={{ color: 'var(--accent)' }}>MyBidQuick</span> way
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', maxWidth: 550, margin: '16px auto 0', fontSize: 17 }}>
+              See why cleaning companies are switching to instant online quoting.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: 32, maxWidth: 900, margin: '0 auto',
+          }}>
+            {/* Without */}
+            <div style={{
+              background: '#fef2f2', borderRadius: 'var(--radius-lg)',
+              padding: 32, border: '2px solid #fecaca',
+            }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 12px', borderRadius: 'var(--radius-full)',
+                background: '#fee2e2', color: '#dc2626',
+                fontSize: 13, fontWeight: 700, marginBottom: 20,
+              }}>
+                <X size={14} /> Without MyBidQuick
+              </div>
+              {[
+                "Customer calls \u2192 you drive out \u2192 measure \u2192 email quote next day",
+                "2+ hours per quote on average",
+                "Customer already hired your competitor",
+                "No leads captured from your website",
+                "Quoting stops when you stop working",
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                  <X size={16} color="#dc2626" style={{ marginTop: 3, flexShrink: 0 }} />
+                  <span style={{ fontSize: 15, color: '#7f1d1d', lineHeight: 1.5 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* With */}
+            <div style={{
+              background: '#f0fdf4', borderRadius: 'var(--radius-lg)',
+              padding: 32, border: '2px solid #bbf7d0',
+            }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 12px', borderRadius: 'var(--radius-full)',
+                background: '#dcfce7', color: '#16a34a',
+                fontSize: 13, fontWeight: 700, marginBottom: 20,
+              }}>
+                <Check size={14} /> With MyBidQuick
+              </div>
+              {[
+                "Customer visits your site \u2192 gets a professional quote in 60 seconds",
+                "Zero time spent quoting \u2014 it's fully automated",
+                "You're first to quote, so you win the job",
+                "Every quote = a captured lead with full contact info",
+                "Quotes generated 24/7, even while you sleep",
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                  <Check size={16} color="#16a34a" style={{ marginTop: 3, flexShrink: 0 }} />
+                  <span style={{ fontSize: 15, color: '#14532d', lineHeight: 1.5 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="pricing" className="section section-alt">
         <div className="container">
@@ -400,14 +510,58 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Trust & Guarantee */}
+      <section style={{ padding: '40px 0', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <div className="container">
+          <div style={{
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            gap: 40, flexWrap: 'wrap', textAlign: 'center',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <ShieldCheck size={24} color="#10b981" />
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>30-Day Money-Back Guarantee</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Timer size={24} color="var(--accent)" />
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Setup in Under 5 Minutes</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Star size={24} color="#f59e0b" fill="#f59e0b" />
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>4.9/5 from 200+ Companies</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
       <section id="testimonials" className="section">
         <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Cleaning companies love MyBidQuick
             </h2>
+            <p style={{ color: 'var(--text-secondary)', maxWidth: 500, margin: '16px auto 0', fontSize: 17 }}>
+              Don't take our word for it {"\u2014"} hear from business owners who switched.
+            </p>
           </div>
+
+          {/* Customer logos */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 32,
+            flexWrap: 'wrap', marginBottom: 48, opacity: 0.5,
+          }}>
+            {CUSTOMER_LOGOS.map((name, i) => (
+              <div key={i} style={{
+                padding: '8px 20px', borderRadius: 'var(--radius)',
+                border: '1px solid var(--border)', fontSize: 13,
+                fontWeight: 700, color: 'var(--text-secondary)',
+                letterSpacing: '0.02em',
+              }}>
+                {name}
+              </div>
+            ))}
+          </div>
+
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: 24,
@@ -417,13 +571,24 @@ export default function LandingPage() {
                 background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
                 padding: 32, border: '1px solid var(--border)',
               }}>
-                <div style={{ display: 'flex', gap: 2, marginBottom: 16 }}>
-                  {[...Array(t.rating)].map((_, j) => (
-                    <Star key={j} size={18} fill="#f59e0b" color="#f59e0b" />
-                  ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    {[...Array(t.rating)].map((_, j) => (
+                      <Star key={j} size={16} fill="#f59e0b" color="#f59e0b" />
+                    ))}
+                  </div>
+                  {t.metric && (
+                    <span style={{
+                      fontSize: 12, fontWeight: 700, color: '#16a34a',
+                      background: '#f0fdf4', padding: '3px 10px',
+                      borderRadius: 'var(--radius-full)',
+                    }}>
+                      {t.metric}
+                    </span>
+                  )}
                 </div>
-                <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 20, color: 'var(--text)' }}>
-                  "{t.quote}"
+                <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 20, color: 'var(--text)' }}>
+                  {"\u201C"}{t.quote}{"\u201D"}
                 </p>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{t.name}</div>
