@@ -218,6 +218,7 @@ export default function AdminDashboard() {
   const [selectedTenant, setSelectedTenant] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
 
   // Load tenants from Supabase (or localStorage fallback), merge with demo data
   const [tenants, setTenants] = useState(DEMO_TENANTS)
@@ -275,16 +276,34 @@ export default function AdminDashboard() {
           <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 56, margin: '0 auto 20px', display: 'block' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Admin Dashboard</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>MyBidQuick Platform Admin</p>
-          <form onSubmit={e => { e.preventDefault(); if (import.meta.env.VITE_ADMIN_PASSWORD && password === import.meta.env.VITE_ADMIN_PASSWORD) setIsAuthenticated(true) }}>
+          <form onSubmit={e => {
+            e.preventDefault()
+            setLoginError('')
+            const envPw = import.meta.env.VITE_ADMIN_PASSWORD
+            if (!envPw) {
+              setLoginError('Admin password not configured. Check VITE_ADMIN_PASSWORD env var in Vercel.')
+              return
+            }
+            if (password === envPw) {
+              setIsAuthenticated(true)
+            } else {
+              setLoginError('Incorrect password. Please try again.')
+            }
+          }}>
             <div className="form-group">
               <input
                 type="password"
                 placeholder="Enter admin password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={e => { setPassword(e.target.value); setLoginError('') }}
                 style={{ textAlign: 'center' }}
               />
             </div>
+            {loginError && (
+              <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 12, fontWeight: 500 }}>
+                {loginError}
+              </p>
+            )}
             <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
               Sign In <ArrowRight size={16} />
             </button>

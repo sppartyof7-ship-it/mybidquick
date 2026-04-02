@@ -15,8 +15,8 @@ const FEATURES = [
   },
   {
     icon: MapPin,
-    title: "Satellite Property View",
-    desc: "Google Maps integration shows customers a satellite image of their property \u2014 builds instant trust and wow factor."
+    title: "Smart Address Lookup",
+    desc: "Google-powered address autocomplete helps customers enter their info fast \u2014 fewer typos, faster quotes, better leads."
   },
   {
     icon: BarChart3,
@@ -53,7 +53,7 @@ const PRICING_TIERS = [
       "Your business name & colors",
     ],
     notIncluded: [
-      "Satellite property images",
+      "Smart address autocomplete",
       "National price comparison",
       "Logo upload",
       "Priority support",
@@ -68,7 +68,7 @@ const PRICING_TIERS = [
     desc: "Everything you need to close more jobs",
     features: [
       "Unlimited quotes",
-      "Satellite property images",
+      "Smart address autocomplete",
       "National price comparison",
       "Your logo + full branding",
       "Lead email notifications",
@@ -114,7 +114,7 @@ const TESTIMONIALS = [
     name: "Sarah Kim",
     company: "Fresh Start Cleaning",
     location: "Portland, OR",
-    quote: "The satellite property view blew my customers away. Our close rate jumped 35% in the first month.",
+    quote: "The branded quoting page blew my customers away. Our close rate jumped 35% in the first month.",
     rating: 5,
     metric: "35% more closes",
   },
