@@ -111,6 +111,25 @@ export async function updateTenantConfig(tenantId, config) {
   return tenants[idx] || { id: tenantId, config }
 }
 
+/**
+ * Update a tenant's profile fields (logo, colors, business name — row-level columns, not config JSON).
+ * Use alongside updateTenantConfig() when saving from the tenant dashboard.
+ */
+export async function updateTenantProfile(tenantId, updates) {
+  // updates can include: { logo_url, primary_color, secondary_color, business_name }
+  if (isSupabaseConnected()) {
+    const { data, error } = await supabase
+      .from('tenants')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', tenantId)
+      .select()
+      .single()
+    if (error) throw error
+    return rowToTenant(data)
+  }
+  return null
+}
+
 // ============================================================================
 // LAUNCH CUSTOMER DISCOUNT
 // ============================================================================

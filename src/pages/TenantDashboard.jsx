@@ -4,9 +4,9 @@ import {
   ArrowLeft, Save, DollarSign, Settings, Mail, Phone, LogOut, Check, Plus, X,
   Eye, Trash2, AlertCircle, Clock, MessageSquare, Home, Zap, TrendingUp,
   ChevronDown, MapPin, Heart, Loader, CreditCard, ShoppingCart, ExternalLink, Gift,
-  BarChart3, Users, Target, Calendar, GripVertical
+  BarChart3, Users, Target, Calendar, GripVertical, Palette, Upload, Image
 } from 'lucide-react'
-import { getTenantByEmail, updateTenantConfig, getLeads, updateLeadStatus, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
+import { getTenantByEmail, updateTenantConfig, updateTenantProfile, uploadLogo, getLeads, updateLeadStatus, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
 import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS, LAUNCH_PACKS, getPacksForTenant } from '../lib/billing'
 
 // ============================================================================
@@ -434,9 +434,27 @@ export default function TenantDashboard() {
     if (tenant && config) {
       setSaving(true)
       try {
+        // Save config JSON
         await updateTenantConfig(tenant.id, config)
-        const updated = { ...tenant, config }
-        setTenant(updated)
+        // Also save row-level profile fields (logo, colors, business name)
+        const profileUpdates = {}
+        if (config.businessName && config.businessName !== tenant.businessName) {
+          profileUpdates.business_name = config.businessName
+        }
+        if (tenant._pendingPrimaryColor !== undefined) {
+          profileUpdates.primary_color = tenant._pendingPrimaryColor
+        }
+        if (tenant._pendingSecondaryColor !== undefined) {
+          profileUpdates.secondary_color = tenant._pendingSecondaryColor
+        }
+        if (Object.keys(profileUpdates).length > 0) {
+          const updatedTenant = await updateTenantProfile(tenant.id, profileUpdates)
+          if (updatedTenant) {
+            setTenant({ ...updatedTenant, config, _pendingPrimaryColor: undefined, _pendingSecondaryColor: undefined })
+          }
+        } else {
+          setTenant({ ...tenant, config })
+        }
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
       } catch (err) {
@@ -445,6 +463,33 @@ export default function TenantDashboard() {
       } finally {
         setSaving(false)
       }
+    }
+  }
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !tenant) return
+    setSaving(true)
+    try {
+      const logoUrl = await uploadLogo(file, tenant.slug)
+      if (logoUrl) {
+        await updateTenantProfile(tenant.id, { logo_url: logoUrl })
+        setTenant({ ...tenant, logo: logoUrl })
+      } else {
+        // Fallback: read as base64
+        const reader = new FileReader()
+        reader.onload = async (evt) => {
+          const base64 = evt.target.result
+          await updateTenantProfile(tenant.id, { logo_url: base64 })
+          setTenant({ ...tenant, logo: base64 })
+        }
+        reader.readAsDataURL(file)
+      }
+    } catch (err) {
+      console.error('Logo upload error:', err)
+      alert('Failed to upload logo. Please try again.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -2234,6 +2279,109 @@ export default function TenantDashboard() {
                         boxSizing: 'border-box',
                       }}
                     />
+                  </div>
+
+                  {/* ---- BRANDING SECTION ---- */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e3a5f', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Palette size={15} /> Branding
+                    </h3>
+
+                    {/* Logo Upload */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8, color: '#1e3a5f' }}>
+                        <Image size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+                        Company Logo
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        {tenant?.logo ? (
+                          <img
+                            src={tenant.logo}
+                            alt="Logo"
+                            style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', padding: 4 }}
+                          />
+                        ) : (
+                          <div style={{ width: 64, height: 64, borderRadius: 8, border: '2px dashed #d4e4f7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f7ff' }}>
+                            <Upload size={20} style={{ color: '#93b5d4' }} />
+                          </div>
+                        )}
+                        <div>
+                          <label style={{
+                            padding: '8px 16px',
+                            borderRadius: 8,
+                            background: '#3b9cff',
+                            color: 'white',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}>
+                            <Upload size={14} /> Upload Logo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
+                          <p style={{ fontSize: 11, color: '#7a9bbc', marginTop: 4 }}>PNG, JPG, or SVG — shown on your quoting page</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Color Pickers */}
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6, color: '#1e3a5f' }}>Primary Color</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="color"
+                            value={tenant?._pendingPrimaryColor ?? tenant?.primaryColor ?? '#3b9cff'}
+                            onChange={e => setTenant({ ...tenant, _pendingPrimaryColor: e.target.value })}
+                            style={{ width: 40, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer', padding: 0 }}
+                          />
+                          <span style={{ fontSize: 13, color: '#64748b', fontFamily: 'monospace' }}>
+                            {tenant?._pendingPrimaryColor ?? tenant?.primaryColor ?? '#3b9cff'}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6, color: '#1e3a5f' }}>Secondary Color</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input
+                            type="color"
+                            value={tenant?._pendingSecondaryColor ?? tenant?.secondaryColor ?? '#1e3a5f'}
+                            onChange={e => setTenant({ ...tenant, _pendingSecondaryColor: e.target.value })}
+                            style={{ width: 40, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer', padding: 0 }}
+                          />
+                          <span style={{ fontSize: 13, color: '#64748b', fontFamily: 'monospace' }}>
+                            {tenant?._pendingSecondaryColor ?? tenant?.secondaryColor ?? '#1e3a5f'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live Preview */}
+                    <div style={{ marginTop: 16, padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff' }}>
+                      <p style={{ fontSize: 11, color: '#7a9bbc', marginBottom: 8 }}>Preview — how your brand looks on the quoting page:</p>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '10px 16px',
+                        borderRadius: 8,
+                        background: tenant?._pendingPrimaryColor ?? tenant?.primaryColor ?? '#3b9cff',
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: 14,
+                      }}>
+                        {tenant?.logo && <img src={tenant.logo} alt="" style={{ width: 28, height: 28, objectFit: 'contain', borderRadius: 4 }} />}
+                        {config.businessName || tenant?.businessName || 'Your Company'}
+                      </div>
+                    </div>
                   </div>
 
                   <div>
