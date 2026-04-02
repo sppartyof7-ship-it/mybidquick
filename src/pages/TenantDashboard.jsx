@@ -1128,7 +1128,7 @@ export default function TenantDashboard() {
         )}
 
         {/* ADMIN TAB */}
-        {activeTab === 'admin' && (
+        {activeTab === 'admin' && config && (
           <div>
             {/* Admin Sub-tabs */}
             <div style={{
@@ -1210,7 +1210,7 @@ export default function TenantDashboard() {
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 16, color: '#1e3a5f' }}>Package Multipliers</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                    {['basic', 'standard', 'premium'].map((pkg, i) => {
+                    {Object.keys(config.packages || {}).map((pkg, i) => {
                       const multipliers = [1, 1.35, 1.75]
                       return (
                         <div key={pkg} style={{
@@ -1223,11 +1223,11 @@ export default function TenantDashboard() {
                             {pkg.charAt(0).toUpperCase() + pkg.slice(1)}
                           </div>
                           <div style={{ fontSize: 20, fontWeight: 800, color: '#3b9cff', marginBottom: 12 }}>
-                            {config.packages[pkg].multiplier}x
+                            {config.packages[pkg]?.multiplier ?? 1}x
                           </div>
                           <input
                             type="number"
-                            value={config.packages[pkg].multiplier}
+                            value={config.packages[pkg]?.multiplier ?? 1}
                             onChange={e => updateConfig(`packages.${pkg}.multiplier`, parseFloat(e.target.value))}
                             step="0.05"
                             style={{
@@ -1241,7 +1241,7 @@ export default function TenantDashboard() {
                           />
                           <input
                             type="text"
-                            value={config.packages[pkg].tagline}
+                            value={config.packages[pkg]?.tagline ?? ''}
                             onChange={e => updateConfig(`packages.${pkg}.tagline`, e.target.value)}
                             placeholder="Tagline"
                             style={{
@@ -1267,8 +1267,16 @@ export default function TenantDashboard() {
                       <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>2 Services Discount %</label>
                       <input
                         type="number"
-                        value={config.bundleDiscounts.twoServices}
-                        onChange={e => updateConfig('bundleDiscounts.twoServices', parseInt(e.target.value))}
+                        value={config.bundleDiscounts?.twoServices ?? config.bundleDiscounts?.['2'] ?? 10}
+                        onChange={e => {
+                          const val = parseInt(e.target.value)
+                          // Support both formats
+                          if ('twoServices' in (config.bundleDiscounts || {})) {
+                            updateConfig('bundleDiscounts.twoServices', val)
+                          } else {
+                            updateConfig('bundleDiscounts.2', val)
+                          }
+                        }}
                         style={{
                           width: '100%',
                           padding: '10px 12px',
@@ -1282,8 +1290,15 @@ export default function TenantDashboard() {
                       <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>3+ Services Discount %</label>
                       <input
                         type="number"
-                        value={config.bundleDiscounts.threeServices}
-                        onChange={e => updateConfig('bundleDiscounts.threeServices', parseInt(e.target.value))}
+                        value={config.bundleDiscounts?.threeServices ?? config.bundleDiscounts?.['3'] ?? 15}
+                        onChange={e => {
+                          const val = parseInt(e.target.value)
+                          if ('threeServices' in (config.bundleDiscounts || {})) {
+                            updateConfig('bundleDiscounts.threeServices', val)
+                          } else {
+                            updateConfig('bundleDiscounts.3', val)
+                          }
+                        }}
                         style={{
                           width: '100%',
                           padding: '10px 12px',
