@@ -269,7 +269,7 @@ See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
 
 **Medium:**
 - [x] Add email format validation in onboarding (regex check + red border feedback)
-- [ ] Deploy billing API endpoints to Vercel (or show "coming soon" message)
+- [x] Deploy billing API endpoints to Vercel (4 endpoints: billing-status, create-checkout, create-portal, webhook)
 
 ### PHASE 3.5 — Lead Pipeline CRM (Started March 28, 2026)
 **Goal**: Track every lead coming through MyBidQuick in a simple 4-stage pipeline, with AI-powered follow-up emails and a visual Kanban board.
@@ -438,41 +438,47 @@ Cleanbid/
 └── public/                    # Static assets (gallery images, etc.)
 ```
 
-### Current Service Pricing (defaults.js — updated 2026-03-29)
-| Service | Base Price | Rate | Unit |
-|---------|-----------|------|------|
-| House Washing | $125 | $0.12/sq ft | sq ft |
-| Window Cleaning | $0 base | Per window (by type & package) | per window |
-| Deck Cleaning | $100 | $0.25/sq ft | sq ft |
-| Concrete Cleaning | $100 | $0.15/sq ft | sq ft |
-| Roof Cleaning | $250 | $0.18/sq ft | sq ft |
-| Gutter Cleaning | $75 | $1.50/lin ft | linear ft |
-| Gutter Guard Install | $0 base | $12.99-22.99/lin ft (by tier) | linear ft |
+### Current Service Pricing (defaults.js — verified 2026-04-03)
+| Service | Base Price | Rate | Unit | Notes |
+|---------|-----------|------|------|-------|
+| House Washing | $125 | $0.15/sq ft | sq ft | Tiered: 100% up to 2k sqft, 67% 2-3k, 47% 3k+ |
+| Window Cleaning | $0 base | Per window (by type & package) | per window | $8/glass door |
+| Deck Cleaning | $75 | $0.40/sq ft | sq ft | maxTier: premium (no Platinum) |
+| Concrete Cleaning | $75 | $0.20/sq ft | sq ft | maxTier: premium (no Platinum) |
+| Roof Cleaning | $150 | $0.10/sq ft | sq ft | |
+| Gutter Cleaning | $50 | $0.85/lin ft | linear ft | maxTier: premium (no Platinum) |
+| Gutter Guard Install | $0 base | $10.99-20.99/lin ft (by tier) | linear ft | |
 
 ### Window Cleaning Pricing (per window, by package)
 | Window Type | Standard | Premium | Platinum |
 |-------------|----------|---------|----------|
-| Casement | $7 | $12 | $18 |
-| Double Hung | $10 | $16 | $22 |
-| Combo/Storm | $18 | $28 | $38 |
+| Casement | $5.50 | $12 | $18 |
+| Double Hung | $8 | $16 | $24 |
+| Combo/Storm | $14 | $28 | $38 |
 
 ### Gutter Guard Tiers
 | Tier | Per Lin Ft | Description |
 |------|-----------|-------------|
-| Basic Install | $12.99 | Guard installation only |
-| Install + Cleaning | $17.99 | Includes full gutter cleaning before install |
-| Full Service | $22.99 | Gutter cleaning, guard install & downspout work |
+| Basic Install | $10.99 | Guard installation only |
+| Install + Cleaning | $15.99 | Includes full gutter cleaning before install |
+| Full Service | $20.99 | Gutter cleaning, guard install & downspout work |
 
 ### Package Multipliers
-- **Standard** (1.0x) — "Get the job done"
-- **Premium** (1.35x) — "Most Popular" (recommended)
-- **Platinum** (1.75x) — "The Full Treatment"
+- **Standard** (1.0x) — "Quality service at a great price"
+- **Premium** (1.25x) — "Our most popular choice" — 7-day spot re-treatment guarantee
+- **Platinum** (1.55x) — "The ultimate clean" — 60-day satisfaction guarantee
+
+### Per-Service Package Selection (added 2026-04-03)
+Customers pick Standard/Premium/Platinum **independently for each service**. Each service card has its own tier picker with bold description card showing what's included. Some services cap at Premium (deck, concrete, gutter cleaning). `servicePackages` state object maps service IDs → tier names. `totalPrice()` computes mixed-tier totals.
+
+### IMPORTANT: Pricing Visibility Rule
+**NEVER show pricing formulas, per-sqft rates, multipliers, or equations to customers.** Customers only see the final dollar amount on the quote review screen. Tim has stated this multiple times — treat it as a hard rule.
 
 ### Smart Cascade Upsell (Engine)
 - Trigger: House Washing selected
 - Upsell 1: Window Cleaning (15% discount)
 - Upsell 2: Gutter Cleaning (15% discount)
-- Bundle discounts: 2 services = 5% off, 3+ services = 10% off
+- Bundle discounts: 2 services = 10% off, 3 = 15%, 4 = 20%, 5 = 25%
 
 ### Tenant Config Structure (in tenant JS files)
 Each tenant file exports: id, businessName, tagline, phone, email, adminPassword, web3formsKey, googlePlacesApiKey, housecallProEnabled, colors (bg, primary, primaryLight, accent, text, textMid, textLight, card, border), logoLetter, logoImage, leadSources[], gallery, marketing config, disabledServices[]
@@ -517,6 +523,9 @@ MyBidQuick gradient: 135deg, #3b9cff → #6dd19e
 | 2026-03-31 | **Repo cleanup for scale**: Full audit + cleanup of both local and GitHub repo. **Deleted**: Nested Cleanbid/ engine copy (139MB), cleanbid-upsell-patch/ (old applied patches), src/App.css (empty), src/assets/ boilerplate (react.svg, vite.svg, hero.png), unused icons (mybidquick-icon.svg/png), root logo dupes (kept public/ copies), garbage files (ziFAvEMC, lock files, AI prompt files). **Organized**: Moved 12 marketing/business docs (xlsx, docx, md, png, html) into `docs/` folder. **Code cleanup**: Removed dead `import './App.css'` from App.jsx. Updated .gitignore with .env, lock file, and OS file patterns. All changes pushed to GitHub — 6 commits, all Vercel builds GREEN. Repo root went from 35+ items to 13 clean items. |
 | 2026-03-31 | **Duplicate webhook cleanup + CRM Phase 3.5**: (1) Confirmed Stripe Dashboard points to `/api/webhook` — deleted duplicate `api/stripe-webhook.js`. (2) **Kanban Board**: Replaced flat lead list with full drag-and-drop Kanban board in TenantDashboard.jsx — 4 columns (New/Contacted/Won/Lost), board+list view toggle, quick-move buttons, stats per stage. (3) **DB Migration**: Updated Supabase `leads` table — changed status check constraint from (pending/won/lost) to (new/contacted/won/lost), migrated 2 existing 'pending' leads to 'new', added `follow_ups_sent` (int array) and `last_follow_up_at` columns. (4) **Auto Follow-Up System**: Created scheduled task `mybidquick-lead-followup` — runs daily at 8am, queries Supabase for leads needing Day 1/3/7 follow-ups, creates Gmail DRAFTS for Tim to review before sending. (5) Created Google Sheet "MyBidQuick — Lead Pipeline CRM" (Sheets write blocked by MCP permissions — manual sync for now). Updated db.js default status from 'pending' to 'new'. |
 | 2026-04-01 | **Follow-up sequence hidden from customers**: Removed the `{config.followUp.enabled && (...)}` block from post-quote confirmation screen (step 4) in mybidquick-engine CustomerFlow.jsx — customers were seeing internal automation details (email immediate, SMS at 2 days). Commit `c943680`, deployed and live on Vercel. **Git CLI fully configured**: GitHub PAT with repo+workflow scope stored at `.github-token`. All future code changes go through `git commit + git push` — retired browser-based CM6 editor workflow. **GitHub Actions CI**: Added `.github/workflows/ci.yml` — runs `npm run build` on every push to main, catches bad builds before Vercel deploys. Commit `782a085`. |
+| 2026-04-01 | **Stripe checkout URL fix + billing toast**: Fixed `create-checkout.js` success/cancel URLs — removed `/#/` hash prefix for BrowserRouter compatibility (was redirecting to wrong page after Stripe payment). Added billing toast notifications to TenantDashboard — on return from Stripe Checkout, shows green "Payment received! X credits will be added shortly" toast on success, or blue "Checkout was cancelled" toast on cancel. Auto-dismisses after 8/5 seconds. Auto-switches to Billing tab. **Email corrections**: Updated all SQL seeds and docs from `tim@clouteinc.com` to `tim.sullivan@clouteinc.com` (AdminDashboard demo data, schema.sql, add-slug.sql, billing-schema.sql, SOFT-LAUNCH-ISSUES.md). Commit `08738e5`. |
+| 2026-04-02 | **Window cleaning tier descriptions**: Updated tierFeatures in mybidquick-engine defaults.js — Standard: "Exterior windows only — outsides cleaned & streak-free", Premium: "Interior & exterior — both sides of every window cleaned", Platinum: "Detailed interior & exterior — windows + tracks, sills, screens & frames". **Tier description cards**: Added colored description box per service showing what each tier includes. **Lead details in dashboard**: Updated `rowToLead()` in db.js to pass through ALL 20+ Supabase fields (address, project type, service details, package prices, extras, bundle, photos, notes). Added SERVICE_NAMES map for friendly display names (pressure_washing → "House Washing"). Both pipeline and list views now show full lead details on expand. |
+| 2026-04-03 | **Per-service package selection SHIPPED**: Replaced global package selector with per-service tier pickers in mybidquick-engine CustomerFlow.jsx. Each service card now has its own Standard/Premium/Platinum buttons. Customers can mix tiers (e.g., Platinum house wash + Standard windows). `servicePackages` state object maps service IDs to tier names. `totalPrice()` computes mixed-tier totals. Services with `maxTier: "premium"` (deck, concrete, gutter) don't show Platinum. **Tier description styling**: Made descriptions bold (14px, 700 weight) inside colored card with "{TIER} — What's Included:" label. Removed old redundant global tier description box. **Notion brain updated**: Corrected all pricing tables to match actual defaults.js (were out of date), added per-service package docs, pricing visibility rule, and session log entries. Engine commits: f4ec533, 40bcbf5. |
 
 ## SEO & Google Search Console
 - **www vs non-www**: All URLs canonicalized to `www.mybidquick.com` (fixed 2026-03-30)
