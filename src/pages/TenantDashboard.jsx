@@ -13,6 +13,19 @@ import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS, LAUNC
 // DEFAULTS & DATA
 // ============================================================================
 
+// Friendly service names (matches engine defaults.js)
+const SERVICE_NAMES = {
+  pressure_washing: 'House Washing',
+  window_cleaning: 'Window Cleaning',
+  deck_cleaning: 'Deck Cleaning',
+  concrete_cleaning: 'Concrete Cleaning',
+  roof_cleaning: 'Roof Cleaning',
+  gutter_cleaning: 'Gutter Cleaning',
+  gutter_guard_install: 'Gutter Guard Installation',
+}
+const svcName = (id) => SERVICE_NAMES[id] || id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+const fmtMoney = (v) => v != null ? `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : ''
+
 // Pipeline stages for the Kanban board
 const PIPELINE_STAGES = [
   { id: 'new', label: 'New', color: '#3b9cff', bg: '#f0f7ff', icon: 'Plus' },
@@ -999,7 +1012,7 @@ export default function TenantDashboard() {
                                   background: '#f0f7ff', color: '#3b9cff',
                                   fontSize: 10, fontWeight: 600,
                                 }}>
-                                  {s}
+                                  {svcName(s)}
                                 </span>
                               ))}
                             </div>
@@ -1018,17 +1031,77 @@ export default function TenantDashboard() {
                               <div style={{
                                 marginTop: 10, paddingTop: 10,
                                 borderTop: '1px solid #e2ecf5',
+                                fontSize: 11, color: '#4a6d94',
                               }}>
-                                <div style={{ fontSize: 11, color: '#7a9bbc', marginBottom: 4 }}>
+                                <div style={{ marginBottom: 4 }}>
                                   <Phone size={10} style={{ marginRight: 4, verticalAlign: -1 }} />{lead.phone}
                                 </div>
-                                {lead.notes && (
-                                  <div style={{ fontSize: 11, color: '#4a6d94', marginBottom: 8, fontStyle: 'italic' }}>
-                                    {lead.notes}
+                                {lead.address && (
+                                  <div style={{ marginBottom: 4 }}>
+                                    <MapPin size={10} style={{ marginRight: 4, verticalAlign: -1 }} />{lead.address}
                                   </div>
                                 )}
+                                {lead.projectType && (
+                                  <div style={{ marginBottom: 4, textTransform: 'capitalize' }}>
+                                    <Home size={10} style={{ marginRight: 4, verticalAlign: -1 }} />{lead.projectType}
+                                  </div>
+                                )}
+
+                                {/* Package price breakdown */}
+                                {lead.packagePrices && Object.keys(lead.packagePrices).length > 0 && (
+                                  <div style={{ marginTop: 6, marginBottom: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    {Object.entries(lead.packagePrices).map(([pkg, price]) => (
+                                      <span key={pkg} style={{
+                                        padding: '2px 6px', borderRadius: 6, fontSize: 10, fontWeight: 600,
+                                        background: pkg === lead.package ? '#3b9cff' : '#f0f7ff',
+                                        color: pkg === lead.package ? 'white' : '#3b9cff',
+                                        textTransform: 'capitalize',
+                                      }}>
+                                        {pkg}: {fmtMoney(price)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Extras */}
+                                {lead.selectedExtras && Object.keys(lead.selectedExtras).length > 0 && (
+                                  <div style={{ marginBottom: 4 }}>
+                                    <span style={{ fontWeight: 600 }}>Extras: </span>
+                                    {Object.entries(lead.selectedExtras).map(([svcId, extras]) =>
+                                      Object.entries(extras).filter(([, v]) => v).map(([extraId]) => (
+                                        <span key={`${svcId}-${extraId}`} style={{
+                                          padding: '1px 5px', borderRadius: 4, background: '#fff3e0',
+                                          color: '#e65100', fontSize: 10, fontWeight: 600, marginRight: 4,
+                                        }}>
+                                          {extraId.replace(/_/g, ' ')}
+                                        </span>
+                                      ))
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Bundle discount */}
+                                {lead.bundleApplied && (
+                                  <div style={{ marginBottom: 4, color: '#16a34a', fontWeight: 600 }}>
+                                    🎉 Bundle: {lead.bundleApplied.name || `${lead.bundleApplied.discount}% off`}
+                                  </div>
+                                )}
+
+                                {lead.notes && (
+                                  <div style={{ marginBottom: 6, fontStyle: 'italic', color: '#4a6d94' }}>
+                                    "{lead.notes}"
+                                  </div>
+                                )}
+
+                                {/* Photos count */}
+                                {lead.photos && lead.photos.length > 0 && (
+                                  <div style={{ marginBottom: 6, fontSize: 10, color: '#7a9bbc' }}>
+                                    📷 {lead.photos.length} photo{lead.photos.length !== 1 ? 's' : ''} uploaded
+                                  </div>
+                                )}
+
                                 {/* Quick-move buttons */}
-                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
                                   {PIPELINE_STAGES.filter(s => s.id !== lead.status).map(s => (
                                     <button
                                       key={s.id}
@@ -1122,13 +1195,14 @@ export default function TenantDashboard() {
                                   padding: '3px 10px', borderRadius: 12,
                                   background: '#f0f7ff', color: '#3b9cff',
                                   fontSize: 12, fontWeight: 600,
-                                }}>{s}</span>
+                                }}>{svcName(s)}</span>
                               ))}
                             </div>
-                            <div style={{ fontSize: 12, color: '#4a6d94', display: 'flex', gap: 16 }}>
-                              <span>{lead.package} {'\u2022'} {lead.date}</span>
-                              <span>Source: {lead.source}</span>
+                            <div style={{ fontSize: 12, color: '#4a6d94', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                              <span style={{ textTransform: 'capitalize' }}>{lead.package} {'\u2022'} {lead.date}</span>
+                              {lead.source && <span>Source: {lead.source}</span>}
                               <span style={{ fontWeight: 700, color: '#3b9cff' }}>${lead.total}</span>
+                              {lead.projectType && <span style={{ textTransform: 'capitalize' }}>🏡 {lead.projectType}</span>}
                             </div>
                           </div>
                           <ChevronDown size={20} color="#7a9bbc" style={{
@@ -1139,12 +1213,85 @@ export default function TenantDashboard() {
 
                         {expandedLead === lead.id && (
                           <div style={{ borderTop: '1px solid #d4e4f7', padding: 24, background: '#f8fbff' }}>
-                            {lead.notes && (
+                            {/* Contact & Address */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                              {lead.address && (
+                                <div>
+                                  <div style={{ fontWeight: 600, fontSize: 12, color: '#1e3a5f', marginBottom: 4 }}>Address</div>
+                                  <div style={{ fontSize: 13, color: '#4a6d94' }}><MapPin size={12} style={{ marginRight: 4, verticalAlign: -2 }} />{lead.address}</div>
+                                </div>
+                              )}
+                              {lead.email && (
+                                <div>
+                                  <div style={{ fontWeight: 600, fontSize: 12, color: '#1e3a5f', marginBottom: 4 }}>Email</div>
+                                  <div style={{ fontSize: 13, color: '#4a6d94' }}>{lead.email}</div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Package price breakdown */}
+                            {lead.packagePrices && Object.keys(lead.packagePrices).length > 0 && (
                               <div style={{ marginBottom: 16 }}>
-                                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e3a5f', marginBottom: 8 }}>Notes</div>
-                                <p style={{ color: '#4a6d94', fontSize: 13 }}>{lead.notes}</p>
+                                <div style={{ fontWeight: 600, fontSize: 12, color: '#1e3a5f', marginBottom: 8 }}>All Package Prices</div>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                  {Object.entries(lead.packagePrices).map(([pkg, price]) => (
+                                    <div key={pkg} style={{
+                                      padding: '8px 14px', borderRadius: 10,
+                                      background: pkg === lead.package ? '#3b9cff' : '#f0f7ff',
+                                      color: pkg === lead.package ? 'white' : '#1e3a5f',
+                                      textAlign: 'center', minWidth: 90,
+                                    }}>
+                                      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize', marginBottom: 2 }}>{pkg}</div>
+                                      <div style={{ fontSize: 16, fontWeight: 800 }}>{fmtMoney(price)}</div>
+                                      {pkg === lead.package && <div style={{ fontSize: 9, opacity: 0.8, marginTop: 2 }}>SELECTED</div>}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
+
+                            {/* Extras */}
+                            {lead.selectedExtras && Object.keys(lead.selectedExtras).length > 0 && (
+                              <div style={{ marginBottom: 16 }}>
+                                <div style={{ fontWeight: 600, fontSize: 12, color: '#1e3a5f', marginBottom: 8 }}>Add-Ons Selected</div>
+                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                  {Object.entries(lead.selectedExtras).map(([svcId, extras]) =>
+                                    Object.entries(extras).filter(([, v]) => v).map(([extraId]) => (
+                                      <span key={`${svcId}-${extraId}`} style={{
+                                        padding: '4px 10px', borderRadius: 8, background: '#fff3e0',
+                                        color: '#e65100', fontSize: 12, fontWeight: 600,
+                                      }}>
+                                        {extraId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                      </span>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Bundle discount */}
+                            {lead.bundleApplied && (
+                              <div style={{ marginBottom: 16, padding: '8px 14px', borderRadius: 8, background: '#f0fdf4', color: '#16a34a', fontWeight: 600, fontSize: 13 }}>
+                                🎉 Bundle Applied: {lead.bundleApplied.name || `${lead.bundleApplied.discount}% off`}
+                              </div>
+                            )}
+
+                            {/* Notes */}
+                            {lead.notes && (
+                              <div style={{ marginBottom: 16 }}>
+                                <div style={{ fontWeight: 600, fontSize: 12, color: '#1e3a5f', marginBottom: 8 }}>Customer Notes</div>
+                                <p style={{ color: '#4a6d94', fontSize: 13, fontStyle: 'italic', margin: 0 }}>"{lead.notes}"</p>
+                              </div>
+                            )}
+
+                            {/* Photos */}
+                            {lead.photos && lead.photos.length > 0 && (
+                              <div style={{ marginBottom: 16, fontSize: 13, color: '#4a6d94' }}>
+                                📷 {lead.photos.length} photo{lead.photos.length !== 1 ? 's' : ''} uploaded by customer
+                              </div>
+                            )}
+
+                            {/* Move buttons */}
                             <div style={{ display: 'flex', gap: 8 }}>
                               {PIPELINE_STAGES.filter(s => s.id !== lead.status).map(s => (
                                 <button
