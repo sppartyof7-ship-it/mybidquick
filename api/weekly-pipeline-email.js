@@ -238,6 +238,9 @@ function generateEmailHTML(tenant, pipelineData, weekRange) {
       <p><strong>MyBidQuick</strong></p>
       <p><a href="mailto:tim@mybidquick.com">tim@mybidquick.com</a></p>
       <p style="margin-top: 12px; opacity: 0.7;">Copyright © 2026 MyBidQuick. All rights reserved.</p>
+      <p style="margin-top: 8px; opacity: 0.5; font-size: 12px;">
+        Don't want these emails? Reply to this email with "unsubscribe" and we'll remove you from future reports.
+      </p>
     </div>
   </div>
 </body>
@@ -293,7 +296,7 @@ async function getPipelineData(tenantId) {
   const pending = leads.filter(l => l.status === 'pending').length
   const won = leads.filter(l => l.status === 'won').length
   const lost = leads.filter(l => l.status === 'lost').length
-  const contacted = won + lost // Contacted = won + lost (those with final status)
+  const contacted = leads.filter(l => l.status === 'contacted').length
 
   const totalRevenue = leads
     .filter(l => l.status === 'won')
@@ -316,10 +319,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get all active tenants
+    // 1. Get all active tenants (skip those who opted out of emails)
     const { data: tenants, error: tenantsErr } = await supabase
       .from('tenants')
-      .select('id, business_name, owner_name, email')
+      .select('id, business_name, owner_name, email, email_opt_out')
+      .or('email_opt_out.is.null,email_opt_out.eq.false')
 
     if (tenantsErr) throw tenantsErr
 

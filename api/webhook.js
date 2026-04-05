@@ -7,10 +7,14 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
-)
+
+// Server-side functions should use the service role key (bypasses RLS).
+// Falls back to anon key if service role key is not configured yet.
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('⚠️  webhook.js: SUPABASE_SERVICE_ROLE_KEY not set — using anon key (will break when RLS is tightened)')
+}
+const supabase = createClient(process.env.VITE_SUPABASE_URL, supabaseKey)
 
 // Vercel serverless config: disable body parsing so we get raw body for signature verification
 export const config = { api: { bodyParser: false } }

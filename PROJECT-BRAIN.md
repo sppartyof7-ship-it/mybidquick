@@ -358,8 +358,9 @@ See Notion: [Exterior Cleaning Expansion — Product & Marketing Research](https
 
 ### Engine (cleanbid Vercel project)
 - `*.mybidquick.com` → wildcard routes to quoting engine (configured 2026-03-31)
-- `cloute-cleaning.mybidquick.com` → Cloute Cleaning quoting page
-- `cornerstone.mybidquick.com` → Cornerstone quoting page
+- `cloute-cleaning.mybidquick.com` → Cloute Exterior Cleaning quoting page (Tim Sullivan)
+- `cornerstone-wash-and-window-cleaning.mybidquick.com` → Cornerstone Wash & Window Cleaning (Noah Baldry)
+- `county-wide-power-wash-and-restorations.mybidquick.com` → County Wide Power Wash (Steven)
 - `cleanbid.vercel.app` → legacy fallback (still works)
 - Specific domains (`www.mybidquick.com`, etc.) take priority over wildcard on Vercel
 
