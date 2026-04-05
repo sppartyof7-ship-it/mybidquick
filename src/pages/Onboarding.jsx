@@ -86,7 +86,9 @@ function saveProgress(step, form, logoPreview) {
 }
 
 function clearProgress() {
-  try { sessionStorage.removeItem(STORAGE_KEY) } catch {}
+  try { sessionStorage.removeItem(STORAGE_KEY) } catch {
+    // Silent fail - storage may not be available
+  }
 }
 
 export default function Onboarding() {
@@ -234,7 +236,7 @@ export default function Onboarding() {
     let isLaunchCustomer = false
     if (form.discountCode === 'LAUNCH20') {
       try {
-        const { isFull, spotsLeft } = await getLaunchCustomerCount()
+        const { isFull, spotsLeft: _spotsLeft } = await getLaunchCustomerCount()
         if (isFull) {
           setLaunchError('Sorry, the LAUNCH20 code has reached its limit of 20 customers. You can still sign up at regular pricing!')
           setLaunching(false)

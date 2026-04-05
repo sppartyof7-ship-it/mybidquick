@@ -43,7 +43,7 @@ export default function Login() {
     try {
       await resetPassword(email)
       setResetSent(true)
-    } catch (err) {
+    } catch {
       setError('Could not send reset email. Please check the address.')
     } finally {
       setLoading(false)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Save, DollarSign, Settings, Mail, Phone, LogOut, Check, Plus, X,
@@ -287,7 +287,6 @@ function updateNestedConfig(config, path, value) {
 
 export default function TenantDashboard() {
   const navigate = useNavigate()
-  const fileInputRef = useRef(null)
 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loginEmail, setLoginEmail] = useState('')
@@ -1402,8 +1401,7 @@ export default function TenantDashboard() {
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 16, color: '#1e3a5f' }}>Package Multipliers</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                    {Object.keys(config.packages || {}).map((pkg, i) => {
-                      const multipliers = [1, 1.35, 1.75]
+                    {Object.keys(config.packages || {}).map((pkg) => {
                       return (
                         <div key={pkg} style={{
                           border: '1px solid #d4e4f7',
@@ -3121,6 +3119,110 @@ export default function TenantDashboard() {
                 ))}
               </div>
 
+              {/* Conversion Funnel */}
+              {(() => {
+                const newCount = leads.filter(l => l.status === 'new').length
+                const contactedCount = leads.filter(l => l.status === 'contacted').length
+                const wonCount = leads.filter(l => l.status === 'won').length
+                const lostCount = leads.filter(l => l.status === 'lost').length
+
+                // Calculate conversion percentages
+                const newToContactedPct = newCount > 0 ? ((contactedCount / newCount) * 100) : 0
+                const contactedToWonPct = contactedCount > 0 ? ((wonCount / contactedCount) * 100) : 0
+                const newToWonPct = newCount > 0 ? ((wonCount / newCount) * 100) : 0
+
+                // Dropout rates
+                const newDropout = 100 - newToContactedPct
+                const contactedDropout = 100 - contactedToWonPct
+
+                return (
+                  <div style={{
+                    background: 'white', borderRadius: 16, padding: 24,
+                    border: '1px solid #e2ecf5', marginBottom: 24,
+                    boxShadow: '0 2px 8px rgba(59, 156, 255, 0.06)',
+                  }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 4 }}>Conversion Funnel</div>
+                    <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 24 }}>Lead progression through your sales pipeline</div>
+
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      {/* Stage 1: New */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #3b9cff, #0066cc)',
+                          borderRadius: 12, padding: 16, marginBottom: 8,
+                          color: 'white', textAlign: 'center',
+                        }}>
+                          <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{newCount}</div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>New Leads</div>
+                        </div>
+                      </div>
+
+                      {/* Arrow + Conversion % */}
+                      <div style={{ flex: 0.6, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingTop: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', marginBottom: 6 }}>
+                          {newToContactedPct.toFixed(0)}%
+                        </div>
+                        <div style={{ fontSize: 20, color: '#3b9cff', marginBottom: 4 }}>→</div>
+                        <div style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>
+                          {newDropout.toFixed(0)}% lost
+                        </div>
+                      </div>
+
+                      {/* Stage 2: Contacted */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #ffa500, #ff8c00)',
+                          borderRadius: 12, padding: 16, marginBottom: 8,
+                          color: 'white', textAlign: 'center',
+                        }}>
+                          <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{contactedCount}</div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>Contacted</div>
+                        </div>
+                      </div>
+
+                      {/* Arrow + Conversion % */}
+                      <div style={{ flex: 0.6, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingTop: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', marginBottom: 6 }}>
+                          {contactedToWonPct.toFixed(0)}%
+                        </div>
+                        <div style={{ fontSize: 20, color: '#3b9cff', marginBottom: 4 }}>→</div>
+                        <div style={{ fontSize: 10, color: '#ef4444', fontWeight: 600 }}>
+                          {contactedDropout.toFixed(0)}% lost
+                        </div>
+                      </div>
+
+                      {/* Stage 3: Won */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                          borderRadius: 12, padding: 16, marginBottom: 8,
+                          color: 'white', textAlign: 'center',
+                        }}>
+                          <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{wonCount}</div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>Won</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary metrics */}
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #e2ecf5', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 4 }}>Total Lost</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: '#ef4444' }}>{lostCount}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 4 }}>New → Won</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: '#22c55e' }}>{newToWonPct.toFixed(0)}%</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 4 }}>Total Leads</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: '#1e3a5f' }}>{totalQuotes}</div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
               {!hasData && (
                 <div style={{
                   background: 'white', borderRadius: 16, padding: 48, textAlign: 'center',
@@ -3136,6 +3238,90 @@ export default function TenantDashboard() {
 
               {hasData && (
                 <>
+                  {/* ROI Summary Card */}
+                  {(() => {
+                    const wonCount = leads.filter(l => l.status === 'won').length
+                    const costPerLeadDollars = tenant?.leadPriceCents ? (tenant.leadPriceCents / 100) : 5.00
+                    const totalCreditCost = totalQuotes * costPerLeadDollars
+                    const revenuePerLead = totalQuotes > 0 ? (totalRevenue / totalQuotes) : 0
+                    const roiValue = totalCreditCost > 0 ? (((totalRevenue - totalCreditCost) / totalCreditCost) * 100) : 0
+                    const creditsRemaining = billing?.credits ?? null
+
+                    return (
+                      <div style={{
+                        background: 'white', borderRadius: 16, padding: 24,
+                        border: '1px solid #e2ecf5', marginBottom: 24,
+                        boxShadow: '0 2px 8px rgba(59, 156, 255, 0.06)',
+                      }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 4 }}>ROI Summary</div>
+                        <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 20 }}>Lead cost, revenue, and return on investment</div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                          {/* Cost per Lead */}
+                          <div style={{
+                            background: '#f8fafc', borderRadius: 12, padding: 16, border: '1px solid #e2ecf5',
+                          }}>
+                            <div style={{ fontSize: 12, color: '#7a9bbc', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                              Cost per Lead
+                            </div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: '#1e3a5f', marginBottom: 4 }}>
+                              ${costPerLeadDollars.toFixed(2)}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#7a9bbc' }}>
+                              Total spent: ${totalCreditCost.toFixed(2)}
+                            </div>
+                          </div>
+
+                          {/* Revenue per Lead */}
+                          <div style={{
+                            background: '#f8fafc', borderRadius: 12, padding: 16, border: '1px solid #e2ecf5',
+                          }}>
+                            <div style={{ fontSize: 12, color: '#7a9bbc', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                              Revenue per Lead
+                            </div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: '#22c55e', marginBottom: 4 }}>
+                              ${revenuePerLead.toFixed(0)}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#7a9bbc' }}>
+                              From {wonCount} won leads
+                            </div>
+                          </div>
+
+                          {/* ROI Percentage */}
+                          <div style={{
+                            background: roiValue >= 0 ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' : 'linear-gradient(135deg, #fee2e2, #fecaca)',
+                            borderRadius: 12, padding: 16, border: `1px solid ${roiValue >= 0 ? '#86efac' : '#fca5a5'}`,
+                          }}>
+                            <div style={{ fontSize: 12, color: roiValue >= 0 ? '#166534' : '#991b1b', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                              ROI
+                            </div>
+                            <div style={{ fontSize: 26, fontWeight: 800, color: roiValue >= 0 ? '#16a34a' : '#dc2626', marginBottom: 4 }}>
+                              {roiValue >= 0 ? '+' : ''}{roiValue.toFixed(0)}%
+                            </div>
+                            <div style={{ fontSize: 11, color: roiValue >= 0 ? '#166534' : '#991b1b' }}>
+                              Return on lead credits
+                            </div>
+                          </div>
+
+                          {/* Credits Remaining */}
+                          <div style={{
+                            background: '#f8fafc', borderRadius: 12, padding: 16, border: '1px solid #e2ecf5',
+                          }}>
+                            <div style={{ fontSize: 12, color: '#7a9bbc', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                              Credits Left
+                            </div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: '#3b9cff', marginBottom: 4 }}>
+                              {creditsRemaining !== null ? creditsRemaining : '—'}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#7a9bbc' }}>
+                              {creditsRemaining !== null ? `${creditsRemaining === 1 ? '1 lead' : creditsRemaining + ' leads'} remaining` : 'Loading...'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   {/* Quote Volume Chart */}
                   <div style={{
                     background: 'white', borderRadius: 16, padding: 24,
@@ -3257,7 +3443,7 @@ export default function TenantDashboard() {
                         <div style={{ fontSize: 13, color: '#7a9bbc', textAlign: 'center', padding: 20 }}>No service data yet</div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                          {topServices.map(([name, count], i) => (
+                          {topServices.map(([name, count]) => (
                             <div key={name}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                                 <span style={{ fontSize: 13, fontWeight: 600, color: '#1e3a5f' }}>{name}</span>
@@ -3292,7 +3478,7 @@ export default function TenantDashboard() {
                       <div style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 4 }}>Revenue by Service</div>
                       <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 20 }}>Estimated revenue split across services (from won leads)</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {serviceRevEntries.map(([name, rev], i) => (
+                        {serviceRevEntries.map(([name, rev]) => (
                           <div key={name}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                               <span style={{ fontSize: 13, fontWeight: 600, color: '#1e3a5f' }}>{name}</span>

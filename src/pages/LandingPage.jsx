@@ -167,7 +167,7 @@ const STATS = [
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [email, _setEmail] = useState('')
 
   const handleGetStarted = (e) => {
     e?.preventDefault()

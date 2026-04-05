@@ -86,7 +86,6 @@ export default function TenantPublicPage({ slug }) {
 
   // Build the engine URL for this tenant's quote page
   // The mybidquick-engine (Cleanbid) is deployed separately
-  const engineBaseUrl = import.meta.env.VITE_ENGINE_URL || 'https://cleanbid.vercel.app'
   const engineUrl = `https://${tenant.slug}.mybidquick.com`
 
   const primaryColor = tenant.primaryColor || '#2563eb'

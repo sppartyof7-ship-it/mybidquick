@@ -683,8 +683,280 @@ MyBidQuick makes the instant quoting part automatic. You set your prices once. C
     cta: "Ready to start getting free pressure washing leads?",
     ctaButton: "Get Your Instant Quoting Tool Free",
     ctaLink: "/signup"
-  }
-}
+  },
+
+  'mybidquick-vs-jobber': {
+    title: "MyBidQuick vs Jobber: Which Is Best for Your Cleaning Company?",
+    date: "April 5, 2026",
+    readTime: "6 min read",
+    author: "Tim Sullivan",
+    metaDescription: "Compare MyBidQuick and Jobber for cleaning companies. See pricing, features, ease of use, and which platform is best for your business model.",
+    heroEmoji: "⚖️",
+    sections: [
+      {
+        heading: "MyBidQuick vs Jobber: What's the Difference?",
+        content: `If you're running a cleaning company in 2026, you've probably heard of both MyBidQuick and Jobber. They're two of the most popular platforms for exterior cleaning businesses. But they solve different problems.
+
+Jobber is a full-featured field service software platform. It's designed to manage jobs, schedule crews, track invoices, and handle customer communication for service companies of all kinds  - plumbing, HVAC, landscaping, cleaning, and more.
+
+MyBidQuick is built specifically for instant quoting and lead generation for exterior cleaning companies. It's a specialized tool that makes it dead-simple to give customers instant quotes with professional branding, tiered pricing, and upsells.
+
+Both have their place. But the best choice depends on your business needs.`
+      },
+      {
+        heading: "Jobber: Full-Featured Job Management",
+        content: `Jobber does a lot. It's a comprehensive platform:
+
+You can create quotes, manage scheduling, handle invoicing and payments, track crew GPS, send automated customer reminders, and more. If you need a complete software ecosystem to run your entire business, Jobber has it.
+
+Jobber is also popular because it integrates with many other platforms and has a strong mobile app for crews in the field.
+
+The downside? Jobber requires a monthly subscription. Pricing typically ranges from $35-$150+ per month depending on features and team size. That's a fixed cost every month whether you book jobs or not.
+
+Also, while Jobber can handle quoting, it's not specifically designed for instant customer-facing quotes. It's more of a tool you use internally after you've already talked to the customer.`
+      },
+      {
+        heading: "MyBidQuick: Instant Quotes + Lead Generation",
+        content: `MyBidQuick takes a different approach. Instead of trying to be everything, it focuses on the one thing that matters most: getting customers to say yes.
+
+You set your pricing once. Customers visit your branded quote page, enter their address, select services, and get an instant professional quote in under 60 seconds. You capture their name, email, address, and phone number. Done.
+
+MyBidQuick handles the quoting, pricing, tiered packages, and smart upsells (House Wash → Windows → Gutters). Every quote includes a satellite image of the customer's property and displays how your pricing compares to national averages.
+
+Instead of monthly subscriptions, MyBidQuick uses a simple pay-per-lead model. You only pay when you get a lead. Credit packs start at just $25 for 10 leads, scaling up to $150 for 100 leads. No monthly fees. No contracts. No surprise bills.
+
+The tradeoff? MyBidQuick is built specifically for quoting and lead capture. It doesn't handle crew scheduling, invoicing, or field management. You'll still need a way to manage jobs once you've booked them.`
+      },
+      {
+        heading: "The Real Difference: Monthly Fees vs Pay-Per-Lead",
+        content: `Here's the core difference that matters most:
+
+With Jobber, you pay $35-$150+ per month no matter what. In slow months when you're only booking 5 jobs, you're still paying full price. That's $420-$1,800 per year in fixed costs.
+
+With MyBidQuick, you only pay for leads. If you book 20 jobs this month from 50 quotes at $50 per credit pack, you're paying based on actual lead volume. Slow month? Fewer leads generated, lower cost.
+
+For a cleaning company doing 100+ jobs per year, the math often favors Jobber's ecosystem approach. You're getting more features and spreading that fixed cost across many jobs.
+
+For a smaller company or one just starting out, MyBidQuick's pay-per-lead model means you don't have to pay upfront for software while you're building your customer base.`
+      },
+      {
+        heading: "Which Should You Choose?",
+        content: `Choose Jobber if:
+- You need comprehensive job management, scheduling, and crew tracking
+- You want to manage everything in one platform
+- You don't mind paying a monthly subscription regardless of volume
+- You're already familiar with field service management software
+
+Choose MyBidQuick if:
+- You want to double your quote conversion rate with instant, professional quotes
+- You need white-labeled branding that shows YOUR logo and colors
+- You prefer paying only for leads, not for unused software features
+- You want smart upsell cascades that increase your average ticket size
+- You're focused on winning more customers first, then managing operations
+
+Many cleaning companies use both. They use MyBidQuick for instant quoting and lead generation, then transfer booked jobs into Jobber (or another system) for scheduling and crew management. It's a powerful combination.`
+      },
+      {
+        heading: "The Bottom Line",
+        content: `Jobber is a tool for managing jobs you've already booked. MyBidQuick is a tool for getting more customers to book in the first place.
+
+Most cleaning companies don't struggle with job management  - they struggle with lead generation and quote conversion. That's where MyBidQuick shines.
+
+If your biggest challenge is "I don't have enough jobs," MyBidQuick is the answer. If your biggest challenge is "I have too many jobs to manage," Jobber is worth the monthly investment.
+
+The best companies in 2026 use MyBidQuick to fill their pipeline and Jobber to manage the work.`
+      }
+    ],
+    cta: "Ready to fill your pipeline with qualified leads?",
+    ctaButton: "Try MyBidQuick Free",
+    ctaLink: "/signup"
+  },
+
+  'mybidquick-vs-housecall-pro': {
+    title: "MyBidQuick vs Housecall Pro: The Best Quoting Tool for Cleaning Companies",
+    date: "April 5, 2026",
+    readTime: "6 min read",
+    author: "Tim Sullivan",
+    metaDescription: "MyBidQuick vs Housecall Pro comparison for cleaning companies. Pricing, features, ease of use, and which platform wins for instant quoting.",
+    heroEmoji: "🏠",
+    sections: [
+      {
+        heading: "Housecall Pro: The Established Giant",
+        content: `Housecall Pro has been around for years and is popular with home service companies. It's a full business management platform similar to Jobber  - quoting, scheduling, invoicing, customer management, and payments all in one place.
+
+Housecall Pro is known for being intuitive and mobile-friendly. If you want a complete software solution to run your entire operation, Housecall Pro delivers that.
+
+Like Jobber, Housecall Pro requires a monthly subscription. Pricing starts around $49/month and goes up from there depending on team size and features.
+
+The quoting feature in Housecall Pro works, but it's designed as an internal tool for your team to build quotes. It's not designed for instant customer-facing quotes on your website.`
+      },
+      {
+        heading: "MyBidQuick: Built for Instant Customer Quotes",
+        content: `MyBidQuick takes a different philosophy. Instead of being a general field service platform, it's specifically optimized for one thing: letting customers get instant quotes on your website.
+
+With MyBidQuick, your customer goes to your custom-branded quote page, enters their address, selects services, sees tiered packages (Standard/Premium/Platinum), gets an instant price, and provides their contact info. The whole process takes 60 seconds.
+
+That customer is now a lead in your system with their full contact information and the services they're interested in. You follow up with them to book the job.
+
+MyBidQuick includes features that matter specifically to cleaning companies:
+- White-label branded pages at your custom subdomain
+- Satellite property images so customers see their own house being quoted
+- Tiered service packages with smart upsells
+- Pricing comparisons to national averages
+- Mobile-optimized design (70%+ of quotes come from mobile)
+- No monthly subscription  - just pay per lead you generate
+
+The downside is that MyBidQuick focuses on quoting and lead capture. Once a job is booked, you'll need another tool to manage scheduling, invoicing, and crew coordination.`
+      },
+      {
+        heading: "The Lead Generation Advantage",
+        content: `Here's where the two platforms diverge fundamentally:
+
+Housecall Pro is a back-office tool. Your team uses it. You build quotes internally, send them to customers via email or text, manage schedules, handle payments.
+
+MyBidQuick is a customer-facing tool. Customers use it directly. They get instant quotes on your website, without ever having to call you or email you or fill out a form. They just enter their address and get a price.
+
+This creates a massive lead generation advantage. Studies show that instant quotes convert at 2-3x higher rates than traditional "call for estimate" funnels. Customers get their answer immediately, you get their contact info immediately.
+
+Housecall Pro requires customers to wait for you to build a quote and send it back. MyBidQuick lets customers self-serve instantly.`
+      },
+      {
+        heading: "Pricing: Monthly Subscription vs Pay-Per-Lead",
+        content: `Housecall Pro: $49-$99+ per month, minimum $588-$1,188 per year
+
+MyBidQuick: Pay per lead you generate. Credit packs start at $25 for 10 leads, scaling to $150 for 100 leads. No monthly fees. No contracts.
+
+For a small company doing 20-30 jobs per month, Housecall Pro's monthly subscription might feel expensive. You're locked into a $588+ annual cost regardless of seasonal fluctuations.
+
+With MyBidQuick, you control the cost. Slow month? Generate fewer leads, pay less. Busy month? Scale up quote volume as needed.`
+      },
+      {
+        heading: "Should You Use Both?",
+        content: `Yes. Many successful cleaning companies do.
+
+They use MyBidQuick to generate leads and capture customers at the moment they're ready to buy (instant quote on your website). Then they use Housecall Pro (or Jobber, or ServiceTitan) to manage the actual job: scheduling crews, invoicing, tracking payment.
+
+MyBidQuick handles the top of the funnel (lead generation). Your other software handles the bottom of the funnel (job management).
+
+This combination is powerful because you're optimizing each step of the process with purpose-built tools instead of forcing one platform to do everything.`
+      },
+      {
+        heading: "The Winner: It Depends on Your Priority",
+        content: `If your biggest challenge is: "How do I manage all my jobs, scheduling, and crews efficiently?"
+Answer: Housecall Pro wins. It's the better all-in-one platform.
+
+If your biggest challenge is: "How do I get more customers to say yes and book with me?"
+Answer: MyBidQuick wins. It's built specifically to close more jobs through instant quoting.
+
+Most cleaning companies prioritize the second challenge. You can't manage jobs you don't have. Lead generation comes first. Operations management comes second.
+
+That's why MyBidQuick is winning with cleaning companies in 2026. It solves the top-of-funnel problem that every home service company faces: getting customers to commit.`
+      }
+    ],
+    cta: "Stop losing leads to slow quote processes.",
+    ctaButton: "Get Instant Quotes in 60 Seconds",
+    ctaLink: "/signup"
+  },
+
+  'mybidquick-vs-responsibid': {
+    title: "MyBidQuick vs ResponsiBid: Which Quoting Platform Wins for Cleaning?",
+    date: "April 5, 2026",
+    readTime: "6 min read",
+    author: "Tim Sullivan",
+    metaDescription: "Compare MyBidQuick and ResponsiBid quoting platforms for cleaning companies. Pricing, features, white-labeling, and which is right for your business.",
+    heroEmoji: "💼",
+    sections: [
+      {
+        heading: "ResponsiBid: The Established Quoting Platform",
+        content: `ResponsiBid is a quoting platform that's been around for years, primarily serving roofing, insurance restoration, and home improvement contractors.
+
+Like MyBidQuick, ResponsiBid focuses specifically on quoting and doesn't try to be a full job management platform. You use it to generate professional quotes, share them with customers, and capture leads.
+
+ResponsiBid is known for detailed, complex quotes with photos, measurements, and itemized pricing  - which works great for roofing estimates or insurance claims where precision matters.
+
+The downside for cleaning companies is that ResponsiBid was built for a different industry. It's overkill for the simplicity that cleaning services need, and it comes with a monthly subscription cost.`
+      },
+      {
+        heading: "MyBidQuick: Purpose-Built for Cleaning Companies",
+        content: `MyBidQuick was built from the ground up specifically for exterior cleaning companies. Not roofing. Not HVAC. Not general home improvement. Cleaning.
+
+This focused approach means MyBidQuick understands the unique needs of cleaning companies:
+- House washing, pressure washing, gutter cleaning, window cleaning  - all with industry-standard pricing tiers
+- Smart upsell cascades (House Wash → Windows → Gutters) that increase average ticket size
+- Satellite property images showing customers their actual house being quoted
+- Mobile-first design (critical because 70%+ of cleaning customers get quotes on their phones)
+- White-label branded pages at your custom subdomain
+- Built-in CRM and lead management
+- No contracts. Pay only for leads.
+
+Because MyBidQuick is specialized, it's simpler. You're not paying for complex features you'll never use.`
+      },
+      {
+        heading: "Quote Complexity: When Simple Wins",
+        content: `ResponsiBid's strength is handling complex, detailed quotes. Perfect for a $50,000 roof replacement where you need itemized pricing, material breakdowns, insurance estimates, and photo documentation.
+
+A cleaning company doesn't need that complexity. You're quoting house washes at $350, gutter cleaning at $200, window cleaning at $150. You need speed and simplicity, not itemization.
+
+MyBidQuick knows this. It's stripped down to exactly what cleaning companies need. Enter address, select services, see price. Done.
+
+This simplicity is a feature, not a limitation. It means your customers can get a quote in 60 seconds instead of filling out a 10-field form.`
+      },
+      {
+        heading: "The White-Labeling Difference",
+        content: `Both platforms offer white-labeling, but MyBidQuick does it better for cleaning companies.
+
+With MyBidQuick, your quotes appear at your own custom subdomain (like quotes.yourcompany.com). It's fully branded with your logo, colors, and business name. Customers never know they're using a third-party tool.
+
+ResponsiBid also offers white-labeling, but the experience is more generic because the platform wasn't designed with cleaning companies in mind.
+
+White-labeling matters because it builds your brand. When a customer sees "John's Pressure Washing" on their quote page, not "ResponsiBid," they're thinking about your company, not a software platform.`
+      },
+      {
+        heading: "Pricing: Monthly vs Pay-Per-Lead",
+        content: `ResponsiBid requires a monthly subscription. Typical pricing ranges from $79-$199+ per month depending on features.
+
+That's $948-$2,388 per year in fixed costs, whether you generate 20 leads or 200 leads.
+
+MyBidQuick uses a flexible pay-per-lead model. You purchase credit packs starting at $25 for 10 leads, scaling up to $150 for 100 leads. No monthly fees. No contracts. Cancel anytime.
+
+For cleaning companies with seasonal fluctuations, MyBidQuick's flexibility is a huge advantage. Slow winter months? Your cost scales down. Busy season? Scale up as much as you want.
+
+For companies generating 100+ leads per month year-round, the monthly subscription might make sense. But for most cleaning companies, paying only for leads you actually capture is better economics.`
+      },
+      {
+        heading: "Lead Management and Follow-Up",
+        content: `Both platforms capture lead information (name, email, phone, address). But MyBidQuick has built-in follow-up automation.
+
+When a customer requests a quote on MyBidQuick, they automatically get a confirmation email with their quote details and a booking link. If they don't book, automated follow-up emails go out at 24 hours and 72 hours.
+
+You can also manage your leads in MyBidQuick's built-in CRM with a Kanban pipeline: New Leads → Quoted → Booked → Completed.
+
+ResponsiBid is more basic on follow-up. You get the lead information, but follow-up is on you to manage manually in whatever email or CRM system you're using.
+
+For cleaning companies focused on closing more jobs, MyBidQuick's built-in follow-up automation is a game-changer.`
+      },
+      {
+        heading: "The Winner for Cleaning Companies",
+        content: `This is a straightforward one: MyBidQuick wins for cleaning companies.
+
+ResponsiBid is a fine platform, but it's built for a different industry. It's like buying a commercial truck when you need a pickup truck. More features, more cost, more complexity than you need.
+
+MyBidQuick was built specifically for cleaning companies. It has:
+- Faster quotes (60 seconds vs 10+ minute forms)
+- Better mobile experience
+- Smart upsell cascades
+- Flexible pricing (pay per lead, not per month)
+- Built-in follow-up automation
+- Industry-specific CRM
+
+If you're choosing between the two for your cleaning company, MyBidQuick is the better choice. You'll get faster customer conversion, lower costs, and a platform that actually understands your business.`
+      }
+    ],
+    cta: "Join hundreds of cleaning companies closing more jobs with instant quoting.",
+    ctaButton: "Get Started Free with MyBidQuick",
+    ctaLink: "/signup"
+
+}}
 
 function BlogPost() {
   const { slug } = useParams()

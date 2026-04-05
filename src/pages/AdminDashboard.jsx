@@ -340,7 +340,6 @@ export default function AdminDashboard() {
                 display: 'flex', alignItems: 'center', gap: 12,
                 width: '100%', padding: '10px 20px',
                 background: activeTab === item.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderLeft: activeTab === item.id ? '3px solid var(--accent)' : '3px solid transparent',
                 border: 'none', borderLeft: activeTab === item.id ? '3px solid var(--accent)' : '3px solid transparent',
                 color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.5)',
                 cursor: 'pointer', fontSize: 14, fontWeight: 500,
