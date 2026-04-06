@@ -459,10 +459,16 @@ export default function TenantDashboard() {
         if (tenant._pendingSecondaryColor !== undefined) {
           profileUpdates.secondary_color = tenant._pendingSecondaryColor
         }
+        if (tenant._pendingCity !== undefined) {
+          profileUpdates.city = tenant._pendingCity
+        }
+        if (tenant._pendingState !== undefined) {
+          profileUpdates.state = tenant._pendingState
+        }
         if (Object.keys(profileUpdates).length > 0) {
           const updatedTenant = await updateTenantProfile(tenant.id, profileUpdates)
           if (updatedTenant) {
-            setTenant({ ...updatedTenant, config, _pendingPrimaryColor: undefined, _pendingSecondaryColor: undefined })
+            setTenant({ ...updatedTenant, config, _pendingPrimaryColor: undefined, _pendingSecondaryColor: undefined, _pendingCity: undefined, _pendingState: undefined })
           }
         } else {
           setTenant({ ...tenant, config })
@@ -2424,6 +2430,51 @@ export default function TenantDashboard() {
                         boxSizing: 'border-box',
                       }}
                     />
+                  </div>
+
+                  {/* City & State */}
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 2 }}>
+                      <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6, color: '#1e3a5f' }}>
+                        <MapPin size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={tenant?._pendingCity ?? tenant?.city ?? ''}
+                        onChange={e => setTenant({ ...tenant, _pendingCity: e.target.value })}
+                        placeholder="e.g. Madison"
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1px solid #d4e4f7',
+                          borderRadius: 10,
+                          fontSize: 14,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6, color: '#1e3a5f' }}>
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={tenant?._pendingState ?? tenant?.state ?? ''}
+                        onChange={e => setTenant({ ...tenant, _pendingState: e.target.value })}
+                        placeholder="e.g. WI"
+                        maxLength={2}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1px solid #d4e4f7',
+                          borderRadius: 10,
+                          fontSize: 14,
+                          boxSizing: 'border-box',
+                          textTransform: 'uppercase',
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* ---- BRANDING SECTION ---- */}
