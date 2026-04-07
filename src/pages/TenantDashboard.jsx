@@ -30,6 +30,7 @@ const fmtMoney = (v) => v != null ? `$${Number(v).toLocaleString(undefined, { mi
 const PIPELINE_STAGES = [
   { id: 'new', label: 'New', color: '#3b9cff', bg: '#f0f7ff', icon: 'Plus' },
   { id: 'contacted', label: 'Contacted', color: '#ffa500', bg: '#fff8ef', icon: 'MessageSquare' },
+  { id: 'scheduled', label: 'Scheduled', color: '#8b5cf6', bg: '#f5f3ff', icon: 'Calendar' },
   { id: 'won', label: 'Won', color: '#22c55e', bg: '#f0fdf4', icon: 'Check' },
   { id: 'lost', label: 'Lost', color: '#ef4444', bg: '#fef2f2', icon: 'X' },
 ]
@@ -1031,6 +1032,15 @@ export default function TenantDashboard() {
                               ))}
                             </div>
 
+                            {(lead.preferredDays || lead.preferredTime) && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6, padding: '4px 8px', borderRadius: 6, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+                                <Calendar size={10} color="#8b5cf6" />
+                                <span style={{ fontSize: 10, fontWeight: 600, color: '#8b5cf6' }}>
+                                  {lead.preferredDays || ''}{lead.preferredDays && lead.preferredTime ? ' · ' : ''}{lead.preferredTime ? (lead.preferredTime === 'morning' ? 'Morning' : lead.preferredTime === 'afternoon' ? 'Afternoon' : 'Any time') : ''}
+                                </span>
+                              </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ fontSize: 10, color: '#a0b5cc' }}>
                                 {lead.package} · {lead.date}
@@ -1217,6 +1227,11 @@ export default function TenantDashboard() {
                               {lead.source && <span>Source: {lead.source}</span>}
                               <span style={{ fontWeight: 700, color: '#3b9cff' }}>${lead.total}</span>
                               {lead.projectType && <span style={{ textTransform: 'capitalize' }}>🏡 {lead.projectType}</span>}
+                              {(lead.preferredDays || lead.preferredTime) && (
+                                <span style={{ color: '#8b5cf6', fontWeight: 600 }}>
+                                  📅 {lead.preferredDays || ''}{lead.preferredDays && lead.preferredTime ? ' · ' : ''}{lead.preferredTime === 'morning' ? 'Morning' : lead.preferredTime === 'afternoon' ? 'Afternoon' : lead.preferredTime === 'any' ? 'Any time' : ''}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <ChevronDown size={20} color="#7a9bbc" style={{
@@ -3366,6 +3381,7 @@ export default function TenantDashboard() {
               {(() => {
                 const newCount = filteredLeads.filter(l => l.status === 'new').length
                 const contactedCount = filteredLeads.filter(l => l.status === 'contacted').length
+                const scheduledCount = filteredLeads.filter(l => l.status === 'scheduled').length
                 const wonCount = filteredLeads.filter(l => l.status === 'won').length
                 const lostCount = filteredLeads.filter(l => l.status === 'lost').length
 
@@ -3829,6 +3845,7 @@ export default function TenantDashboard() {
                               const statusColors = {
                                 new: { bg: '#f0f7ff', color: '#3b9cff' },
                                 contacted: { bg: '#fff8ef', color: '#ffa500' },
+                                scheduled: { bg: '#f5f3ff', color: '#8b5cf6' },
                                 won: { bg: '#f0fdf4', color: '#22c55e' },
                                 lost: { bg: '#fef2f2', color: '#ef4444' },
                               }

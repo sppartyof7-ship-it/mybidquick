@@ -37,7 +37,7 @@ create table if not exists leads (
   package text,
   source text,
   total numeric(10,2) default 0,
-  status text default 'pending' check (status in ('pending', 'won', 'lost')),
+  status text default 'new' check (status in ('new', 'contacted', 'scheduled', 'won', 'lost')),
   notes text,
   photos jsonb default '[]'::jsonb,
   created_at timestamptz default now(),

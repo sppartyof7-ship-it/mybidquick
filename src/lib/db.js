@@ -447,5 +447,7 @@ function rowToLead(row) {
     photos: row.photos || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    preferredDays: row.preferred_days || null,
+    preferredTime: row.preferred_time || null,
   }
 }
