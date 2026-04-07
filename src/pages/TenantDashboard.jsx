@@ -319,6 +319,7 @@ export default function TenantDashboard() {
   const [billingLoading, setBillingLoading] = useState(false)
   const [buyingPack, setBuyingPack] = useState(null)
   const [billingToast, setBillingToast] = useState(null)
+  const [analyticsRange, setAnalyticsRange] = useState('30d')
 
   // URL params (for billing success/cancel return from Stripe)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -3194,8 +3195,27 @@ export default function TenantDashboard() {
         {activeTab === 'analytics' && (() => {
           // Compute analytics from leads data
           const now = new Date()
-          const wonLeads = leads.filter(l => l.status === 'won')
-          const totalQuotes = leads.length
+
+          // --- Time range filtering ---
+          const getRangeCutoff = (range) => {
+            if (range === '7d') {
+              const d = new Date(now); d.setDate(d.getDate() - 7); d.setHours(0,0,0,0); return d
+            }
+            if (range === '30d') {
+              const d = new Date(now); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0); return d
+            }
+            if (range === 'mtd') {
+              return new Date(now.getFullYear(), now.getMonth(), 1)
+            }
+            return null // 'all'
+          }
+          const cutoff = getRangeCutoff(analyticsRange)
+          const filteredLeads = cutoff
+            ? leads.filter(l => new Date(l.created_at || l.date) >= cutoff)
+            : leads
+
+          const wonLeads = filteredLeads.filter(l => l.status === 'won')
+          const totalQuotes = filteredLeads.length
           const totalRevenue = wonLeads.reduce((sum, l) => sum + (Number(l.total) || 0), 0)
           const avgTicket = wonLeads.length > 0 ? totalRevenue / wonLeads.length : 0
           const conversionRate = totalQuotes > 0 ? ((wonLeads.length / totalQuotes) * 100) : 0
@@ -3206,11 +3226,11 @@ export default function TenantDashboard() {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
             const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
             const monthLabel = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-            const count = leads.filter(l => {
+            const count = filteredLeads.filter(l => {
               const ld = new Date(l.created_at || l.date)
               return ld.getFullYear() === d.getFullYear() && ld.getMonth() === d.getMonth()
             }).length
-            const rev = leads.filter(l => {
+            const rev = filteredLeads.filter(l => {
               const ld = new Date(l.created_at || l.date)
               return ld.getFullYear() === d.getFullYear() && ld.getMonth() === d.getMonth() && l.status === 'won'
             }).reduce((s, l) => s + (Number(l.total) || 0), 0)
@@ -3221,7 +3241,7 @@ export default function TenantDashboard() {
 
           // Lead sources breakdown
           const sourceMap = {}
-          leads.forEach(l => {
+          filteredLeads.forEach(l => {
             const src = l.source || 'Unknown'
             sourceMap[src] = (sourceMap[src] || 0) + 1
           })
@@ -3244,7 +3264,7 @@ export default function TenantDashboard() {
           })
           // Also count services from all leads for popularity
           const allServiceCount = {}
-          leads.forEach(l => {
+          filteredLeads.forEach(l => {
             const svcs = Array.isArray(l.services) ? l.services : []
             svcs.forEach(s => {
               const name = typeof s === 'string' ? s : (s.name || 'Other')
@@ -3264,17 +3284,51 @@ export default function TenantDashboard() {
           startOfWeek.setHours(0, 0, 0, 0)
           const startOfLastWeek = new Date(startOfWeek)
           startOfLastWeek.setDate(startOfLastWeek.getDate() - 7)
-          const thisWeekLeads = leads.filter(l => new Date(l.created_at || l.date) >= startOfWeek).length
-          const lastWeekLeads = leads.filter(l => {
+          const thisWeekLeads = filteredLeads.filter(l => new Date(l.created_at || l.date) >= startOfWeek).length
+          const lastWeekLeads = filteredLeads.filter(l => {
             const d = new Date(l.created_at || l.date)
             return d >= startOfLastWeek && d < startOfWeek
           }).length
           const weekTrend = lastWeekLeads > 0 ? (((thisWeekLeads - lastWeekLeads) / lastWeekLeads) * 100) : (thisWeekLeads > 0 ? 100 : 0)
 
-          const hasData = leads.length > 0
+          const hasData = filteredLeads.length > 0
+
+          const rangeLabel = { '7d': 'Last 7 Days', '30d': 'Last 30 Days', 'mtd': 'Month to Date', 'all': 'All Time' }
 
           return (
             <div>
+              {/* Time Range Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1e3a5f', margin: 0 }}>Analytics</h2>
+                  <p style={{ fontSize: 13, color: '#7a9bbc', margin: '4px 0 0' }}>
+                    {rangeLabel[analyticsRange]} — {filteredLeads.length} quote{filteredLeads.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 6, background: '#f0f4f8', borderRadius: 10, padding: 4 }}>
+                  {['7d', '30d', 'mtd', 'all'].map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setAnalyticsRange(r)}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: analyticsRange === r ? 'white' : 'transparent',
+                        color: analyticsRange === r ? '#1e3a5f' : '#7a9bbc',
+                        boxShadow: analyticsRange === r ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {rangeLabel[r]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* KPI Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
                 {[
@@ -3310,10 +3364,10 @@ export default function TenantDashboard() {
 
               {/* Conversion Funnel */}
               {(() => {
-                const newCount = leads.filter(l => l.status === 'new').length
-                const contactedCount = leads.filter(l => l.status === 'contacted').length
-                const wonCount = leads.filter(l => l.status === 'won').length
-                const lostCount = leads.filter(l => l.status === 'lost').length
+                const newCount = filteredLeads.filter(l => l.status === 'new').length
+                const contactedCount = filteredLeads.filter(l => l.status === 'contacted').length
+                const wonCount = filteredLeads.filter(l => l.status === 'won').length
+                const lostCount = filteredLeads.filter(l => l.status === 'lost').length
 
                 // Calculate conversion percentages
                 const newToContactedPct = newCount > 0 ? ((contactedCount / newCount) * 100) : 0
@@ -3429,7 +3483,7 @@ export default function TenantDashboard() {
                 <>
                   {/* ROI Summary Card */}
                   {(() => {
-                    const wonCount = leads.filter(l => l.status === 'won').length
+                    const wonCount = filteredLeads.filter(l => l.status === 'won').length
                     const costPerLeadDollars = tenant?.leadPriceCents ? (tenant.leadPriceCents / 100) : 5.00
                     const totalCreditCost = totalQuotes * costPerLeadDollars
                     const revenuePerLead = totalQuotes > 0 ? (totalRevenue / totalQuotes) : 0
