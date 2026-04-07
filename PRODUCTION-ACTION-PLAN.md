@@ -10,8 +10,8 @@
 | **Credits** | Cloute: 82, Cornerstone (old): 3, County Wide: 25, Cornerstone (new): 25 |
 | **Stripe** | Only Cloute has a Stripe customer. 1 completed purchase ($25/10 credits), 1 failed ($50). |
 | **Auth** | Cornerstone Exterior (old) has `auth_user_id: null` — cannot log in |
-| **RLS** | All 5 tables have `Allow public *` policies. Anyone with the Supabase anon key can read/write everything. |
-| **API routes** | All 4 billing API functions use `VITE_SUPABASE_ANON_KEY` (anon key), NOT service role key |
+| **RLS** | ✅ HARDENED April 6, 2026. 12 scoped policies active. credit_purchases + welcome_email_schedule locked to service_role_key only. Tenant isolation verified. |
+| **API routes** | ✅ All 4 billing API functions switched to `SUPABASE_SERVICE_ROLE_KEY` with anon fallback (April 5). Key deployed to Vercel April 6. |
 | **Edge functions** | 2 deployed: submit-lead, process-welcome-emails. Both have `verify_jwt: false` |
 | **Vercel** | Both projects deploying. mybidquick on 9 domains, cleanbid on `*.mybidquick.com` wildcard |
 
@@ -266,4 +266,16 @@ LATER (Bucket 3 — not yet):
 
 ---
 
-*Plan created April 5, 2026. Based on live database queries, Vercel project inspection, and full code audit of both repos.*
+---
+
+## Completed Milestones
+
+| Date | Milestone | Details |
+|------|-----------|---------|
+| April 5 | Bucket 1 safe fixes committed | Commit 909fe64 — origin whitelists, service_role_key fallback, weekly email fixes, .env.example, audit docs |
+| April 6 | SUPABASE_SERVICE_ROLE_KEY deployed to Vercel | All 4 API routes now use service_role_key in production |
+| April 6 | **RLS hardening applied and verified** | 18 old permissive policies dropped, 12 scoped policies created. credit_purchases and welcome_email_schedule fully locked. All 10 tests passed: quote load, quote submit, tenant login, tenant isolation, settings update, Kanban CRM, Stripe checkout, billing status API, onboarding, admin dashboard. Rollback script available at `supabase/rls-rollback.sql`. |
+
+---
+
+*Plan created April 5, 2026. Updated April 6, 2026 after RLS hardening. Based on live database queries, Vercel project inspection, and full code audit of both repos.*
