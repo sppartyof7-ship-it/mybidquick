@@ -111,6 +111,10 @@ const DEFAULT_CONFIG = {
     premium: { multiplier: 1.25, tagline: 'Our most popular choice' },
     platinum: { multiplier: 1.55, tagline: 'The ultimate clean' },
   },
+  storiesMultipliers: {
+    2: 1.12,
+    3: 1.21,
+  },
   bundleDiscounts: {
     twoServices: 10,
     threeServices: 15,
@@ -1502,6 +1506,64 @@ export default function TenantDashboard() {
                           fontSize: 13,
                         }}
                       />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Multi-Story Pricing */}
+                <div style={{ marginTop: 32 }}>
+                  <label style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 8, color: '#1e3a5f' }}>
+                    Multi-Story Upcharge
+                  </label>
+                  <p style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 16 }}>
+                    Extra charge for elevated work (house wash, windows, roof, gutters). Enter as a multiplier — e.g. 1.12 = 12% upcharge.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>2-Story Multiplier</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          max="2"
+                          value={config.storiesMultipliers?.['2'] ?? 1.12}
+                          onChange={e => updateConfig('storiesMultipliers.2', parseFloat(e.target.value))}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            border: '1px solid #d4e4f7',
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        />
+                        <span style={{ fontSize: 13, color: '#4a6d94', fontWeight: 600, minWidth: 50, textAlign: 'center' }}>
+                          +{Math.round(((config.storiesMultipliers?.['2'] ?? 1.12) - 1) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>3+ Story Multiplier</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          max="3"
+                          value={config.storiesMultipliers?.['3'] ?? 1.21}
+                          onChange={e => updateConfig('storiesMultipliers.3', parseFloat(e.target.value))}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            border: '1px solid #d4e4f7',
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        />
+                        <span style={{ fontSize: 13, color: '#4a6d94', fontWeight: 600, minWidth: 50, textAlign: 'center' }}>
+                          +{Math.round(((config.storiesMultipliers?.['3'] ?? 1.21) - 1) * 100)}%
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
