@@ -127,6 +127,9 @@ const DEFAULT_CONFIG = {
     fourServices: 20,
     fiveServices: 25,
   },
+  featureToggles: {
+    googleCalendar: false,
+  },
   services: [
     {
       id: 'house_washing',
@@ -1033,11 +1036,25 @@ export default function TenantDashboard() {
                             </div>
 
                             {(lead.preferredDays || lead.preferredTime) && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6, padding: '4px 8px', borderRadius: 6, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
-                                <Calendar size={10} color="#8b5cf6" />
-                                <span style={{ fontSize: 10, fontWeight: 600, color: '#8b5cf6' }}>
-                                  {lead.preferredDays || ''}{lead.preferredDays && lead.preferredTime ? ' · ' : ''}{lead.preferredTime ? (lead.preferredTime === 'morning' ? 'Morning' : lead.preferredTime === 'afternoon' ? 'Afternoon' : 'Any time') : ''}
-                                </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 6, background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
+                                  <Calendar size={10} color="#8b5cf6" />
+                                  <span style={{ fontSize: 10, fontWeight: 600, color: '#8b5cf6' }}>
+                                    {lead.preferredDays || ''}{lead.preferredDays && lead.preferredTime ? ' · ' : ''}{lead.preferredTime ? (lead.preferredTime === 'morning' ? 'Morning' : lead.preferredTime === 'afternoon' ? 'Afternoon' : 'Any time') : ''}
+                                  </span>
+                                </div>
+                                {config.featureToggles?.googleCalendar && config.googleCalendarConnected && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); /* Phase 2: create Google Calendar event */ }}
+                                    style={{
+                                      padding: '3px 8px', borderRadius: 6, border: '1px solid #ddd6fe',
+                                      background: '#8b5cf6', color: 'white', fontSize: 9, fontWeight: 700,
+                                      cursor: 'pointer', whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    + Calendar
+                                  </button>
+                                )}
                               </div>
                             )}
 
@@ -1362,7 +1379,7 @@ export default function TenantDashboard() {
               border: '1px solid #d4e4f7',
               overflowX: 'auto',
             }}>
-              {['pricing', 'services', 'bundles', 'marketing', 'followup', 'settings'].map(tab => (
+              {['pricing', 'services', 'bundles', 'marketing', 'followup', 'integrations', 'settings'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setAdminTab(tab)}
@@ -2551,6 +2568,111 @@ export default function TenantDashboard() {
                 >
                   <Plus size={16} /> Add Step
                 </button>
+              </div>
+            )}
+
+            {/* INTEGRATIONS TAB */}
+            {adminTab === 'integrations' && (
+              <div style={{
+                background: 'white',
+                borderRadius: 16,
+                padding: 32,
+                border: '1px solid #d4e4f7',
+              }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, color: '#1e3a5f' }}>Integrations</h2>
+                <p style={{ color: '#7a9bbc', fontSize: 14, marginBottom: 24 }}>Connect external tools. Toggle features on or off per integration.</p>
+
+                {/* Google Calendar */}
+                <div style={{
+                  padding: 24, borderRadius: 14,
+                  border: `1px solid ${config.featureToggles?.googleCalendar ? '#ddd6fe' : '#e2ecf5'}`,
+                  background: config.featureToggles?.googleCalendar ? '#faf5ff' : '#f8fafc',
+                  marginBottom: 16,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10,
+                        background: config.featureToggles?.googleCalendar ? '#8b5cf620' : '#e2ecf5',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <Calendar size={20} color={config.featureToggles?.googleCalendar ? '#8b5cf6' : '#7a9bbc'} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#1e3a5f' }}>Google Calendar</div>
+                        <div style={{ fontSize: 12, color: '#7a9bbc' }}>
+                          Add scheduling requests directly to your calendar
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => updateConfig('featureToggles.googleCalendar', !config.featureToggles?.googleCalendar)}
+                      style={{
+                        width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                        background: config.featureToggles?.googleCalendar ? '#8b5cf6' : '#d4e4f7',
+                        position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        width: 20, height: 20, borderRadius: '50%', background: 'white',
+                        position: 'absolute', top: 3,
+                        left: config.featureToggles?.googleCalendar ? 25 : 3,
+                        transition: 'left 0.2s',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                      }} />
+                    </button>
+                  </div>
+
+                  {config.featureToggles?.googleCalendar && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2ecf5' }}>
+                      {config.googleCalendarConnected ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>Connected</span>
+                          </div>
+                          <button
+                            onClick={() => updateConfig('googleCalendarConnected', false)}
+                            style={{
+                              padding: '6px 14px', borderRadius: 8, border: '1px solid #fecaca',
+                              background: '#fef2f2', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                            }}
+                          >
+                            Disconnect
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 12 }}>
+                            Connect your Google Calendar to add scheduling requests as events. You can assign leads to calendar slots directly from the Kanban board.
+                          </p>
+                          <button
+                            onClick={() => {
+                              // Phase 2: this will trigger Google OAuth flow
+                              // For now, mark as connected for testing
+                              updateConfig('googleCalendarConnected', true)
+                            }}
+                            style={{
+                              padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                              background: '#8b5cf6', color: 'white', fontSize: 13, fontWeight: 700,
+                              display: 'flex', alignItems: 'center', gap: 8,
+                            }}
+                          >
+                            <Calendar size={14} /> Connect Google Calendar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reusable pattern hint */}
+                <div style={{ padding: 16, borderRadius: 10, background: '#f0f7ff', border: '1px solid #d4e4f7' }}>
+                  <div style={{ fontSize: 12, color: '#3b9cff', fontWeight: 600, marginBottom: 4 }}>More integrations coming soon</div>
+                  <div style={{ fontSize: 12, color: '#7a9bbc' }}>
+                    QuickBooks, Jobber, and more — toggle them on when you need them.
+                  </div>
+                </div>
               </div>
             )}
 
