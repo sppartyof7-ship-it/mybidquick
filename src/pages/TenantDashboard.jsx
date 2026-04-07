@@ -115,6 +115,11 @@ const DEFAULT_CONFIG = {
     2: 1.12,
     3: 1.21,
   },
+  minimumCharges: {
+    window_cleaning: 75,
+    gutter_guard_install: 200,
+    gutter_cleaning: 75,
+  },
   bundleDiscounts: {
     twoServices: 10,
     threeServices: 15,
@@ -1563,6 +1568,78 @@ export default function TenantDashboard() {
                         <span style={{ fontSize: 13, color: '#4a6d94', fontWeight: 600, minWidth: 50, textAlign: 'center' }}>
                           +{Math.round(((config.storiesMultipliers?.['3'] ?? 1.21) - 1) * 100)}%
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Minimum Charge Floors */}
+                <div style={{ marginTop: 32 }}>
+                  <label style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 8, color: '#1e3a5f' }}>
+                    Minimum Charge Floors
+                  </label>
+                  <p style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 16 }}>
+                    The lowest price a service quote can be — prevents unrealistically cheap quotes on small jobs.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>Window Cleaning</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14, color: '#4a6d94', fontWeight: 600 }}>$</span>
+                        <input
+                          type="number"
+                          step="5"
+                          min="0"
+                          value={config.minimumCharges?.window_cleaning ?? 75}
+                          onChange={e => updateConfig('minimumCharges.window_cleaning', parseFloat(e.target.value) || 0)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            border: '1px solid #d4e4f7',
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>Gutter Guard Install</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14, color: '#4a6d94', fontWeight: 600 }}>$</span>
+                        <input
+                          type="number"
+                          step="5"
+                          min="0"
+                          value={config.minimumCharges?.gutter_guard_install ?? 200}
+                          onChange={e => updateConfig('minimumCharges.gutter_guard_install', parseFloat(e.target.value) || 0)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            border: '1px solid #d4e4f7',
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#7a9bbc', display: 'block', marginBottom: 6 }}>Gutter Cleaning</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14, color: '#4a6d94', fontWeight: 600 }}>$</span>
+                        <input
+                          type="number"
+                          step="5"
+                          min="0"
+                          value={config.minimumCharges?.gutter_cleaning ?? 75}
+                          onChange={e => updateConfig('minimumCharges.gutter_cleaning', parseFloat(e.target.value) || 0)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            border: '1px solid #d4e4f7',
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
