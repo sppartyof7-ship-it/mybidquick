@@ -3744,6 +3744,217 @@ export default function TenantDashboard() {
                       </div>
                     </div>
                   )}
+
+                  {/* Plain-English Performance Summary */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f0f7ff, #f8fafc)', borderRadius: 16, padding: 24,
+                    border: '1px solid #d4e4f7', marginBottom: 24,
+                  }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 12 }}>Performance Summary</div>
+                    <div style={{ fontSize: 14, color: '#3a5a7c', lineHeight: 1.7 }}>
+                      {(() => {
+                        const totalQuotedValue = filteredLeads.reduce((s, l) => s + (Number(l.total) || 0), 0)
+                        const wonValue = wonLeads.reduce((s, l) => s + (Number(l.total) || 0), 0)
+                        const closeRate = totalQuotes > 0 ? ((wonLeads.length / totalQuotes) * 100).toFixed(1) : '0.0'
+                        const avgTkt = wonLeads.length > 0 ? (wonValue / wonLeads.length) : 0
+                        // Top quoted service
+                        const svcCount = {}
+                        filteredLeads.forEach(l => {
+                          (Array.isArray(l.services) ? l.services : []).forEach(s => {
+                            const name = typeof s === 'string' ? s : (s.name || 'Other')
+                            svcCount[name] = (svcCount[name] || 0) + 1
+                          })
+                        })
+                        const topSvc = Object.entries(svcCount).sort((a, b) => b[1] - a[1])[0]
+
+                        return (
+                          <>
+                            <p style={{ margin: '0 0 8px' }}>
+                              You received <strong>{totalQuotes} quote{totalQuotes !== 1 ? 's' : ''}</strong> worth a
+                              total of <strong>${totalQuotedValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>.
+                              {wonLeads.length > 0
+                                ? <> Of those, <strong>{wonLeads.length}</strong> {wonLeads.length === 1 ? 'was' : 'were'} won
+                                  for <strong>${wonValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> in revenue.</>
+                                : <> No quotes have been marked as won yet.</>
+                              }
+                            </p>
+                            <p style={{ margin: '0 0 8px' }}>
+                              Your close rate is <strong>{closeRate}%</strong>
+                              {wonLeads.length > 0
+                                ? <> with an average ticket of <strong>${avgTkt.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>.</>
+                                : <>.</>
+                              }
+                            </p>
+                            {topSvc && (
+                              <p style={{ margin: 0 }}>
+                                Your most-quoted service is <strong>{topSvc[0]}</strong> ({topSvc[1]} quote{topSvc[1] !== 1 ? 's' : ''}).
+                              </p>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Recent Quotes Table */}
+                  <div style={{
+                    background: 'white', borderRadius: 16, padding: 24,
+                    border: '1px solid #e2ecf5', marginBottom: 24,
+                    boxShadow: '0 2px 8px rgba(59, 156, 255, 0.06)',
+                  }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f', marginBottom: 4 }}>Recent Quotes</div>
+                    <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 16 }}>Last 10 quotes in the selected range</div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid #e2ecf5' }}>
+                            {['Date', 'Customer', 'Primary Service', 'Total', 'Status'].map(h => (
+                              <th key={h} style={{
+                                textAlign: h === 'Total' ? 'right' : 'left',
+                                padding: '10px 12px', color: '#7a9bbc', fontWeight: 700,
+                                fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5,
+                              }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...filteredLeads]
+                            .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date))
+                            .slice(0, 10)
+                            .map((lead, i) => {
+                              const svcs = Array.isArray(lead.services) ? lead.services : []
+                              const primary = svcs.length > 0
+                                ? (typeof svcs[0] === 'string' ? svcs[0] : (svcs[0].name || 'Other'))
+                                : '—'
+                              const statusColors = {
+                                new: { bg: '#f0f7ff', color: '#3b9cff' },
+                                contacted: { bg: '#fff8ef', color: '#ffa500' },
+                                won: { bg: '#f0fdf4', color: '#22c55e' },
+                                lost: { bg: '#fef2f2', color: '#ef4444' },
+                              }
+                              const sc = statusColors[lead.status] || statusColors.new
+                              return (
+                                <tr key={lead.id || i} style={{ borderBottom: '1px solid #f0f4f8' }}>
+                                  <td style={{ padding: '10px 12px', color: '#4a6d94' }}>
+                                    {new Date(lead.created_at || lead.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', color: '#1e3a5f', fontWeight: 600 }}>
+                                    {lead.name || '—'}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', color: '#4a6d94' }}>{primary}</td>
+                                  <td style={{ padding: '10px 12px', color: '#1e3a5f', fontWeight: 700, textAlign: 'right' }}>
+                                    ${Number(lead.total || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                  </td>
+                                  <td style={{ padding: '10px 12px' }}>
+                                    <span style={{
+                                      display: 'inline-block', padding: '3px 10px', borderRadius: 12,
+                                      fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
+                                      background: sc.bg, color: sc.color,
+                                    }}>{lead.status}</span>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          {filteredLeads.length === 0 && (
+                            <tr>
+                              <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#7a9bbc' }}>
+                                No quotes in this time range.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Follow-Up Opportunities */}
+                  {(() => {
+                    const openLeads = filteredLeads
+                      .filter(l => l.status === 'new' || l.status === 'contacted')
+                      .sort((a, b) => (Number(b.total) || 0) - (Number(a.total) || 0))
+
+                    return (
+                      <div style={{
+                        background: 'white', borderRadius: 16, padding: 24,
+                        border: '1px solid #e2ecf5', marginBottom: 24,
+                        boxShadow: '0 2px 8px rgba(59, 156, 255, 0.06)',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: '#1e3a5f' }}>Follow-Up Opportunities</div>
+                          {openLeads.length > 0 && (
+                            <span style={{
+                              padding: '4px 12px', borderRadius: 12, fontSize: 11, fontWeight: 700,
+                              background: '#fff8ef', color: '#ffa500',
+                            }}>
+                              {openLeads.length} open
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#7a9bbc', marginBottom: 16 }}>
+                          Quotes awaiting follow-up, sorted by highest value first
+                        </div>
+
+                        {openLeads.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '24px 0', color: '#7a9bbc' }}>
+                            <Check size={28} color="#22c55e" style={{ marginBottom: 8 }} />
+                            <div style={{ fontSize: 14, fontWeight: 600, color: '#22c55e' }}>All caught up!</div>
+                            <div style={{ fontSize: 12, marginTop: 4 }}>No open quotes need follow-up in this range.</div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {openLeads.slice(0, 8).map((lead, i) => {
+                              const svcs = Array.isArray(lead.services) ? lead.services : []
+                              const primary = svcs.length > 0
+                                ? (typeof svcs[0] === 'string' ? svcs[0] : (svcs[0].name || 'Other'))
+                                : '—'
+                              const isNew = lead.status === 'new'
+                              const daysSince = Math.floor((now - new Date(lead.created_at || lead.date)) / (1000 * 60 * 60 * 24))
+
+                              return (
+                                <div key={lead.id || i} style={{
+                                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                  padding: '12px 16px', borderRadius: 10,
+                                  background: i === 0 ? '#fffbeb' : '#f8fafc',
+                                  border: `1px solid ${i === 0 ? '#fde68a' : '#e2ecf5'}`,
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{
+                                      width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      background: isNew ? '#f0f7ff' : '#fff8ef',
+                                      color: isNew ? '#3b9cff' : '#ffa500', fontSize: 12, fontWeight: 800,
+                                    }}>
+                                      {i + 1}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1e3a5f' }}>{lead.name || '—'}</div>
+                                      <div style={{ fontSize: 11, color: '#7a9bbc' }}>
+                                        {primary}{svcs.length > 1 ? ` +${svcs.length - 1} more` : ''} · {daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : `${daysSince} days ago`}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <span style={{
+                                      padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700, textTransform: 'capitalize',
+                                      background: isNew ? '#f0f7ff' : '#fff8ef',
+                                      color: isNew ? '#3b9cff' : '#ffa500',
+                                    }}>{lead.status}</span>
+                                    <span style={{ fontSize: 15, fontWeight: 800, color: '#1e3a5f' }}>
+                                      ${Number(lead.total || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                            {openLeads.length > 8 && (
+                              <div style={{ textAlign: 'center', fontSize: 12, color: '#7a9bbc', paddingTop: 4 }}>
+                                +{openLeads.length - 8} more open quotes
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </>
               )}
             </div>
