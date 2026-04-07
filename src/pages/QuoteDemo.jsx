@@ -17,11 +17,10 @@ import { ArrowLeft, Home, Droplets, Check, Tag, X, Waves } from 'lucide-react'
 */
 
 const WINDOW_TYPES = [
-  { id: 'single_hung', name: 'Single-Hung', description: 'One movable sash', priceMultiplier: 1.0 },
-  { id: 'double_hung', name: 'Double-Hung', description: 'Both sashes move', priceMultiplier: 1.15 },
-  { id: 'casement', name: 'Casement', description: 'Hinged, crank open', priceMultiplier: 1.25 },
-  { id: 'sliding', name: 'Sliding', description: 'Slides horizontally', priceMultiplier: 1.1 },
-  { id: 'bay_bow', name: 'Bay / Bow', description: 'Multi-panel, angled', priceMultiplier: 1.5 },
+  { id: 'casement', name: 'Casement', description: 'Single pane, hinged on one side, cranks open', priceMultiplier: 1.0 },
+  { id: 'single_hung', name: 'Single Hung', description: 'One sash slides up & down, top pane is fixed', priceMultiplier: 1.3 },
+  { id: 'double_hung', name: 'Double Hung', description: 'Two sashes that slide up & down, tilt-in for cleaning', priceMultiplier: 1.6 },
+  { id: 'combination', name: 'Combination / Storm', description: 'Inner window + outer storm pane — extra glass to clean', priceMultiplier: 2.0 },
 ]
 
 const SQ_FT_OPTIONS = [
@@ -33,14 +32,14 @@ const SQ_FT_OPTIONS = [
 
 // Demo config - in production this comes from the tenant's MyBidQuick config
 const DEMO_CONFIG = {
-  businessName: 'Cloute Cleaning',
+  businessName: 'MyBidQuick Demo',
   primaryColor: '#2563eb',
   secondaryColor: '#60a5fa',
-  houseWashBasePrice: 350,
-  windowBasePrice: 250,
-  gutterBasePrice: 125,
-  gutterPerLinFt: 1.50,
-  upsellDiscountPercent: 20,
+  houseWashBasePrice: 125,
+  windowBasePrice: 0,
+  gutterBasePrice: 50,
+  gutterPerLinFt: 0.85,
+  upsellDiscountPercent: 15,
 }
 
 function calculateHouseWashPrice(sqft) {

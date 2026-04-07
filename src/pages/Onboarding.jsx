@@ -50,13 +50,13 @@ const STEPS = [
 ]
 
 const DEFAULT_SERVICES = [
-  { id: "house_washing", name: "House Washing", enabled: true, price: 350 },
-  { id: "roof_cleaning", name: "Roof Cleaning", enabled: true, price: 450 },
-  { id: "gutter_cleaning", name: "Gutter Cleaning", enabled: true, price: 150 },
-  { id: "window_cleaning", name: "Window Cleaning", enabled: true, price: 250 },
-  { id: "driveway_cleaning", name: "Driveway Cleaning", enabled: true, price: 200 },
-  { id: "deck_patio", name: "Deck & Patio Cleaning", enabled: true, price: 275 },
-  { id: "gutter_guard", name: "Gutter Guard Install", enabled: false, price: 800 },
+  { id: "house_washing", name: "House Washing", enabled: true, price: 125 },
+  { id: "window_cleaning", name: "Window Cleaning", enabled: true, price: 0 },
+  { id: "deck_cleaning", name: "Deck Cleaning", enabled: true, price: 75 },
+  { id: "concrete_cleaning", name: "Concrete Cleaning", enabled: true, price: 75 },
+  { id: "roof_cleaning", name: "Roof Cleaning", enabled: true, price: 150 },
+  { id: "gutter_cleaning", name: "Gutter Cleaning", enabled: true, price: 50 },
+  { id: "gutter_guard", name: "Gutter Guard Install", enabled: false, price: 0 },
 ]
 
 const COLOR_PRESETS = [
