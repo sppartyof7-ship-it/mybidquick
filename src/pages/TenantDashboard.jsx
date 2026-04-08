@@ -287,6 +287,9 @@ function updateNestedConfig(config, path, value) {
   const newConfig = deepClone(config)
   let current = newConfig
   for (let i = 0; i < keys.length - 1; i++) {
+    if (current[keys[i]] === undefined || current[keys[i]] === null) {
+      current[keys[i]] = {}
+    }
     current = current[keys[i]]
   }
   current[keys[keys.length - 1]] = value
