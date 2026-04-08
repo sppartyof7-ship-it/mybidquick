@@ -109,6 +109,10 @@ export default async function handler(req, res) {
         ...tenant.config,
         googleCalendarConnected: true,
         googleCalendarEmail: calendarEmail,
+        featureToggles: {
+          ...(tenant.config?.featureToggles || {}),
+          googleCalendar: true,
+        },
       }
       await supabase
         .from('tenants')

@@ -3,7 +3,10 @@
 // Initiates Google OAuth flow — redirects user to Google consent screen
 // ============================================================================
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/userinfo.email',
+]
 
 export default function handler(req, res) {
   if (req.method !== 'GET') {
