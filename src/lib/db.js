@@ -116,7 +116,7 @@ export async function updateTenantConfig(tenantId, config) {
  * Use alongside updateTenantConfig() when saving from the tenant dashboard.
  */
 export async function updateTenantProfile(tenantId, updates) {
-  // updates can include: { logo_url, primary_color, secondary_color, business_name }
+  // updates can include: { logo_url, primary_color, secondary_color, business_name, phone, email, city, state }
   if (isSupabaseConnected()) {
     const { data, error } = await supabase
       .from('tenants')
@@ -230,9 +230,42 @@ export async function createLead(leadData) {
       })
     }
 
+    // Send confirmation email to the customer (best-effort, non-blocking)
+    sendQuoteConfirmation(data, leadData.tenant_id).catch((err) =>
+      console.warn('Quote confirmation email failed (non-blocking):', err)
+    )
+
     return rowToLead(data)
   }
   return leadData
+}
+
+/**
+ * Send a confirmation email to the customer after quote submission.
+ * Calls the Vercel API route which looks up tenant info and sends via Resend.
+ * This is fire-and-forget — failures are logged but don't break the quote flow.
+ */
+async function sendQuoteConfirmation(leadRow, tenantId) {
+  const baseUrl = import.meta.env.VITE_APP_URL || 'https://www.mybidquick.com'
+  const response = await fetch(`${baseUrl}/api/send-quote-confirmation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      lead: {
+        name: leadRow.name,
+        email: leadRow.email,
+        services: leadRow.services,
+        total: leadRow.total,
+        package: leadRow.package,
+      },
+      tenant_id: tenantId,
+    }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.error || `HTTP ${response.status}`)
+  }
+  return response.json()
 }
 
 // ============================================================================

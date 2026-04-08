@@ -597,10 +597,16 @@ export default function TenantDashboard() {
         if (tenant._pendingState !== undefined) {
           profileUpdates.state = tenant._pendingState
         }
+        if (tenant._pendingPhone !== undefined) {
+          profileUpdates.phone = tenant._pendingPhone
+        }
+        if (tenant._pendingEmail !== undefined) {
+          profileUpdates.email = tenant._pendingEmail
+        }
         if (Object.keys(profileUpdates).length > 0) {
           const updatedTenant = await updateTenantProfile(tenant.id, profileUpdates)
           if (updatedTenant) {
-            setTenant({ ...updatedTenant, config, _pendingPrimaryColor: undefined, _pendingSecondaryColor: undefined, _pendingCity: undefined, _pendingState: undefined })
+            setTenant({ ...updatedTenant, config, _pendingPrimaryColor: undefined, _pendingSecondaryColor: undefined, _pendingCity: undefined, _pendingState: undefined, _pendingPhone: undefined, _pendingEmail: undefined })
           }
         } else {
           setTenant({ ...tenant, config })
@@ -2858,6 +2864,52 @@ export default function TenantDashboard() {
                         boxSizing: 'border-box',
                       }}
                     />
+                  </div>
+
+                  {/* Phone & Email */}
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6, color: '#1e3a5f' }}>
+                        <Phone size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+                        Business Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={tenant?._pendingPhone ?? tenant?.phone ?? ''}
+                        onChange={e => setTenant({ ...tenant, _pendingPhone: e.target.value })}
+                        placeholder="(555) 123-4567"
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1px solid #d4e4f7',
+                          borderRadius: 10,
+                          fontSize: 14,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                      <p style={{ fontSize: 11, color: '#7a9bbc', marginTop: 4 }}>Shown on quotes and confirmation emails</p>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6, color: '#1e3a5f' }}>
+                        <Mail size={13} style={{ marginRight: 4, verticalAlign: -2 }} />
+                        Business Email
+                      </label>
+                      <input
+                        type="email"
+                        value={tenant?._pendingEmail ?? tenant?.email ?? ''}
+                        onChange={e => setTenant({ ...tenant, _pendingEmail: e.target.value })}
+                        placeholder="hello@yourcompany.com"
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          border: '1px solid #d4e4f7',
+                          borderRadius: 10,
+                          fontSize: 14,
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                      <p style={{ fontSize: 11, color: '#7a9bbc', marginTop: 4 }}>Customer replies go here</p>
+                    </div>
                   </div>
 
                   {/* City & State */}
