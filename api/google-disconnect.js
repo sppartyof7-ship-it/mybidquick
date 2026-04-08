@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       .select('access_token_encrypted')
       .eq('tenant_id', tenantId)
       .eq('provider', 'google_calendar')
-      .single()
+      .maybeSingle()
 
     if (integration?.access_token_encrypted) {
       try {
