@@ -324,6 +324,10 @@ export default function TenantDashboard() {
   const [buyingPack, setBuyingPack] = useState(null)
   const [billingToast, setBillingToast] = useState(null)
   const [analyticsRange, setAnalyticsRange] = useState('30d')
+  // Google Calendar state
+  const [gcalConnecting, setGcalConnecting] = useState(false)
+  const [gcalToast, setGcalToast] = useState(null)
+  const [calendarCreating, setCalendarCreating] = useState(null) // leadId currently being added
 
   // URL params (for billing success/cancel return from Stripe)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -346,6 +350,39 @@ export default function TenantDashboard() {
       searchParams.delete('billing')
       setSearchParams(searchParams, { replace: true })
       setTimeout(() => setBillingToast(null), 5000)
+    }
+  }, [])
+
+  // Handle Google Calendar OAuth return
+  useEffect(() => {
+    const gcalStatus = searchParams.get('gcal')
+    if (gcalStatus === 'connected') {
+      setGcalToast({ type: 'success', message: 'Google Calendar connected!' })
+      setActiveTab('admin')
+      setAdminTab('integrations')
+      // Reload config to pick up googleCalendarConnected + email
+      ;(async () => {
+        try {
+          const myTenant = await getMyTenant()
+          if (myTenant) {
+            setConfig(myTenant.config || config)
+          }
+        } catch {}
+      })()
+      searchParams.delete('gcal')
+      setSearchParams(searchParams, { replace: true })
+      setTimeout(() => setGcalToast(null), 5000)
+    } else if (gcalStatus === 'denied') {
+      setGcalToast({ type: 'info', message: 'Google Calendar connection was cancelled.' })
+      searchParams.delete('gcal')
+      setSearchParams(searchParams, { replace: true })
+      setTimeout(() => setGcalToast(null), 5000)
+    } else if (gcalStatus === 'error') {
+      setGcalToast({ type: 'error', message: 'Failed to connect Google Calendar. Please try again.' })
+      searchParams.delete('gcal')
+      searchParams.delete('reason')
+      setSearchParams(searchParams, { replace: true })
+      setTimeout(() => setGcalToast(null), 6000)
     }
   }, [])
 
@@ -453,6 +490,84 @@ export default function TenantDashboard() {
     const newConfig = updateNestedConfig(config, path, value)
     setConfig(newConfig)
     setSaved(false)
+  }
+
+  // ── Google Calendar handlers ──
+
+  const handleGcalConnect = () => {
+    if (!tenant?.id) return
+    setGcalConnecting(true)
+    // Redirect to our OAuth start endpoint — browser navigates away
+    window.location.href = `/api/google-auth-start?tenantId=${tenant.id}`
+  }
+
+  const handleGcalDisconnect = async () => {
+    if (!tenant?.id) return
+    setGcalConnecting(true)
+    try {
+      const resp = await fetch('/api/google-disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId: tenant.id }),
+      })
+      if (resp.ok) {
+        updateConfig('googleCalendarConnected', false)
+        const updated = updateNestedConfig(config, 'googleCalendarEmail', undefined)
+        setConfig(updated)
+        setGcalToast({ type: 'info', message: 'Google Calendar disconnected.' })
+        setTimeout(() => setGcalToast(null), 4000)
+      } else {
+        setGcalToast({ type: 'error', message: 'Failed to disconnect. Try again.' })
+        setTimeout(() => setGcalToast(null), 4000)
+      }
+    } catch {
+      setGcalToast({ type: 'error', message: 'Network error. Try again.' })
+      setTimeout(() => setGcalToast(null), 4000)
+    }
+    setGcalConnecting(false)
+  }
+
+  const handleAddToCalendar = async (lead) => {
+    if (!tenant?.id) return
+    setCalendarCreating(lead.id)
+    try {
+      const resp = await fetch('/api/create-calendar-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: tenant.id,
+          lead: {
+            name: lead.name,
+            email: lead.email,
+            phone: lead.phone,
+            address: lead.address,
+            services: lead.services,
+            total: lead.total,
+            preferredDays: lead.preferredDays,
+            preferredTime: lead.preferredTime,
+          },
+        }),
+      })
+      const result = await resp.json()
+      if (resp.ok && result.success) {
+        setGcalToast({ type: 'success', message: `Added to calendar! ${result.eventLink ? '' : ''}` })
+        if (result.eventLink) {
+          // Open the event in a new tab
+          window.open(result.eventLink, '_blank')
+        }
+      } else if (resp.status === 401) {
+        // Token expired — need to reconnect
+        updateConfig('googleCalendarConnected', false)
+        setGcalToast({ type: 'error', message: 'Google Calendar session expired. Please reconnect.' })
+      } else {
+        setGcalToast({ type: 'error', message: result.error || 'Failed to create event.' })
+      }
+      setTimeout(() => setGcalToast(null), 5000)
+    } catch {
+      setGcalToast({ type: 'error', message: 'Network error. Try again.' })
+      setTimeout(() => setGcalToast(null), 4000)
+    }
+    setCalendarCreating(null)
   }
 
   const handleSave = async () => {
@@ -890,6 +1005,23 @@ export default function TenantDashboard() {
           </button>
         </div>
 
+        {/* Google Calendar Toast (global — shows on any tab) */}
+        {gcalToast && (
+          <div style={{
+            padding: '12px 18px', borderRadius: 12, marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: gcalToast.type === 'success' ? '#f0fdf4' : gcalToast.type === 'error' ? '#fef2f2' : '#f0f7ff',
+            border: `1px solid ${gcalToast.type === 'success' ? '#22c55e' : gcalToast.type === 'error' ? '#ef4444' : '#3b9cff'}`,
+            color: gcalToast.type === 'success' ? '#166534' : gcalToast.type === 'error' ? '#991b1b' : '#1e3a5f',
+          }}>
+            {gcalToast.type === 'success' ? <Check size={16} /> : gcalToast.type === 'error' ? <AlertCircle size={16} /> : <Calendar size={16} />}
+            <span style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>{gcalToast.message}</span>
+            <button onClick={() => setGcalToast(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* LEADS TAB — KANBAN PIPELINE BOARD */}
         {activeTab === 'leads' && (
           <div>
@@ -1045,14 +1177,17 @@ export default function TenantDashboard() {
                                 </div>
                                 {config.featureToggles?.googleCalendar && config.googleCalendarConnected && (
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); /* Phase 2: create Google Calendar event */ }}
+                                    onClick={(e) => { e.stopPropagation(); handleAddToCalendar(lead); }}
+                                    disabled={calendarCreating === lead.id}
                                     style={{
                                       padding: '3px 8px', borderRadius: 6, border: '1px solid #ddd6fe',
-                                      background: '#8b5cf6', color: 'white', fontSize: 9, fontWeight: 700,
-                                      cursor: 'pointer', whiteSpace: 'nowrap',
+                                      background: calendarCreating === lead.id ? '#a78bfa' : '#8b5cf6',
+                                      color: 'white', fontSize: 9, fontWeight: 700,
+                                      cursor: calendarCreating === lead.id ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+                                      opacity: calendarCreating === lead.id ? 0.7 : 1,
                                     }}
                                   >
-                                    + Calendar
+                                    {calendarCreating === lead.id ? '...' : '+ Calendar'}
                                   </button>
                                 )}
                               </div>
@@ -2626,20 +2761,33 @@ export default function TenantDashboard() {
                   {config.featureToggles?.googleCalendar && (
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e2ecf5' }}>
                       {config.googleCalendarConnected ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>Connected</span>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} />
+                              <span style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>Connected</span>
+                            </div>
+                            <button
+                              onClick={handleGcalDisconnect}
+                              disabled={gcalConnecting}
+                              style={{
+                                padding: '6px 14px', borderRadius: 8, border: '1px solid #fecaca',
+                                background: '#fef2f2', color: '#ef4444', fontSize: 12, fontWeight: 600,
+                                cursor: gcalConnecting ? 'wait' : 'pointer',
+                                opacity: gcalConnecting ? 0.6 : 1,
+                              }}
+                            >
+                              {gcalConnecting ? 'Disconnecting...' : 'Disconnect'}
+                            </button>
                           </div>
-                          <button
-                            onClick={() => updateConfig('googleCalendarConnected', false)}
-                            style={{
-                              padding: '6px 14px', borderRadius: 8, border: '1px solid #fecaca',
-                              background: '#fef2f2', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                            }}
-                          >
-                            Disconnect
-                          </button>
+                          {config.googleCalendarEmail && (
+                            <div style={{ fontSize: 12, color: '#7a9bbc' }}>
+                              Linked to <strong style={{ color: '#1e3a5f' }}>{config.googleCalendarEmail}</strong>
+                            </div>
+                          )}
+                          <p style={{ fontSize: 11, color: '#a0b5cc', marginTop: 6, marginBottom: 0 }}>
+                            Leads with scheduling preferences will show a "+ Calendar" button on the Kanban board.
+                          </p>
                         </div>
                       ) : (
                         <div>
@@ -2647,18 +2795,18 @@ export default function TenantDashboard() {
                             Connect your Google Calendar to add scheduling requests as events. You can assign leads to calendar slots directly from the Kanban board.
                           </p>
                           <button
-                            onClick={() => {
-                              // Phase 2: this will trigger Google OAuth flow
-                              // For now, mark as connected for testing
-                              updateConfig('googleCalendarConnected', true)
-                            }}
+                            onClick={handleGcalConnect}
+                            disabled={gcalConnecting}
                             style={{
-                              padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                              background: '#8b5cf6', color: 'white', fontSize: 13, fontWeight: 700,
+                              padding: '10px 20px', borderRadius: 10, border: 'none',
+                              cursor: gcalConnecting ? 'wait' : 'pointer',
+                              background: gcalConnecting ? '#a78bfa' : '#8b5cf6',
+                              color: 'white', fontSize: 13, fontWeight: 700,
                               display: 'flex', alignItems: 'center', gap: 8,
+                              opacity: gcalConnecting ? 0.7 : 1,
                             }}
                           >
-                            <Calendar size={14} /> Connect Google Calendar
+                            <Calendar size={14} /> {gcalConnecting ? 'Connecting...' : 'Connect Google Calendar'}
                           </button>
                         </div>
                       )}
