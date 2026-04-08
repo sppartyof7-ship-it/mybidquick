@@ -514,9 +514,10 @@ export default function TenantDashboard() {
         body: JSON.stringify({ tenantId: tenant.id }),
       })
       if (resp.ok) {
-        updateConfig('googleCalendarConnected', false)
-        const updated = updateNestedConfig(config, 'googleCalendarEmail', undefined)
+        let updated = updateNestedConfig(config, 'googleCalendarConnected', false)
+        updated = updateNestedConfig(updated, 'googleCalendarEmail', undefined)
         setConfig(updated)
+        setSaved(false)
         setGcalToast({ type: 'info', message: 'Google Calendar disconnected.' })
         setTimeout(() => setGcalToast(null), 4000)
       } else {
