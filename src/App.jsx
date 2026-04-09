@@ -7,6 +7,8 @@ import TenantDashboard from './pages/TenantDashboard'
 import TenantPublicPage from './pages/TenantPublicPage'
 import Login from './pages/Login'
 import { BlogIndex, BlogPost } from './pages/BlogPost'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
 
 /**
  * Detect if we're on a tenant subdomain.
@@ -68,6 +70,8 @@ function App() {
       <Route path="/blog" element={<BlogIndex />} />
       <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/q/:slug" element={<SlugRoute />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
     </Routes>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
   Zap, Shield, DollarSign, BarChart3, Users, Globe,
   Star, ArrowRight, Check, Sparkles, TrendingUp,
@@ -632,7 +632,12 @@ export default function LandingPage() {
             <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 32, filter: 'brightness(0) invert(1)' }} />
           </div>
           <p>Proudly made in Wisconsin</p>
-          <p style={{ marginTop: 8 }}>{"\u00A9"} {new Date().getFullYear()} MyBidQuick All rights reserved.</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 12 }}>
+            <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: 13 }}>Privacy Policy</Link>
+            <Link to="/terms" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: 13 }}>Terms of Service</Link>
+            <a href="mailto:tim@mybidquick.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: 13 }}>Contact</a>
+          </div>
+          <p style={{ marginTop: 12 }}>{"\u00A9"} {new Date().getFullYear()} MyBidQuick. All rights reserved.</p>
         </div>
       </footer>
 
