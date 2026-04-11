@@ -50,7 +50,7 @@ Two repos (both under MyBidQuick):
 - **Hosting**: Vercel (LIVE and deployed)
 - **Database**: Supabase (PostgreSQL with RLS) — tenant storage, leads, billing
 - **Payments**: Stripe (per-lead credit billing via Checkout + Customer Portal)
-- **Serverless API**: Vercel Functions (4 endpoints in `/api/`)
+- **Serverless API**: Vercel Functions (10 endpoints in `/api/`)
 - **Domains**: mybidquick.com, mybidquick.io, mybidquick.org (all purchased via Vercel, all connected)
 - **Vercel URL**: mybidquick.vercel.app
 
@@ -70,6 +70,8 @@ Two repos (both under MyBidQuick):
 | `/dashboard` | TenantDashboard.jsx | Full tenant admin panel for each cleaning company (auth-protected) |
 | `/blog` | BlogIndex (BlogPost.jsx) | Blog index page listing all SEO articles |
 | `/blog/:slug` | BlogPost (BlogPost.jsx) | Individual blog post pages (10 SEO articles, incl. 3 competitor comparisons) |
+| `/privacy` | PrivacyPolicy.jsx | Privacy Policy page (required for Gartner/Capterra listing) |
+| `/terms` | TermsOfService.jsx | Terms of Service page (required for Gartner/Capterra listing) |
 | `/q/:slug` | TenantPublicPage.jsx | Fallback tenant quote page for before subdomain DNS is set up |
 | *(subdomain)* | TenantPublicPage.jsx | Auto-detected via `slug.mybidquick.com` — shows tenant's public quote page |
 
@@ -85,17 +87,43 @@ mybidquick/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml          # GitHub Actions CI — runs `npm run build` on every push to main
-├── api/                    # Vercel Serverless Functions
-│   ├── create-checkout.js  # Creates Stripe Checkout sessions for credit packs
-│   ├── create-portal.js    # Creates Stripe Customer Portal sessions
-│   ├── billing-status.js   # GET billing info (credits, purchases, charges)
-│   ├── webhook.js          # Stripe webhook (fulfills credit purchases) — endpoint: /api/webhook
-│   └── weekly-pipeline-email.js  # Weekly pipeline summary email to tenants (scheduled Monday 8am ET via Resend)
+├── api/                    # Vercel Serverless Functions (11 endpoints)
+│   ├── _lib/
+│   │   ├── encryption.js       # AES-256-GCM encrypt/decrypt for OAuth tokens
+│   │   └── supabase-admin.js   # Supabase client with service_role_key (bypasses RLS)
+│   ├── billing-status.js       # GET billing info (credits, purchases, charges)
+│   ├── create-calendar-event.js # Creates Google Calendar event from lead scheduling prefs
+│   ├── create-checkout.js      # Creates Stripe Checkout sessions for credit packs
+│   ├── create-portal.js        # Creates Stripe Customer Portal sessions
+│   ├── google-auth-callback.js # OAuth callback — exchanges code → tokens → encrypts → stores
+│   ├── google-auth-start.js    # Initiates Google OAuth flow (Calendar + email scopes)
+│   ├── google-disconnect.js    # Revokes Google tokens + cleans up integration record
+│   ├── send-quote-confirmation.js # Sends confirmation email to customer after quote submission (Resend)
+│   ├── webhook.js              # Stripe webhook (fulfills credit purchases) — endpoint: /api/webhook
+│   └── weekly-pipeline-email.js # Weekly pipeline summary email to tenants (scheduled Monday 8am ET via Resend)
 ├── docs/                   # Marketing, planning, and reference docs (not deployed)
+│   ├── client-acquisition-playbook.html  # Interactive playbook: cold DM templates, FB group posts, directory links
+│   ├── directory-listings.md             # Software directory submission guide + links
+│   ├── resend-setup.md                   # Resend email/SMTP configuration reference
+│   ├── welcome-email-sequence.md         # 5-email welcome sequence templates
+│   ├── tim-personal-posts.md             # Tim's personal social media post templates
+│   ├── community-launch-posts.md         # Ready-to-post copy for PH, Reddit, IH, FB groups
+│   ├── marketing-teaser-tonight.md       # Soft-launch "First 50 FREE" campaign
+│   ├── design-philosophy.md              # "Electric Velocity" brand design philosophy
+│   ├── SOFT-LAUNCH-ISSUES.md             # Pre-launch QA audit (15 issues, categorized)
+│   ├── MyBidQuick-Onboarding-SOP.docx    # Standard Operating Procedure for onboarding
+│   ├── MyBidQuick-Marketing-Playbook.docx # Marketing playbook document
+│   ├── MyBidQuick-Lead-Pipeline.xlsx     # Lead pipeline tracker spreadsheet
+│   └── seo-audit-march2026.html          # SEO audit report with keyword opps
 ├── supabase/
-│   ├── schema.sql          # Core schema (tenants, leads tables)
-│   ├── add-slug.sql        # Slug column migration
-│   └── billing-schema.sql  # Billing tables (lead_charges, credit_purchases)
+│   ├── schema.sql              # Core schema (tenants, leads tables)
+│   ├── add-slug.sql            # Slug column migration
+│   ├── billing-schema.sql      # Billing tables (lead_charges, credit_purchases)
+│   ├── integrations-schema.sql # OAuth token storage (integrations table, RLS server-only)
+│   ├── scheduling-schema.sql   # Adds 'scheduled' status + preferred_days/time columns to leads
+│   ├── rls-hardening.sql       # 12 scoped RLS policies replacing open "Allow public *" policies
+│   ├── rls-rollback.sql        # Rollback script to restore pre-hardening policies
+│   └── RLS-TEST-CHECKLIST.md   # Manual test checklist for verifying RLS policies
 ├── public/
 │   ├── favicon.svg         # Site favicon
 │   ├── icons.svg           # Icon sprite
@@ -105,7 +133,7 @@ mybidquick/
 │   └── sitemap.xml         # SEO sitemap (all 6 URLs use www.mybidquick.com)
 ├── src/
 │   ├── main.jsx            # React entry with HashRouter
-│   ├── App.jsx             # Router (11 routes + subdomain detection)
+│   ├── App.jsx             # Router (13 routes + subdomain detection)
 │   ├── index.css           # Global styles & CSS variables
 │   ├── lib/
 │   │   ├── supabase.js     # Supabase client init
@@ -118,29 +146,19 @@ mybidquick/
 │       ├── Onboarding.jsx      # 3-step signup wizard (includes upsell config)
 │       ├── AdminDashboard.jsx  # Tim's admin panel (password via VITE_ADMIN_PASSWORD env var)
 │       ├── QuoteDemo.jsx       # Customer-facing quote demo with upsell
-│       ├── TenantDashboard.jsx # Tenant admin panel (Leads + Admin + Billing tabs)
+│       ├── TenantDashboard.jsx # Tenant admin panel (Leads + Admin + Billing + Analytics tabs)
 │       ├── BlogPost.jsx        # Blog index + individual post pages (10 SEO articles incl. competitor comparisons)
+│       ├── PrivacyPolicy.jsx   # Privacy Policy page (for Gartner/Capterra listing approval)
+│       ├── TermsOfService.jsx  # Terms of Service page (for Gartner/Capterra listing approval)
 │       └── TenantPublicPage.jsx # Public-facing tenant quote page (subdomain or /q/:slug)
 ├── mybidquick-logo.svg     # Full logo (lightning bolt + speed lines, navy/orange)
 ├── mybidquick-logo.png     # Full logo PNG version
 ├── mybidquick-icon.svg     # Icon-only mark (BQ)
 ├── mybidquick-icon.png     # Icon-only PNG version
-├── SOFT-LAUNCH-ISSUES.md   # Pre-launch QA audit (15 issues, categorized by severity)
-├── MyBidQuick-Onboarding-SOP.docx # Standard Operating Procedure for onboarding new tenants
-├── MyBidQuick-Lead-Pipeline.xlsx  # Lead pipeline tracker spreadsheet (4-stage CRM)
-├── community-launch-posts.md      # Ready-to-post copy for Product Hunt, Reddit, Indie Hackers, Facebook groups
-├── marketing-teaser-tonight.md    # Full soft-launch campaign: "First 50 FREE" hype posts + FB ad copy (3 versions) + Canva graphics + posting game plan
-├── mybidquick-ops-eval-review.html # Internal ops eval review viewer (HTML + SheetJS)
-├── mybidquick-ops-eval-v2.html    # Ops eval v2 — updated review viewer with Poppins/Lora fonts
-├── mybidquick-ops.skill           # Claude skill file for MyBidQuick ops workflows
-├── quote-preview.html             # Mobile phone mockup preview of quote results page
-├── design-philosophy.md           # "Electric Velocity" brand design philosophy
-├── MyBidQuick-Marketing-Playbook.docx # Marketing playbook document
+├── AUDIT-APRIL-2026.md     # April 2026 production audit findings
+├── PRODUCTION-ACTION-PLAN.md # Production hardening action plan
 ├── embed-snippet.html      # Copy-paste HTML embed code for tenants — 3 options: full-page iframe, floating button + slide-up modal, simple CTA link
-├── cleanbid-upsell-patch/          # Patch files staged for mybidquick-engine repo
-│   ├── CustomerFlow.jsx            # Updated customer flow with cascade upsell + tenant config wiring
-│   ├── pricing.js                  # Extracted pricing utility (single source of truth for price calc)
-│   └── index.css                   # CSS updates for engine
+├── County-Wide-PowerWash-Website-Audit-V2.docx # Website audit delivered to County Wide (Steven)
 ├── package.json            # Dependencies (includes stripe, @stripe/stripe-js)
 └── vite.config.js          # Vite config
 ```
@@ -190,26 +208,29 @@ single-hung, double-hung, casement, sliding, bay/bow (each with price multiplier
 - Needs porting to mybidquick-engine (the customer-facing quoting engine)
 
 ## Tenant Dashboard (mybidquick.com/#/dashboard)
-Full admin panel for each tenant (cleaning company customer). Login via email lookup. Includes:
-- **Leads/CRM Panel**: Stats dashboard (total leads, pending, won, revenue), status filters (All/Pending/Won/Lost), expandable lead cards with contact info, services, notes, won/lost actions
-- **Pricing Tab**: Global price adjustment slider (-50% to +50%), package multipliers (Basic 1x, Standard 1.35x, Premium 1.75x with editable descriptions), bundle discounts (2-service and 3+ service %)
+Full admin panel for each tenant (cleaning company customer). Login via Supabase Auth. Includes:
+- **Leads/CRM Panel**: Stats dashboard (total leads, pending, won, revenue), status filters (All/New/Contacted/Scheduled/Won/Lost), expandable lead cards with contact info, services, scheduling preferences, notes, quick-move actions
+- **Pricing Tab**: Global price adjustment slider (-50% to +50%), package multipliers (Standard 1.0x, Premium 1.25x, Platinum 1.55x with editable descriptions), bundle discounts (2/3/4/5-service %), multi-story upcharge controls (2-story and 3-story multipliers), configurable minimum charge floors per service
 - **Services Tab**: Per-service config with toggle on/off, base price, per sq ft, per window, per linear ft, and editable add-ons with prices
 - **Bundles Tab**: Seasonal bundle builder with name, discount %, end date, tagline
 - **Marketing Tab**: Toggleable marketing elements — urgency timer, social proof, limited-time offer, review badge
 - **Followup Tab**: Email/SMS sequence builder — delay (days), type (email/sms), subject, body with template variables ({{name}}, {{business}}, {{total}}, {{services}}), add/remove steps
+- **Integrations Tab**: Google Calendar OAuth integration — connect/disconnect with one click, encrypted token storage (AES-256-GCM), auto-create calendar events from leads with scheduling preferences, shows connected account email. OAuth flow: google-auth-start → Google consent → google-auth-callback → encrypted token stored in `integrations` table
 - **Settings Tab**: Business name, admin password, lead sources (add/remove tags), lead notification email, Web3Forms API key, export config JSON
 - **Demo accounts**: tim.sullivan@clouteinc.com, noah@cornerstoneexterior.com
-- **Analytics Tab**: 4 KPI cards (Total Quotes, Conversion Rate, Avg Ticket Size, Total Revenue), conversion funnel visualization (New → Contacted → Won with dropout rates), ROI summary card (Cost per Lead, Revenue per Lead, ROI %, Credits Remaining), bar chart for quote volume by month (last 6 months), revenue by month chart, lead source breakdown with color-coded percentage bars, top services by popularity, revenue by service. Empty state shown when no leads exist yet. All computed client-side from the `leads` array.
+- **Analytics Tab**: Time range filter (7d/30d/90d/All), 4 KPI cards (Total Quotes, Conversion Rate, Avg Ticket Size, Total Revenue), conversion funnel visualization (New → Contacted → Scheduled → Won with dropout rates), ROI summary card (Cost per Lead, Revenue per Lead, ROI %, Credits Remaining), bar chart for quote volume by month (last 6 months), revenue by month chart, lead source breakdown with color-coded percentage bars, top services by popularity, revenue by service, performance summary (best day, avg quotes/day), recent quotes table (last 10), follow-up opportunities (leads needing contact). Empty state shown when no leads exist yet. All computed client-side from the `leads` array.
 - **Billing Tab**: Credits banner (real-time from Supabase), low/zero credit warnings, 4 lead credit pack cards, "How It Works" section, purchase history table, Manage Billing button (Stripe Customer Portal)
 - Config pattern: `updateConfig(dotPath, value)` with `deepClone` for immutable state, localStorage persistence
 - Self-contained component with inline styles, blue theme (#3b9cff primary)
 
-## Demo Tenants (Hardcoded)
+## Demo Tenants (Hardcoded in AdminDashboard)
 | Company | Owner | Plan | Quotes/Month |
 |---------|-------|------|-------------|
 | Cloute Cleaning | Tim Sullivan | Pro | 147 |
 | Cornerstone Exterior | Noah Baldry | Growth | 63 |
 | + 3 others | Various | Various | Various |
+
+**Real Tenants (Supabase)**: 3 active — Cloute Exterior Cleaning, Cornerstone Wash and Window Cleaning, County Wide Power Wash. See "Active Tenants" section in mybidquick-engine docs below for full details.
 
 ## Branding
 - Product name: **MyBidQuick**
@@ -254,7 +275,13 @@ Full admin panel for each tenant (cleaning company customer). Login via email lo
 - [x] Supabase billing schema (lead_charges + credit_purchases tables)
 - [x] Configure Stripe webhook endpoint URL in Stripe Dashboard (https://www.mybidquick.com/api/webhook)
 - [x] Add STRIPE_WEBHOOK_SECRET env var to Vercel for signature verification
-- [x] Usage analytics / reporting for tenants (Analytics tab in TenantDashboard — quotes, revenue, conversion rate, lead sources, top services)
+- [x] Usage analytics / reporting for tenants (Analytics tab in TenantDashboard — quotes, revenue, conversion rate, lead sources, top services, time range filters, performance summary, follow-up opportunities)
+- [x] RLS hardening — 12 scoped policies replacing open "Allow public *" on all 4 tables (2026-04-06)
+- [x] Google Calendar integration for tenants — OAuth connect/disconnect, auto-create events from leads (2026-04-07)
+- [x] Quote confirmation emails — branded HTML email sent to customers after quote submission via Resend (2026-04-08)
+- [x] Multi-story upcharge controls in tenant dashboard (2-story/3-story multipliers)
+- [x] Minimum charge floors per service in tenant dashboard
+- [x] Scheduled status in CRM pipeline (5th stage between Contacted and Won)
 
 ### SOFT LAUNCH FIXES (from QA audit — March 27, 2026)
 See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
@@ -275,7 +302,7 @@ See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
 ### PHASE 3.5 — Lead Pipeline CRM (Started March 28, 2026)
 **Goal**: Track every lead coming through MyBidQuick in a simple 4-stage pipeline, with AI-powered follow-up emails and a visual Kanban board.
 
-**Pipeline Stages**: New → Contacted → Won → Lost (Supabase check constraint updated)
+**Pipeline Stages**: New → Contacted → Scheduled → Won → Lost (Supabase check constraint updated)
 
 **Tracking Fields**: Lead #, Date, Name, Email, Phone, Tenant, Service Requested, Quote $, Status, Last Contact, Notes, Follow-ups Sent
 
@@ -299,6 +326,7 @@ See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
 - [x] Board view + List view toggle
 - [x] Quick-move buttons on expanded lead cards (move to any stage with one click)
 - [x] Stats row showing count per stage + total won revenue
+- [x] Automated follow-up email system — `follow_up_logs` table in Supabase, tenants configure steps in Follow-Up tab, Vercel cron sends branded emails per tenant config (2026-04-08)
 - [ ] Invoicing integration (generate + send invoices for Won leads)
 - [x] Marketing source tracking (lead source field + analytics tab breakdown)
 
@@ -501,11 +529,14 @@ Customers pick Standard/Premium/Platinum **independently for each service**. Eac
 ### Tenant Config Structure (in tenant JS files)
 Each tenant file exports: id, businessName, tagline, phone, email, adminPassword, web3formsKey, googlePlacesApiKey, housecallProEnabled, colors (bg, primary, primaryLight, accent, text, textMid, textLight, card, border), logoLetter, logoImage, leadSources[], gallery, marketing config, disabledServices[]
 
-### Active Tenants
+### Active Tenants (Supabase — 3 rows as of April 10, 2026)
 | Tenant | Slug | HCP Integration | Notes |
 |--------|------|-----------------|-------|
-| Cloute Cleaning | cloute | Yes | Tim's cleaning company (managing partner) |
-| Cornerstone Exterior | cornerstone | No | Noah Baldry's company, roof/gutter guard disabled |
+| Cloute Exterior Cleaning | cloute-cleaning | Yes | Tim's company (managing partner). Test tenant. 82+ credits. Only one with Stripe customer. |
+| Cornerstone Wash and Window Cleaning | cornerstone-wash-and-window-cleaning | No | Noah Baldry. Coaching client — credits manually seeded. |
+| County Wide Power Wash and Restorations | county-wide-power-wash-and-restorations | No | Steven. Coaching client — credits manually seeded. |
+
+**Note**: Old orphaned "Cornerstone Exterior" record (auth_user_id: null, slug: cornerstone-exterior) should be soft-deleted. Non-Cloute tenants are coaching clients getting free leads — don't flag credit balances as anomalies.
 
 ### Embed Snippet (for tenant websites)
 File: `embed-snippet.html` in mybidquick repo root. Three integration options:
@@ -547,19 +578,53 @@ MyBidQuick gradient: 135deg, #3b9cff → #6dd19e
 | 2026-04-03 | **Per-service package selection SHIPPED**: Replaced global package selector with per-service tier pickers in mybidquick-engine CustomerFlow.jsx. Each service card now has its own Standard/Premium/Platinum buttons. Customers can mix tiers (e.g., Platinum house wash + Standard windows). `servicePackages` state object maps service IDs to tier names. `totalPrice()` computes mixed-tier totals. Services with `maxTier: "premium"` (deck, concrete, gutter) don't show Platinum. **Tier description styling**: Made descriptions bold (14px, 700 weight) inside colored card with "{TIER} — What's Included:" label. Removed old redundant global tier description box. **Notion brain updated**: Corrected all pricing tables to match actual defaults.js (were out of date), added per-service package docs, pricing visibility rule, and session log entries. Engine commits: f4ec533, 40bcbf5. |
 | 2026-04-04 | **Bug fixes + UX improvements + video toggle**: (1) **Window Cleaning $0 bug FIXED** — added sqft fallback in pricing logic; if window cleaning's details don't have sqft yet (useEffect sync race condition), it falls back to house washing sqft. (2) **National averages comparison bars FIXED** — were showing base price without package multiplier; now show package-adjusted price matching what customer sees. (3) **Owner intro video toggle** — added `showOwnerVideo` boolean to config (defaults.js, cloute.js, configAdapter.js); AdminPanel.jsx has toggle switch next to video URL field; CustomerFlow.jsx checks both toggle AND URL before rendering. Tenants can save URL and toggle on/off without losing it. (4) **Scroll-to-top on step navigation** — Next/Back buttons now smooth-scroll to top instead of leaving page at bottom. (5) **Customer notes field** — added "Questions or Notes" textarea on quote review page (step 3) between "What Happens Next" and trust signals. Notes already wired into lead submission data. (6) **Street View Static API** enabled in GCP (from prior session). (7) **Canva Facebook post graphic** created with Cloute blue/navy branding + dad joke copy for Tim's personal page. (8) **Noah Baldry onboarding email** drafted from Cloute email with signup link (mybidquick.com/#/signup) and checklist of what he needs to provide. Engine commits: 60f8fe5, 17c7ad5, f29da05. |
 | 2026-04-05 | **Email domain setup + Gmail Send As**: (1) **Resend domain swap** — deleted send.mybidquick.com, added mybidquick.com (root domain) to Resend to stay on free tier (1 domain limit). (2) **DNS records added to Vercel** — 4 records: DKIM (TXT on resend._domainkey), SPF (MX + TXT on send subdomain), DMARC (TXT on _dmarc). Full 218-char DKIM key extracted from Resend UI. (3) **Resend domain verified** (green) — propagated in ~2 minutes since Vercel manages both DNS and registrar. (4) **Edge Function v4 deployed** — `process-welcome-emails` updated from address: `tim@send.mybidquick.com` → `tim@mybidquick.com`. Reply-to unchanged. (5) **New Resend API key** created: "gmail-smtp" with Sending access (old masked key couldn't be revealed). (6) **Gmail "Send As" configured** — tim@mybidquick.com working via smtp.resend.com:587/TLS (port 465/SSL failed; 587/TLS succeeded). Tim can now send emails as tim@mybidquick.com from Gmail. (7) **Gartner Digital Markets / Capterra submission started** — confirmation received (request ID: 0a8c9922). Covers Capterra + GetApp + Software Advice (all Gartner-owned). (8) Updated next-steps-action-guide.md with SMTP instructions + docs/directory-listings.md + docs/resend-setup.md committed. |
+| 2026-04-06 | **RLS hardening + production safety audit**: (1) **Production safety audit (Bucket 1)** — switched all 4 API routes (webhook, create-checkout, billing-status, create-portal) to use `SUPABASE_SERVICE_ROLE_KEY` with anon key fallback. Added `api/_lib/supabase-admin.js` shared module (commit `909fe64`). (2) **City & State fields** added to tenant Settings tab in TenantDashboard — saves to Supabase `city` and `state` columns (commit `5c89096`). (3) **RLS hardening applied to production** — replaced 10+ wide-open "Allow public *" policies with 12 scoped policies: authenticated tenants see only their own data, anon users can only read tenant info by slug and insert leads, service_role_key bypasses for server-side API routes. Created `supabase/rls-hardening.sql`, `supabase/rls-rollback.sql`, and `supabase/RLS-TEST-CHECKLIST.md`. All 4 tables hardened: tenants, leads, lead_charges, credit_purchases (commit `84a0209`). |
+| 2026-04-07 | **Platform defaults sync + pricing controls + analytics upgrade + scheduling + Google Calendar integration**: (1) **Synced platform defaults with engine** — updated DEFAULT_CONFIG in TenantDashboard to match engine defaults.js: packages renamed Basic→Standard/Standard→Premium/Premium→Platinum with correct multipliers (1.0/1.25/1.55), all service prices aligned, added 4/5-service bundle discounts, window types updated (commit `510f19e`). (2) **Multi-story upcharge controls** — added `storiesMultipliers` config section to Pricing tab: 2-story (default 1.12x) and 3-story (default 1.21x) adjustable sliders (commit `fe5bb86`). (3) **Minimum charge floors** — new Pricing tab section for per-service minimum charges: window cleaning ($75), gutter guard install ($200), gutter cleaning ($75) with editable inputs (commit `3cfe104`). (4) **Analytics time range filter** — added 7d/30d/90d/All toggle to Analytics tab, all charts and KPIs filter by selected range (commit `c69d87e`). (5) **Analytics enhancements** — added performance summary (best day, avg quotes/day), recent quotes table (last 10 with status badges), and follow-up opportunities section highlighting leads needing contact (commit `0d442b4`). (6) **Scheduled status** — added 'scheduled' as 5th pipeline stage (purple, between Contacted and Won). DB migration adds `preferred_days` and `preferred_time` columns to leads. Kanban board updated with scheduling display on lead cards (commits `ce660cd`, `5db091e`). (7) **Integrations tab + Google Calendar OAuth** — new admin sub-tab for managing integrations. Full Google Calendar flow: `google-auth-start.js` → Google consent → `google-auth-callback.js` → encrypted tokens stored in `integrations` table (AES-256-GCM via `api/_lib/encryption.js`). Disconnect via `google-disconnect.js` revokes tokens. `create-calendar-event.js` creates events from lead scheduling preferences. New Supabase table `integrations` with RLS (server-only, no client access). Feature toggle `googleCalendar` in config. Multiple bug fixes for state races, toggle crashes, OAuth scopes (commits `96d9d42`, `e8352ee`, `fafc180`, `a4bb8a1`, `e3509f1`). |
+| 2026-04-08 | **Quote confirmation emails**: (1) **Customer confirmation email** — new `api/send-quote-confirmation.js` endpoint sends a branded HTML email to customers immediately after quote submission via Resend. Called from `createLead()` in db.js. Email includes service details, total price, business name/phone, and "What happens next" section (commit `18b26fe`). (2) **Redeploy** to pick up `RESEND_API_KEY` env var in Vercel (commit `ddb539c`). |
+| 2026-04-09 | **Legal pages for directory listings**: Added Privacy Policy (`/privacy`) and Terms of Service (`/terms`) pages — required for Gartner Digital Markets (Capterra/GetApp/SoftwareAdvice) listing approval. New files: `PrivacyPolicy.jsx`, `TermsOfService.jsx`. Footer links added to LandingPage.jsx. 2 new routes in App.jsx (commit `98adcd1`). **SEO audit v2**: Updated audit (seo-audit-2026-04-09.md) — ~200 organic visits/mo, big gap vs QuoteIQ (15-25K) and Jobber (20-35K). Nobody owns "white-label quoting" or "per-lead pricing" content yet. Quick wins: optimize homepage title/meta, add schema markup, fix internal linking. **Blog rewrite**: Replaced generic "How to Price Pressure Washing Jobs" with Tim's authentic voice version. **County Wide website audit V2**: Full PageSpeed + technical SEO + conversion audit delivered as docx for Steven. |
+| 2026-04-10 | **State of project review + client acquisition playbook**: Reviewed full project status — product is solid, bottleneck is tenant acquisition. Built interactive client acquisition playbook (`docs/client-acquisition-playbook.html`) with 4 cold DM/email templates for solo pressure washers, 5 Facebook group value posts (ready to paste), 8 software directory submission links with steps, weekly action plan (<2 hrs/week), and positioning guide (4 differentiators vs Jobber/HCP/ResponsiBid). **Gartner Peer Insights submitted**: MyBidQuick listed under "Configure, Price and Quote Applications" in Sales market. Submitted with Cloute + Cornerstone as customer links. Under review 2-5 business days. **PROJECT-BRAIN.md major update**: Added follow_up_logs table, updated tenant roster (3 active: Cloute, Cornerstone W&W, County Wide), added Scheduled Tasks section, added Client Acquisition section, documented all 7 Supabase tables with key columns, updated file tree with docs/ contents, verified API count at 10. |
+
+## Scheduled Tasks (Automation)
+These run automatically via Cowork scheduled tasks:
+| Task | Schedule | What It Does |
+|------|----------|-------------|
+| mybidquick-lead-sync | Every 4 hours | Syncs leads from Supabase, generates sync report |
+| mybidquick-lead-followup | Daily 8am | Checks leads needing Day 1/3/7 follow-ups, creates Gmail drafts |
+| weekly-mybidquick-marketing | Sundays 8pm | Generates 10 social posts, 1 blog outline, competitor intel |
+| mybidquick-health-check | Daily | Checks site uptime and API endpoint health |
+| daily-tenant-update | Daily | Pulls tenant data, creates Google Sheet report, emails Tim |
+| update-project-brain | Periodic | Auto-updates PROJECT-BRAIN.md with recent session work |
+
+## Client Acquisition (as of April 10, 2026)
+**Target customer**: Solo pressure washers (1-person operations, no website, price-sensitive)
+**Budget**: Under $200/month
+**Strategy**: 3-pronged approach documented in `docs/client-acquisition-playbook.html`:
+1. **Cold outreach** — personalized DMs to pressure washers on Instagram/Facebook. Lead with their pain (slow quoting), offer 3 free credits. 5 DMs/week.
+2. **Facebook group value posts** — show up as "the pressure washer who built a quoting tool." 1 post/week in PW groups (Pressure Washing Resource, PWRA, Softwash Nation).
+3. **Software directories** — passive inbound from Capterra, G2, GetApp, AlternativeTo, Product Hunt.
+
+**Directory submission status**:
+- Gartner Digital Markets (Capterra/GetApp/SoftwareAdvice): Submitted 2026-04-05, request ID 0a8c9922
+- Gartner Peer Insights: Submitted 2026-04-10 via Vendor Portal (under review, 2-5 business days). Category: Configure, Price and Quote Applications.
+- G2: Profile submitted 2026-04-05 (4/4 steps, awaiting review)
+- SourceForge: N/A (open-source only)
+
+**Outreach tools built**:
+- `website_audit.py` — Python script that audits a prospect's website (PageSpeed + content scrape), generates a report with 3 quick wins. Use before cold emailing to lead with value.
+- `County-Wide-PowerWash-Website-Audit-V2.docx` — example audit delivered to Steven's company
 
 ## SEO & Google Search Console
 - **www vs non-www**: All URLs canonicalized to `www.mybidquick.com` (fixed 2026-03-30)
 - **Google Search Console**: www.mybidquick.com property verified via meta tag
 - **Verification tag**: `<meta name="google-site-verification" content="uVz2LLgmtmrxIhr1PeowRq9TlUksp-kxqfaG8Ekxxow" />` (in index.html)
-- **Sitemap**: `www.mybidquick.com/sitemap.xml` — 13 URLs (/, /signup, /blog, 7 blog posts, /login, /dashboard, /demo/quote)
+- **Sitemap**: `www.mybidquick.com/sitemap.xml` — 14 URLs (/, /signup, /blog, 7 blog posts, /login, /compare, /privacy, /terms)
 - **Canonical tag**: `<link rel="canonical" href="https://www.mybidquick.com/" />` (in index.html)
 - **og:url**: `https://www.mybidquick.com/` (in index.html)
 - **robots.txt**: Points sitemap to `https://www.mybidquick.com/sitemap.xml`
-- **SEO Audit Report**: seo-audit-march2026.html (in repo) — 17 target keywords, competitor comparison, 12-item action plan
+- **SEO Audit Reports**: seo-audit-march2026.html (original, March 2026) + seo-audit-2026-04-09.md (updated April 9 — ~200 organic visits/mo, QuoteIQ gets 15-25K, Jobber 20-35K. Key opps: own "white-label quoting" and "per-lead pricing" content)
 - **Status as of 2026-03-30**: Zero pages indexed in Google. Fixes deployed, waiting for Googlebot to crawl.
 - **Google Business Profile**: Verified (2026-04-03)
-- **Pending**: Software directory submissions — Capterra/GetApp/SoftwareAdvice submitted via Gartner (2026-04-05, awaiting review); G2 + SourceForge still pending. Competitor comparison landing pages still pending.
+- **Pending**: Software directory submissions — Capterra/GetApp/SoftwareAdvice submitted via Gartner (2026-04-05, awaiting review); G2 submitted (awaiting review); SourceForge N/A (open-source only). Competitor comparison blog posts shipped (3 articles).
 - **Email**: tim@mybidquick.com fully operational — Resend domain verified, Edge Function sends from root domain, Gmail "Send As" configured via smtp.resend.com:587/TLS (2026-04-05)
 
 ## Cloute Cleaning — Quick Reference (Tenant)
@@ -592,11 +657,17 @@ Cloute Cleaning is a **customer/tenant** of MyBidQuick. Tim Sullivan is managing
 | Admin Dashboard | `www.mybidquick.com/#/admin` (password: via Vercel env var — changed 2026-04-05) |
 | Tabs | Overview, Tenants, Revenue, Analytics, Settings |
 
-### Cornerstone Exterior (Other Tenant)
+### Cornerstone Wash & Window (Tenant)
 | Page | URL |
 |------|-----|
-| Quoting Page | `cornerstone.mybidquick.com#quote` |
+| Quoting Page | `cornerstone-wash-and-window-cleaning.mybidquick.com#quote` |
 | Demo Login Email | noah@cornerstoneexterior.com |
+
+### County Wide Power Wash (Tenant)
+| Page | URL |
+|------|-----|
+| Quoting Page | `county-wide-power-wash-and-restorations.mybidquick.com#quote` |
+| Owner | Steven |
 
 ## Environment Variables
 ### In `.env` (committed to repo — client-side, publishable only)
@@ -607,12 +678,24 @@ Cloute Cleaning is a **customer/tenant** of MyBidQuick. Tim Sullivan is managing
 ### In Vercel Dashboard (NOT committed — server-side secrets)
 - `VITE_SUPABASE_URL` — Also needed by serverless functions
 - `VITE_SUPABASE_ANON_KEY` — Also needed by serverless functions
+- `SUPABASE_SERVICE_ROLE_KEY` — Service role key (bypasses RLS for server-side API routes)
 - `STRIPE_SECRET_KEY` — Stripe secret key (sk_test_...)
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret (whsec_...)
+- `GOOGLE_CLIENT_ID` — Google OAuth client ID (for Calendar integration)
+- `GOOGLE_CLIENT_SECRET` — Google OAuth client secret
+- `INTEGRATION_ENCRYPTION_KEY` — 64-char hex string (32 bytes) for AES-256-GCM token encryption
+- `RESEND_API_KEY` — Resend API key for sending transactional emails (quote confirmations, weekly pipeline)
 
 ### Supabase
 - **Project**: Mybidquick (eccuaztubjdxicylcwrh)
-- **Tables**: tenants, leads, lead_charges, credit_purchases
+- **Tables** (7 total):
+  - `tenants` — company profiles, configs, billing info, auth linkage. Key columns: slug, config (JSONB), lead_credits (default 25), stripe_customer_id, auth_user_id, is_launch_customer, email_opt_out
+  - `leads` — customer quote submissions. Key columns: status (new/contacted/scheduled/won/lost), service_details (JSONB), package_prices (JSONB), address, preferred_days/time, follow_ups_sent (int array)
+  - `lead_charges` — per-lead billing records (1 credit deducted per quote)
+  - `credit_purchases` — Stripe checkout purchase records (pending/completed/failed)
+  - `integrations` — OAuth token storage (Google Calendar). Encrypted access/refresh tokens (AES-256-GCM). RLS: server-only (no client access)
+  - `welcome_email_schedule` — 5-email onboarding sequence per tenant. Tracks sent_at, status (pending/sent/skipped/failed). RLS: server-only
+  - `follow_up_logs` — automated follow-up email tracking. Logs each step sent per lead (step_index, delay_days, type, subject, status). RLS: server-only
 - **Auth column on tenants**: auth_user_id (UUID FK → auth.users.id, unique)
 - **Billing columns on tenants**: stripe_customer_id, lead_credits (default 3), lead_price_cents (default 500), billing_active
 
