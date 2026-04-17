@@ -120,8 +120,14 @@ export default async function handler(req, res) {
 // Resend email sender
 // ============================================================================
 async function sendEmail({ to, subject, html, text, replyTo }) {
-  const resendApiKey = process.env.RESEND_API_KEY
-  if (!resendApiKey) throw new Error('RESEND_API_KEY not configured')
+  // Accept either casing — Vercel env was historically saved lowercase.
+  const resendApiKey = process.env.RESEND_API_KEY || process.env.resend_api_key
+  if (!resendApiKey) {
+    // Diagnostic: log which RESEND-ish keys ARE present (names only, not values).
+    const seen = Object.keys(process.env).filter((k) => /resend/i.test(k))
+    console.error('welcome-drip: RESEND key missing. Found RESEND-ish env keys:', seen)
+    throw new Error('RESEND_API_KEY not configured')
+  }
 
   const payload = {
     from: 'Tim Sullivan <tim@mybidquick.com>',
