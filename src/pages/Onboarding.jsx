@@ -42,6 +42,25 @@ async function notifyNewSignup(form, slug, isLaunchCustomer) {
   }
 }
 
+// Send the Day-0 welcome email to the new tenant.
+// Best-effort: logs and swallows errors so onboarding never fails on email.
+// Backend template lives in api/send-welcome-email.js.
+async function sendWelcomeEmail({ email, ownerName, businessName, slug }) {
+  try {
+    const resp = await fetch('/api/send-welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, ownerName, businessName, slug }),
+    })
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}))
+      console.warn('Welcome email send returned non-OK:', resp.status, data)
+    }
+  } catch (err) {
+    console.warn('Welcome email send failed (non-blocking):', err)
+  }
+}
+
 const STEPS = [
   { title: "Your Info", desc: "Tell us about your business" },
   { title: "Branding", desc: "Make it look like yours" },
@@ -276,14 +295,23 @@ export default function Onboarding() {
       // 2. Notify Tim about the new signup (non-blocking)
       notifyNewSignup(form, slug, isLaunchCustomer)
 
-      // 3. Create auth user with email + password
+      // 3. Send Day-0 welcome email (non-blocking — never fail onboarding on email)
+      //    See api/send-welcome-email.js
+      sendWelcomeEmail({
+        email: form.email,
+        ownerName: form.ownerName,
+        businessName: form.businessName,
+        slug,
+      })
+
+      // 4. Create auth user with email + password
       try {
         const authUser = await signUp(form.email, form.password, {
           business_name: form.businessName,
           owner_name: form.ownerName,
         })
 
-        // 3. Link auth user to tenant
+        // 5. Link auth user to tenant
         if (authUser && tenant?.id) {
           await linkAuthToTenant(tenant.id, authUser.id)
         }

@@ -216,21 +216,29 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTenant, setSelectedTenant] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Session-persisted auth flag so refresh doesn't force re-login in the same tab.
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try { return sessionStorage.getItem('mbq_admin_auth') === '1' } catch { return false }
+  })
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
+  const [loggingIn, setLoggingIn] = useState(false)
 
-  // Load tenants from Supabase (or localStorage fallback), merge with demo data
-  const [tenants, setTenants] = useState(DEMO_TENANTS)
+  // Demo tenants only appear in local dev so prod totals/revenue are real.
+  // Flip to DEMO_TENANTS locally by running `npm run dev`.
+  const SEED_TENANTS = import.meta.env.DEV ? DEMO_TENANTS : []
+
+  // Load tenants from Supabase (or localStorage fallback), merge with demo data (dev only)
+  const [tenants, setTenants] = useState(SEED_TENANTS)
 
   useEffect(() => {
     async function loadTenants() {
       try {
         const dbTenants = await getAllTenants()
-        // Merge DB tenants with demo data, avoiding duplicates by email
-        const demoEmails = new Set(DEMO_TENANTS.map(t => t.email?.toLowerCase()))
+        // Merge DB tenants with seed/demo data, avoiding duplicates by email
+        const seedEmails = new Set(SEED_TENANTS.map(t => t.email?.toLowerCase()))
         const extraTenants = dbTenants
-          .filter(t => !demoEmails.has(t.email?.toLowerCase()))
+          .filter(t => !seedEmails.has(t.email?.toLowerCase()))
           .map(t => ({
             ...t,
             quotesThisMonth: t.quotesUsed || 0,
@@ -243,7 +251,7 @@ export default function AdminDashboard() {
             primaryColor: t.primaryColor || '#2563eb',
             secondaryColor: t.secondaryColor || '#60a5fa',
           }))
-        setTenants([...DEMO_TENANTS, ...extraTenants])
+        setTenants([...SEED_TENANTS, ...extraTenants])
       } catch (err) {
         console.error('Failed to load tenants:', err)
       }
@@ -276,18 +284,39 @@ export default function AdminDashboard() {
           <img src="/mybidquick-logo.svg" alt="MyBidQuick" style={{ height: 56, margin: '0 auto 20px', display: 'block' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Admin Dashboard</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>MyBidQuick Platform Admin</p>
-          <form onSubmit={e => {
+          <form onSubmit={async e => {
             e.preventDefault()
             setLoginError('')
-            const envPw = import.meta.env.VITE_ADMIN_PASSWORD
-            if (!envPw) {
-              setLoginError('Admin password not configured. Check VITE_ADMIN_PASSWORD env var in Vercel.')
+            if (!password) {
+              setLoginError('Please enter a password.')
               return
             }
-            if (password === envPw) {
-              setIsAuthenticated(true)
-            } else {
-              setLoginError('Incorrect password. Please try again.')
+            setLoggingIn(true)
+            try {
+              // Password check happens on the server so ADMIN_PASSWORD never
+              // ships in the client bundle. See api/admin-login.js.
+              const resp = await fetch('/api/admin-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password }),
+              })
+              const data = await resp.json().catch(() => ({}))
+              if (resp.ok && data.ok) {
+                try { sessionStorage.setItem('mbq_admin_auth', '1') } catch {}
+                setIsAuthenticated(true)
+                setPassword('')
+              } else if (resp.status === 401) {
+                setLoginError('Incorrect password. Please try again.')
+              } else if (resp.status === 500 && data.error?.includes('not configured')) {
+                setLoginError('Admin password not configured. Set ADMIN_PASSWORD in Vercel env vars.')
+              } else {
+                setLoginError(data.error || 'Login failed. Please try again.')
+              }
+            } catch (err) {
+              console.error('admin login request failed:', err)
+              setLoginError('Network error. Please try again.')
+            } finally {
+              setLoggingIn(false)
             }
           }}>
             <div className="form-group">
@@ -304,8 +333,8 @@ export default function AdminDashboard() {
                 {loginError}
               </p>
             )}
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-              Sign In <ArrowRight size={16} />
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={loggingIn}>
+              {loggingIn ? 'Checking…' : <>Sign In <ArrowRight size={16} /></>}
             </button>
           </form>
         </div>
