@@ -250,7 +250,8 @@ function generateEmailHTML(tenant, pipelineData, weekRange) {
 
 // Send email via Resend
 async function sendEmail(to, subject, html) {
-  const resendApiKey = process.env.RESEND_API_KEY
+  // Accept either casing — Vercel env was historically saved lowercase.
+  const resendApiKey = process.env.RESEND_API_KEY || process.env.resend_api_key
 
   if (!resendApiKey) {
     throw new Error('RESEND_API_KEY not configured')

@@ -83,7 +83,8 @@ export default async function handler(req, res) {
 // Resend Email Sender
 // ============================================================================
 async function sendEmail({ to, subject, html, replyTo }) {
-  const resendApiKey = process.env.RESEND_API_KEY
+  // Accept either casing — Vercel env was historically saved lowercase.
+  const resendApiKey = process.env.RESEND_API_KEY || process.env.resend_api_key
   if (!resendApiKey) throw new Error('RESEND_API_KEY not configured')
 
   const payload = {
