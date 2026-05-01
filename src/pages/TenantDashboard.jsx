@@ -296,6 +296,24 @@ function updateNestedConfig(config, path, value) {
   return newConfig
 }
 
+// Deep-merge a tenant's loaded config on top of DEFAULT_CONFIG so missing
+// fields (e.g. an older tenant whose row predates a feature like marketing or
+// followUp) fall back to defaults instead of crashing the dashboard. Arrays in
+// the loaded config replace defaults entirely.
+function mergeWithDefaults(loaded) {
+  const merge = (defaults, override) => {
+    if (override === undefined || override === null) return deepClone(defaults)
+    if (Array.isArray(defaults) || Array.isArray(override)) return deepClone(override)
+    if (typeof defaults !== 'object' || typeof override !== 'object') return override
+    const out = { ...defaults }
+    for (const k of Object.keys(override)) {
+      out[k] = (k in defaults) ? merge(defaults[k], override[k]) : deepClone(override[k])
+    }
+    return out
+  }
+  return merge(DEFAULT_CONFIG, loaded || {})
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -368,7 +386,7 @@ export default function TenantDashboard() {
         try {
           const myTenant = await getMyTenant()
           if (myTenant) {
-            setConfig(myTenant.config || config)
+            setConfig(mergeWithDefaults(myTenant.config))
           }
         } catch {}
       })()
@@ -403,7 +421,7 @@ export default function TenantDashboard() {
           const myTenant = await getMyTenant()
           if (myTenant) {
             setTenant(myTenant)
-            setConfig(myTenant.config || deepClone(DEFAULT_CONFIG))
+            setConfig(mergeWithDefaults(myTenant.config))
             setIsLoggedIn(true)
 
             // Load leads
@@ -455,7 +473,7 @@ export default function TenantDashboard() {
 
       if (found) {
         setTenant(found)
-        setConfig(found.config || deepClone(DEFAULT_CONFIG))
+        setConfig(mergeWithDefaults(found.config))
         setIsLoggedIn(true)
 
         // Load leads from Supabase if available
