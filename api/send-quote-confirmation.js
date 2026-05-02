@@ -126,18 +126,43 @@ function buildConfirmationEmail(lead, tenant) {
   // Derive a darker shade for gradients (used in header)
   const brandColorDark = darkenHex(brandColor, 0.15)
 
-  // Build services table rows
+  // Build services table rows. Look up friendly names from tenant.config.services
+  // (so customers see "House Washing" instead of raw IDs like "house_washing"),
+  // and pair each service with its individual final price from lead.servicePrices.
+  // Per project rule: customers see final dollar amounts only - no rates, no formulas.
   const services = Array.isArray(lead.services) ? lead.services : []
+  const tenantServices = (tenant.config && Array.isArray(tenant.config.services)) ? tenant.config.services : []
+  const fmtSvcMoney = (v) => v != null && isFinite(Number(v))
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(v))
+    : null
   const serviceRows = services
     .map((svc) => {
-      // Handle both formats: string or {name, tier, price} object
-      const name = typeof svc === 'string' ? svc : svc.name || svc.service || 'Service'
-      const tier = typeof svc === 'object' && svc.tier ? ` (${svc.tier})` : ''
+      let name
+      let id = null
+      if (typeof svc === 'string') {
+        id = svc
+        const match = tenantServices.find((s) => s.id === svc)
+        name = (match && match.name) || svc.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      } else if (svc && typeof svc === 'object') {
+        name = svc.name || svc.service || 'Service'
+        id = svc.id || null
+      } else {
+        name = 'Service'
+      }
+      const tier = svc && typeof svc === 'object' && svc.tier ? ` (${svc.tier})` : ''
+      const priceVal = (id && lead.servicePrices && lead.servicePrices[id] != null)
+        ? lead.servicePrices[id]
+        : (svc && typeof svc === 'object' ? svc.price : null)
+      const priceStr = fmtSvcMoney(priceVal)
+      const priceCell = priceStr
+        ? `<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; text-align: right; color: #1e3a5f; font-weight: 600; white-space: nowrap;">${priceStr}</td>`
+        : `<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0;"></td>`
       return `
         <tr>
           <td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; color: #333;">
             ${escapeHtml(name)}${tier ? `<span style="color: #888; font-size: 13px;">${escapeHtml(tier)}</span>` : ''}
           </td>
+          ${priceCell}
         </tr>`
     })
     .join('')
