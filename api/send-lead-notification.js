@@ -360,4 +360,5 @@ function rgbToHex(r, g, b) {
 
 function darkenHex(hex, amount) {
   const [r, g, b] = hexToRgb(hex)
-  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount
+  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount))
+}

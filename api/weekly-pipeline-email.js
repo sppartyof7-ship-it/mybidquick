@@ -379,3 +379,4 @@ export default async function handler(req, res) {
     console.error('Pipeline email job failed:', err)
     return res.status(500).json({ error: err.message })
   }
+}

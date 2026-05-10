@@ -404,4 +404,5 @@ function darkenHex(hex, amount) {
 /** Lighten a hex color by mixing toward white. lightenHex('#2563eb', 0.9) → very light tint */
 function lightenHex(hex, amount) {
   const [r, g, b] = hexToRgb(hex)
-  return rgbToHex(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amoun
+  return rgbToHex(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount)
+}
