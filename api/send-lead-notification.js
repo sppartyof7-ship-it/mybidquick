@@ -95,7 +95,7 @@ async function sendEmail({ to, subject, html, replyTo }) {
   if (!resendApiKey) throw new Error('RESEND_API_KEY not configured')
 
   const payload = {
-    from: 'MyBidQuick Leads <leads@mybidquick.com>',
+    from: 'MyBidQuick Leads <leads@send.mybidquick.com>',
     to,
     subject,
     html,
@@ -360,5 +360,4 @@ function rgbToHex(r, g, b) {
 
 function darkenHex(hex, amount) {
   const [r, g, b] = hexToRgb(hex)
-  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount))
-}
+  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount

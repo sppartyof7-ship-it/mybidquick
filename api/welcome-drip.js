@@ -130,7 +130,7 @@ async function sendEmail({ to, subject, html, text, replyTo }) {
   }
 
   const payload = {
-    from: 'Tim Sullivan <tim@mybidquick.com>',
+    from: 'Tim Sullivan <tim@send.mybidquick.com>',
     to,
     subject,
     html,
@@ -380,4 +380,4 @@ function escapeHtml(str) {
 }
 
 // TODO (next): honor "exit early on credit purchase" rule from the sequence doc.
-// Query credit_purchases for tenant → if any, bump welcome_step to 4 and skip.
+// Query credit_purchases for tenant → if any, bump welcome_step to 4 and s

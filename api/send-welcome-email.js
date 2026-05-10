@@ -74,7 +74,7 @@ async function sendEmail({ to, subject, html, text, replyTo }) {
   if (!resendApiKey) throw new Error('RESEND_API_KEY not configured')
 
   const payload = {
-    from: 'Tim Sullivan <tim@mybidquick.com>',
+    from: 'Tim Sullivan <tim@send.mybidquick.com>',
     to,
     subject,
     html,
@@ -237,4 +237,4 @@ function escapeHtml(str) {
 //       createdAt is N days ago AND welcome_step < N → send next email → bump step.
 //       (Requires adding welcome_step integer column to tenants table.)
 //   (b) Skip drip in code — send Email 1 only here and do Days 1/3/5/7 as
-//       Gmail drafts (same pattern already in use for quote follow-ups).
+//       Gmail drafts (same pattern already in use for quote follow-u
