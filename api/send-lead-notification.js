@@ -71,8 +71,19 @@ export default async function handler(req, res) {
     const html = buildLeadNotificationEmail(lead, tenant)
     const subject = buildSubject(lead, tenant)
 
+    // Platform owner gets a silent BCC of every lead across every tenant so
+    // Tim has full visibility into MyBidQuick activity. Override via env var
+    // if we ever need to disable/redirect this.
+    const platformBcc = process.env.LEAD_NOTIFICATION_BCC || 'tim@mybidquick.com'
+    // Don't BCC ourselves if the tenant's leadEmail IS the platform owner
+    // (e.g., Tim testing on his own Cloute account).
+    const bccList = platformBcc && platformBcc.toLowerCase() !== recipient.toLowerCase()
+      ? [platformBcc]
+      : undefined
+
     await sendEmail({
       to: recipient,
+      bcc: bccList,
       subject,
       html,
       // Replies from Noah land in the customer's inbox. Critical UX — lets
@@ -80,7 +91,7 @@ export default async function handler(req, res) {
       replyTo: lead.email || undefined,
     })
 
-    return res.status(200).json({ sent: true, to: recipient })
+    return res.status(200).json({ sent: true, to: recipient, bcc: bccList })
   } catch (err) {
     console.error('Lead notification email failed:', err)
     return res.status(500).json({ error: 'Email send failed', detail: err.message })
@@ -90,7 +101,7 @@ export default async function handler(req, res) {
 // ============================================================================
 // Resend Email Sender — same shape as send-quote-confirmation.js
 // ============================================================================
-async function sendEmail({ to, subject, html, replyTo }) {
+async function sendEmail({ to, bcc, subject, html, replyTo }) {
   const resendApiKey = process.env.RESEND_API_KEY || process.env.resend_api_key
   if (!resendApiKey) throw new Error('RESEND_API_KEY not configured')
 
@@ -100,6 +111,7 @@ async function sendEmail({ to, subject, html, replyTo }) {
     subject,
     html,
   }
+  if (bcc && bcc.length) payload.bcc = bcc
   if (replyTo) payload.reply_to = replyTo
 
   const response = await fetch('https://api.resend.com/emails', {
@@ -357,6 +369,31 @@ function formatMoney(v) {
 
 function escapeHtml(str) {
   if (str == null) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '')
+  return [
+    parseInt(h.substring(0, 2), 16),
+    parseInt(h.substring(2, 4), 16),
+    parseInt(h.substring(4, 6), 16),
+  ]
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0')).join('')
+}
+
+function darkenHex(hex, amount) {
+  const [r, g, b] = hexToRgb(hex)
+  return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount))
+}
+l) return ''
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
