@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyBidQuick — Client Acquisition Playbook</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+    border-bottom: 1px solid #334155;
+    padding: 60px 40px 40px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 8px;
+  }
+
+  .hero .subtitle {
+    color: #94a3b8;
+    font-size: 1.05rem;
+  }
+
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat .num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #f97316;
+  }
+
+  .stat .label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .section-num {
+    background: #f97316;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .section h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+
+  .section-desc {
+    color: #94a3b8;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+
+  .template-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .template-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f97316;
+    margin-bottom: 6px;
+  }
+
+  .template-card .context {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-bottom: 14px;
+    font-style: italic;
+  }
+
+  .template-body {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 0.92rem;
+    color: #cbd5e1;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    position: relative;
+  }
+
+  .template-body .placeholder {
+    color: #f97316;
+    font-weight: 500;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #334155;
+    border: 1px solid #475569;
+    color: #94a3b8;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .copy-btn:hover {
+    background: #475569;
+    color: #f8fafc;
+  }
+
+  .copy-btn.copied {
+    background: #166534;
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  .tip {
+    background: #1a2332;
+    border-left: 3px solid #f97316;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.88rem;
+    color: #94a3b8;
+  }
+
+  .tip strong {
+    color: #f97316;
+  }
+
+  .directory-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .directory-grid { grid-template-columns: 1fr; }
+    .stats-bar { gap: 20px; }
+  }
+
+  .dir-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .dir-card h4 {
+    font-size: 0.95rem;
+    color: #f8fafc;
+    margin-bottom: 4px;
+  }
+
+  .dir-card .traffic {
+    font-size: 0.78rem;
+    color: #22c55e;
+    margin-bottom: 10px;
+  }
+
+  .dir-card a {
+    display: inline-block;
+    background: #f97316;
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+
+  .dir-card a:hover { background: #ea580c; }
+
+  .dir-card .notes {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 8px;
+  }
+
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+
+  .checklist li {
+    padding: 10px 0;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.92rem;
+  }
+
+  .checklist li:last-child { border: none; }
+
+  .check {
+    color: #f97316;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .weekly-plan {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .weekly-plan .day {
+    padding: 16px 24px;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .weekly-plan .day:last-child { border: none; }
+
+  .day-label {
+    font-weight: 600;
+    color: #f97316;
+    min-width: 80px;
+    font-size: 0.88rem;
+  }
+
+  .day-task {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+  }
+
+  .time-tag {
+    background: #334155;
+    color: #94a3b8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Client Acquisition Playbook</h1>
+  <p class="subtitle">MyBidQuick — Getting your first 10 paying customers</p>
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="num">&lt;$200</div>
+      <div class="label">Monthly Budget</div>
+    </div>
+    <div class="stat">
+      <div class="num">&lt;2hrs</div>
+      <div class="label">Weekly Time</div>
+    </div>
+    <div class="stat">
+      <div class="num">Solo PW</div>
+      <div class="label">Target Customer</div>
+    </div>
+    <div class="stat">
+      <div class="num">3 Free</div>
+      <div class="label">Credits Hook</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ====== SECTION 1: COLD OUTREACH ====== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>Cold Outreach Templates (DM + Email)</h2>
+    </div>
+    <p class="section-desc">Your current cold outreach hasn't converted. These templates are built for solo pressure washers — they lead with pain, not features. The hook is always "try it free, zero risk."</p>
+
+    <div class="tip"><strong>Why cold outreach fails:</strong> Most SaaS cold DMs sound like "Hey, I built a tool, check it out!" Solo operators delete those instantly. Instead, call out something specific about THEIR business — their Google listing, their Facebook page, their website. Make it about them.</div>
+
+    <div class="template-card">
+      <h3>Instagram/Facebook DM — The "Saw Your Work" Opener</h3>
+      <div class="context">Use when: You find a pressure washer posting before/after photos on social media. Works best because it's genuine and specific.</div>
+      <div class="template-body" id="tmpl1">
+<button class="copy-btn" onclick="copyTemplate('tmpl1')">Copy</button>Hey <span class="placeholder">[first name]</span> — your <span class="placeholder">[driveway/deck/house]</span> wash came out clean. Quick question: when a homeowner hits you up for a quote, how are you sending it back? Text? Phone call?
+
+I'm a pressure washer too and I got tired of going back and forth, so I built a tool that lets my customers get an instant quote from my website — no phone tag. It's called MyBidQuick.
+
+If you want to try it I'll set you up with 3 free quotes, no card needed. Takes about 5 minutes.
+
+Either way, solid work man. 🤙</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Facebook DM — The "No Website" Angle</h3>
+      <div class="context">Use when: You find a pressure washer who only has a Facebook page (no website). Very common for solo operators.</div>
+      <div class="template-body" id="tmpl2">
+<button class="copy-btn" onclick="copyTemplate('tmpl2')">Copy</button>Hey <span class="placeholder">[first name]</span> — I saw your pressure washing page. Do you have a website yet or are you running everything through Facebook?
+
+I ask because I built something that gives you a branded quote page (<span class="placeholder">[their-name]</span>.mybidquick.com) where customers can get an instant price. No website needed. You can put the link in your bio, on your truck, yard signs, wherever.
+
+I'm a PW guy myself — built it because I was losing jobs to guys who quoted faster. First 3 quotes are free if you want to test it out.</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Email — The "Losing Jobs to Speed" Angle</h3>
+      <div class="context">Use when: Cold emailing from a list. Subject line matters more than anything. Keep the email under 100 words.</div>
+      <div class="template-body" id="tmpl3">
+<button class="copy-btn" onclick="copyTemplate('tmpl3')">Copy</button><strong>Subject:</strong> quick question about your quoting process
+
+<span class="placeholder">[First name]</span> —
+
+When a homeowner wants a pressure washing quote, how fast do they get a number back from you?
+
+I was losing jobs because I'd take 2-3 hours to respond. The homeowner already booked someone else by then.
+
+So I built a tool that lets customers get an instant price from my website — like 30 seconds. Now I use it for my own company AND sell it to other pressure washers.
+
+Your first 3 quotes are free. Takes 5 minutes to set up:
+https://www.mybidquick.com
+
+— Tim
+MyBidQuick | Founder (and pressure washer)</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Follow-Up DM (Day 3) — The Nudge</h3>
+      <div class="context">Use when: They saw your first message but didn't reply. One follow-up only — never send more than two messages total.</div>
+      <div class="template-body" id="tmpl4">
+<button class="copy-btn" onclick="copyTemplate('tmpl4')">Copy</button>Hey <span class="placeholder">[first name]</span> — no pressure at all. Just wanted to bump this in case it got buried.
+
+Here's what it looks like for one of my customers: https://cloute-cleaning.mybidquick.com
+
+If it's not for you, totally cool. Good luck this season 👊</div>
+    </div>
+
+    <div class="tip"><strong>Finding targets:</strong> Search Instagram for #pressurewashing, #powerwashing, #softwash in your state. Look for accounts with 200-2000 followers — they're active but not too big to reply. On Facebook, join "Pressure Washing Resource," "PWRA," "Softwash Nation" — watch for posts asking about quoting/pricing software.</div>
+  </div>
+
+  <!-- ====== SECTION 2: FACEBOOK GROUP POSTS ====== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>Facebook Group Value Posts (Ready to Paste)</h2>
+    </div>
+    <p class="section-desc">Don't post ads. Post value that naturally leads back to MyBidQuick. The goal: be "the pressure washer who built a quoting tool" — not a salesperson.</p>
+
+    <div class="tip"><strong>Groups to join:</strong> Pressure Washing Resource (60k+), PWRA Discussion, Softwash Nation, Power Washing Secrets, Pressure Washing Business Tips. Post 1x per week max per group. Engage on others' posts 3-4x per week — build presence before you promote.</div>
+
+    <div class="template-card">
+      <h3>Post #1 — The "Here's What I Did" Story</h3>
+      <div class="context">Best first post. Tells your story. Gets engagement because people love origin stories from fellow operators.</div>
+      <div class="template-body" id="fb1">
+<button class="copy-btn" onclick="copyTemplate('fb1')">Copy</button>I've been pressure washing since 2017 and the one thing that always killed me was quoting.
+
+Customer texts "how much for my driveway?" and by the time I get back to them 2 hours later... they already booked someone else.
+
+So this past year I built a tool that lets my customers get an instant quote from my website. They pick their services, enter their sqft, boom — price shows up in 30 seconds.
+
+My close rate went from maybe 30% to over 60% just because I was FIRST to give them a number.
+
+I'm now offering it to other PW companies too. You get your own branded page (yourcompany.mybidquick.com) and first 3 quotes are free.
+
+Anyone else struggle with quoting speed? What's your process?</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Post #2 — The "Question" Post</h3>
+      <div class="context">Pure engagement post. No link, no pitch. Just builds authority and starts conversations you can DM from.</div>
+      <div class="template-body" id="fb2">
+<button class="copy-btn" onclick="copyTemplate('fb2')">Copy</button>Quick poll for the solo operators:
+
+When a lead comes in from your website/Google/Facebook — how fast are you getting back to them with a price?
+
+A) Under 30 minutes
+B) 1-3 hours
+C) Same day
+D) Next day or longer
+
+Be honest lol. I used to be a solid C and couldn't figure out why my close rate was trash. Turns out speed matters more than price for most homeowners.</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Post #3 — The "Tip + Soft Mention"</h3>
+      <div class="context">Leads with genuinely useful advice. Drops MyBidQuick naturally at the end as one of several options.</div>
+      <div class="template-body" id="fb3">
+<button class="copy-btn" onclick="copyTemplate('fb3')">Copy</button>3 things that actually moved the needle for my pressure washing business this year:
+
+1. Put a QR code on my yard signs that goes straight to a quote page. People scan while I'm still on the job next door.
+
+2. Started offering window cleaning as an add-on at checkout. Adds $150-200 to the average ticket without any extra selling.
+
+3. Automated my follow-up emails. Day 1, Day 3, Day 7 — if they got a quote but didn't book, they hear from me again automatically.
+
+None of this is rocket science but it added probably $2K/month for me.
+
+I use MyBidQuick for the quoting (I built it) but even if you're using something else — yard sign QR codes are a cheat code. Try it.</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Post #4 — The "Screenshot" Post</h3>
+      <div class="context">Show, don't tell. Take a screenshot of your Cloute Cleaning quote page on mobile and post it. Visual posts get 3x engagement.</div>
+      <div class="template-body" id="fb4">
+<button class="copy-btn" onclick="copyTemplate('fb4')">Copy</button>[ATTACH: screenshot of cloute-cleaning.mybidquick.com quote page on mobile]
+
+This is what my customers see when they scan the QR code on my yard signs or click the link in my Google listing.
+
+They pick their service, enter their info, get an instant price. No phone call, no waiting.
+
+I built this for my own PW company and now I'm letting other cleaning companies use it too. You get your own branded version at yourname.mybidquick.com.
+
+3 free quotes to test it, no card needed. Link in comments if anyone wants to check it out.</div>
+    </div>
+
+    <div class="template-card">
+      <h3>Post #5 — The "Response to Someone Else"</h3>
+      <div class="context">Don't post this — use it as a comment reply when someone asks about quoting, CRMs, or software recommendations.</div>
+      <div class="template-body" id="fb5">
+<button class="copy-btn" onclick="copyTemplate('fb5')">Copy</button>I was in the same boat. Tried Jobber and Housecall Pro for quoting but they were overkill (and expensive) when all I needed was a way to get prices to customers fast.
+
+I ended up building my own tool — MyBidQuick. It just does instant online quotes with your branding. No scheduling, no invoicing, no $50/month subscription. You buy quote credits as you need them (starts at $2.50 per lead).
+
+Been using it for my own PW company since last year. Happy to show you what it looks like if you want.
+
+mybidquick.com</div>
+    </div>
+  </div>
+
+  <!-- ====== SECTION 3: DIRECTORIES ====== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>Software Directory Submissions</h2>
+    </div>
+    <p class="section-desc">Submit once, get inbound leads forever. These directories rank high on Google for "quoting software" and "pressure washing software." You have Privacy Policy and Terms pages live — you're unblocked for all of these.</p>
+
+    <div class="directory-grid">
+      <div class="dir-card">
+        <h4>Capterra</h4>
+        <div class="traffic">~5M monthly visitors. Biggest ROI.</div>
+        Free basic listing. They may call to upsell paid placement — skip it for now.
+        <br><a href="https://www.capterra.com/vendors/sign-up" target="_blank">Submit Listing →</a>
+        <div class="notes">Category: "Quoting Software" or "Field Service Management"</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>G2</h4>
+        <div class="traffic">~3M monthly visitors. Second biggest.</div>
+        Free profile. Reviews are currency here — ask your coaching clients to leave one.
+        <br><a href="https://sell.g2.com/create-a-profile" target="_blank">Submit Listing →</a>
+        <div class="notes">Category: "Quoting Software" or "Configure Price Quote (CPQ)"</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>GetApp</h4>
+        <div class="traffic">Owned by Gartner (same as Capterra). Different audience.</div>
+        Free listing. Often auto-pulls from Capterra but submit separately to be safe.
+        <br><a href="https://www.getapp.com/vendors/" target="_blank">Submit Listing →</a>
+        <div class="notes">Category: "Estimating Software" or "Quoting Software"</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>Software Advice</h4>
+        <div class="traffic">Also Gartner. Strong for "best X software" searches.</div>
+        Free listing. Phone-heavy sales team will call — just do the free tier.
+        <br><a href="https://www.softwareadvice.com/vendors/" target="_blank">Submit Listing →</a>
+        <div class="notes">Category: "Field Service" or "Quoting"</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>SourceForge</h4>
+        <div class="traffic">Surprisingly good SEO. Easy submission.</div>
+        Free. Less competitive = easier to rank.
+        <br><a href="https://sourceforge.net/software/vendors/" target="_blank">Submit Listing →</a>
+        <div class="notes">Just needs name, description, URL, and a screenshot</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>Product Hunt</h4>
+        <div class="traffic">Tech-savvy crowd. Great for backlinks + credibility.</div>
+        Free launch. Plan a "launch day" — Tuesday or Wednesday gets best traffic.
+        <br><a href="https://www.producthunt.com/posts/new" target="_blank">Submit Launch →</a>
+        <div class="notes">Tag: "SaaS", "Small Business", "Productivity"</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>AppSumo Marketplace</h4>
+        <div class="traffic">Deal-hungry buyers. Good for first customers.</div>
+        Apply to sell. They take a cut but it's pure inbound.
+        <br><a href="https://sell.appsumo.com/" target="_blank">Apply →</a>
+        <div class="notes">Consider a "lifetime deal" for 50 credits at $49 — hooks early adopters</div>
+      </div>
+
+      <div class="dir-card">
+        <h4>AlternativeTo</h4>
+        <div class="traffic">People searching for Jobber/HCP alternatives land here.</div>
+        Free listing. Position as alternative to Jobber, Housecall Pro, ServiceTitan.
+        <br><a href="https://alternativeto.net/manage-apps/" target="_blank">Submit →</a>
+        <div class="notes">List as alternative to: Jobber, Housecall Pro, ServiceTitan, ResponsiBid</div>
+      </div>
+    </div>
+
+    <div class="tip"><strong>Listing description tip:</strong> Use this positioning line everywhere: <em>"Instant online quoting for cleaning companies. Your customers get a price in 30 seconds. No monthly subscription — pay per lead starting at $2.50."</em> The "no monthly subscription" angle is your biggest differentiator vs. Jobber/HCP.</div>
+  </div>
+
+  <!-- ====== SECTION 4: WEEKLY PLAN ====== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>Your Weekly Plan (Under 2 Hours)</h2>
+    </div>
+    <p class="section-desc">Here's how to spend your time each week. Do this every week for 8 weeks and you'll have paying customers.</p>
+
+    <div class="weekly-plan">
+      <div class="day">
+        <span class="day-label">Monday</span>
+        <span class="day-task">Send 5 cold DMs to pressure washers you found over the weekend. Use templates #1 or #2. <span class="time-tag">30 min</span></span>
+      </div>
+      <div class="day">
+        <span class="day-label">Wednesday</span>
+        <span class="day-task">Post 1 value post in a Facebook group (rotate groups weekly). Engage on 3-4 other people's posts with helpful comments. <span class="time-tag">30 min</span></span>
+      </div>
+      <div class="day">
+        <span class="day-label">Friday</span>
+        <span class="day-task">Follow up on any DMs from Monday (use template #4). Search Instagram/Facebook for 10 new targets for next Monday. <span class="time-tag">30 min</span></span>
+      </div>
+      <div class="day">
+        <span class="day-label">Weekend</span>
+        <span class="day-task">Browse PW groups casually — comment on quoting/pricing threads (use template #5 as a reply). Save good targets. <span class="time-tag">15 min</span></span>
+      </div>
+    </div>
+
+    <div class="tip"><strong>The math:</strong> 5 DMs/week × 8 weeks = 40 pressure washers contacted. At a 10% conversion rate (conservative for a free trial), that's 4 new tenants. At 25% of those buying a Growth pack ($50), that's $200/month recurring. The directory listings add passive inbound on top of that.</div>
+  </div>
+
+  <!-- ====== SECTION 5: FIRST WEEK CHECKLIST ====== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>This Week's Checklist</h2>
+    </div>
+    <p class="section-desc">Do these 7 things this week. Everything else can wait.</p>
+
+    <ul class="checklist">
+      <li><span class="check">□</span> Submit to Capterra (biggest ROI, do this first)</li>
+      <li><span class="check">□</span> Submit to G2 and AlternativeTo</li>
+      <li><span class="check">□</span> Join 3 pressure washing Facebook groups (Pressure Washing Resource, PWRA, Softwash Nation)</li>
+      <li><span class="check">□</span> Find 10 solo pressure washers on Instagram (#pressurewashing + your state)</li>
+      <li><span class="check">□</span> Send 5 DMs using Template #1 (the "Saw Your Work" opener)</li>
+      <li><span class="check">□</span> Post one value post in a Facebook group (Post #1 — your story)</li>
+      <li><span class="check">□</span> Ask Noah (Cornerstone) and Steven (County Wide) to leave a review on G2</li>
+    </ul>
+  </div>
+
+  <!-- ====== SECTION 6: POSITIONING ====== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>Your Positioning (What Makes You Different)</h2>
+    </div>
+    <p class="section-desc">When talking to prospects, these are the 4 things that set MyBidQuick apart from Jobber, Housecall Pro, and ResponsiBid.</p>
+
+    <div class="template-card">
+      <h3>Your Killer Angles</h3>
+      <div class="template-body" id="positioning">
+<strong>1. No monthly subscription.</strong>
+Jobber is $49/mo. HCP is $65/mo. You pay those even when it's slow season and you're getting zero leads. MyBidQuick: pay per lead. 10 leads = $25. Only pay when you get business.
+
+<strong>2. You're a pressure washer, not a tech company.</strong>
+"I built this because I was losing jobs. I still run my own PW company." This is your strongest angle. Solo operators trust other operators, not SaaS salespeople.
+
+<strong>3. 30-second setup, not a 3-hour onboarding.</strong>
+Jobber and HCP have huge feature sets that take forever to configure. MyBidQuick does ONE thing — instant quotes. Set up in 5 minutes, live the same day.
+
+<strong>4. Customers get a price immediately.</strong>
+Most quoting tools still require the operator to manually create and send a quote. MyBidQuick gives the homeowner a price in real-time. That speed closes jobs.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function copyTemplate(id) {
+  const el = document.getElementById(id);
+  const btn = el.querySelector('.copy-btn');
+
+  // Get text content, stripping the copy button text
+  let text = '';
+  el.childNodes.forEach(node => {
+    if (node === btn) return;
+    if (node.nodeType === 3) text += node.textContent;
+    else if (node.tagName === 'SPAN' || node.tagName === 'STRONG') text += node.textContent;
+    else if (node.tagName === 'BR') text += '\n';
+  });
+
+  text = text.trim();
+
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

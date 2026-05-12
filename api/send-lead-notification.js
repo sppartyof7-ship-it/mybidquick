@@ -150,7 +150,12 @@ function buildLeadNotificationEmail(lead, tenant) {
   const projectType = lead.projectType || ''
   const leadSource = lead.leadSource || ''
   const notes = lead.notes || ''
-  const photoCount = Array.isArray(lead.photos) ? lead.photos.length : 0
+  // Photos may arrive as [{name, url}, ...] from the new engine pipeline, or as
+  // [{name}] from the old broken path. Filter to entries that actually have a
+  // URL so we can render thumbnails; fall back to count for legacy rows.
+  const allPhotos = Array.isArray(lead.photos) ? lead.photos : []
+  const photoCount = allPhotos.length
+  const photosWithUrls = allPhotos.filter((p) => p && typeof p.url === 'string' && p.url)
   const preferredDays = lead.preferredDays || ''
   const preferredTime = lead.preferredTime || ''
 
@@ -261,8 +266,22 @@ function buildLeadNotificationEmail(lead, tenant) {
               </div>
               ` : ''}
 
-              ${photoCount ? `
-              <p style="margin: 0 0 24px; color: #7a9bbc; font-size: 13px;">📎 Customer uploaded ${photoCount} photo${photoCount === 1 ? '' : 's'} (view in dashboard).</p>
+              ${photosWithUrls.length ? `
+              <h3 style="margin: 0 0 12px; color: #1e3a5f; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">📷 Customer Photos (${photosWithUrls.length})</h3>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 24px; border-collapse: separate; border-spacing: 8px;">
+                <tr>
+                  ${photosWithUrls.map((p) => `
+                  <td style="padding: 0;">
+                    <a href="${escapeHtml(p.url)}" target="_blank" style="display: inline-block; text-decoration: none;">
+                      <img src="${escapeHtml(p.url)}" alt="${escapeHtml(p.name || 'Customer photo')}" width="140" height="140" style="display: block; width: 140px; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid #e2ecf5;" />
+                    </a>
+                  </td>
+                  `).join('')}
+                </tr>
+              </table>
+              <p style="margin: -16px 0 24px; color: #7a9bbc; font-size: 12px;">Click any photo to view full size.</p>
+              ` : photoCount ? `
+              <p style="margin: 0 0 24px; color: #b45309; font-size: 13px; padding: 12px 14px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px;">⚠️ Customer attempted to attach ${photoCount} photo${photoCount === 1 ? '' : 's'}, but the upload didn't complete. Ask them to re-send via text or email.</p>
               ` : ''}
 
               <!-- Action buttons -->

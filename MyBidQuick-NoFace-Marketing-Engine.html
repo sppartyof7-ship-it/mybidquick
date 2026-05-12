@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyBidQuick — No-Face Marketing Engine</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+
+  .header { background: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%); padding: 48px 24px; text-align: center; }
+  .header h1 { font-size: 2.2rem; color: #fff; margin-bottom: 8px; }
+  .header p { color: #c7d2fe; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+  .header .badge { display: inline-block; background: rgba(255,255,255,0.15); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 0.85rem; margin-top: 12px; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+
+  .summary-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+  .summary-box h2 { color: #60a5fa; font-size: 1.2rem; margin-bottom: 12px; }
+  .summary-box .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
+  .stat { background: #0f172a; border-radius: 8px; padding: 16px; text-align: center; }
+  .stat .number { font-size: 1.8rem; font-weight: 700; color: #34d399; }
+  .stat .label { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+
+  .section { margin-bottom: 40px; }
+  .section h2 { font-size: 1.5rem; color: #fff; margin-bottom: 6px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; display: inline-block; }
+  .section .subtitle { color: #94a3b8; margin-bottom: 20px; font-size: 0.95rem; }
+
+  .channel-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-bottom: 16px; transition: border-color 0.2s; }
+  .channel-card:hover { border-color: #3b82f6; }
+  .channel-card .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .channel-card h3 { font-size: 1.15rem; color: #f1f5f9; }
+  .channel-card .effort-badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+  .effort-low { background: #065f46; color: #6ee7b7; }
+  .effort-med { background: #713f12; color: #fbbf24; }
+  .effort-high { background: #7f1d1d; color: #fca5a5; }
+  .channel-card p { color: #cbd5e1; margin-bottom: 10px; }
+  .channel-card .action-list { list-style: none; padding: 0; }
+  .channel-card .action-list li { padding: 6px 0 6px 24px; position: relative; color: #94a3b8; font-size: 0.92rem; }
+  .channel-card .action-list li::before { content: "→"; position: absolute; left: 4px; color: #3b82f6; }
+  .channel-card .roi { margin-top: 12px; padding: 10px 14px; background: #0f172a; border-radius: 8px; font-size: 0.88rem; color: #a5b4fc; }
+
+  .weekly-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .weekly-table th { background: #1e293b; color: #60a5fa; text-align: left; padding: 12px 14px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .weekly-table td { padding: 12px 14px; border-bottom: 1px solid #1e293b; color: #cbd5e1; font-size: 0.92rem; }
+  .weekly-table tr:hover td { background: #1e293b; }
+  .weekly-table .time { color: #34d399; font-weight: 600; white-space: nowrap; }
+
+  .priority-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+  .p-now { background: #dc2626; color: #fff; }
+  .p-soon { background: #d97706; color: #fff; }
+  .p-later { background: #2563eb; color: #fff; }
+
+  .cta-box { background: linear-gradient(135deg, #1e40af, #7c3aed); border-radius: 12px; padding: 32px; text-align: center; margin-top: 40px; }
+  .cta-box h2 { color: #fff; margin-bottom: 8px; }
+  .cta-box p { color: #c7d2fe; max-width: 500px; margin: 0 auto; }
+
+  .tab-container { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; border-radius: 8px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+  .tab:hover, .tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .quick-win { background: #064e3b; border: 1px solid #065f46; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
+  .quick-win .check { color: #34d399; font-size: 1.2rem; flex-shrink: 0; }
+  .quick-win .text { color: #a7f3d0; font-size: 0.92rem; }
+  .quick-win .text strong { color: #6ee7b7; }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.6rem; }
+    .summary-box .stats { grid-template-columns: 1fr 1fr; }
+    .weekly-table { font-size: 0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>MyBidQuick — No-Face Marketing Engine</h1>
+  <p>7 channels. Zero camera time. 2-5 hours a week. Built for a one-person SaaS founder.</p>
+  <div class="badge">Updated April 10, 2026</div>
+</div>
+
+<div class="container">
+
+  <!-- WHAT YOU ALREADY HAVE -->
+  <div class="summary-box">
+    <h2>What's Already Running</h2>
+    <p style="color:#94a3b8; margin-bottom:12px;">You're not starting from zero — here's your current marketing stack:</p>
+    <div class="stats">
+      <div class="stat"><div class="number">20/day</div><div class="label">Cold Emails</div></div>
+      <div class="stat"><div class="number">7</div><div class="label">SEO Blog Posts</div></div>
+      <div class="stat"><div class="number">Auto</div><div class="label">Weekly Social Content</div></div>
+      <div class="stat"><div class="number">Live</div><div class="label">Google Business Profile</div></div>
+    </div>
+  </div>
+
+  <!-- QUICK WINS -->
+  <div class="section">
+    <h2>Quick Wins (Do This Week)</h2>
+    <p class="subtitle">Under 30 minutes each. Immediate visibility boost.</p>
+
+    <div class="quick-win">
+      <span class="check">☐</span>
+      <div class="text"><strong>Claim free Capterra listing</strong> — Create vendor account at vendors.capterra.com. Fill profile with screenshots + description. Free to list, cleaning niche has low competition.</div>
+    </div>
+    <div class="quick-win">
+      <span class="check">☐</span>
+      <div class="text"><strong>Claim free G2 listing</strong> — g2.com/products/new. Same deal. G2 acquired Capterra/GetApp/SoftwareAdvice so one account may cover all four.</div>
+    </div>
+    <div class="quick-win">
+      <span class="check">☐</span>
+      <div class="text"><strong>List on SourceForge</strong> — sourceforge.net/software/product/new. Free, decent SEO authority.</div>
+    </div>
+    <div class="quick-win">
+      <span class="check">☐</span>
+      <div class="text"><strong>Join 3 Facebook Groups</strong> — "Cleaning Business Owners USA" (25K+), "Window Cleaning Tips & Tricks", "Pressure Washing & Exterior Cleaning." Don't pitch — just answer quoting questions for a week.</div>
+    </div>
+    <div class="quick-win">
+      <span class="check">☐</span>
+      <div class="text"><strong>Post on r/sweatystartup</strong> — Share your story building MyBidQuick as a cleaning company owner who built his own tool. This sub loves that narrative.</div>
+    </div>
+  </div>
+
+  <!-- CHANNEL BREAKDOWN -->
+  <div class="section">
+    <h2>The 7 Channels</h2>
+    <p class="subtitle">Each one works without your face. Ranked by effort-to-impact ratio.</p>
+
+    <!-- Channel 1: Cold Email -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>1. Cold Email Outreach <span class="priority-tag p-now">RUNNING</span></h3>
+        <span class="effort-badge effort-low">~30 min/day</span>
+      </div>
+      <p>Already your strongest channel. 20 emails/day with automated Day 2/4/7 follow-ups. John from Dakota's already replied — that's proof the templates work.</p>
+      <ul class="action-list">
+        <li>Keep the daily 20 going — consistency compounds</li>
+        <li>Add LinkedIn connection requests to the same prospects (no InMail needed, just connect + note)</li>
+        <li>Track reply rate weekly — if any template drops below 5%, swap it</li>
+        <li>Build a "warm reply" playbook: demo call → free trial → onboard</li>
+      </ul>
+      <div class="roi">Expected: 2-5% reply rate = 2-5 warm leads/week from 100 emails</div>
+    </div>
+
+    <!-- Channel 2: Software Directories -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>2. Software Directories <span class="priority-tag p-now">THIS WEEK</span></h3>
+        <span class="effort-badge effort-low">2 hrs once</span>
+      </div>
+      <p>Free listings on Capterra, G2, GetApp, SoftwareAdvice, and SourceForge. Cleaning company owners search these when comparing tools. Low competition in this niche = you show up fast.</p>
+      <ul class="action-list">
+        <li>Capterra: vendors.capterra.com — free basic listing, paid PPC available later</li>
+        <li>G2: g2.com/products/new — free profile, ask Cloute + Cornerstone to leave reviews</li>
+        <li>GetApp + SoftwareAdvice: owned by G2 now, may auto-populate from Capterra listing</li>
+        <li>SourceForge: sourceforge.net — free, good backlink for SEO</li>
+        <li>After listing: ask your first 3 tenants for reviews (reviews = ranking on these platforms)</li>
+      </ul>
+      <div class="roi">Expected: 5-15 inbound leads/month once profiles have 3+ reviews</div>
+    </div>
+
+    <!-- Channel 3: Communities -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>3. Facebook Groups + Reddit <span class="priority-tag p-now">THIS WEEK</span></h3>
+        <span class="effort-badge effort-low">30 min, 3x/week</span>
+      </div>
+      <p>Cleaning company owners live in Facebook Groups. Show up as a fellow owner who happens to have built a tool — never lead with a pitch.</p>
+      <ul class="action-list">
+        <li><strong>Facebook:</strong> Join "Cleaning Business Owners USA", "Window Cleaning Tips & Tricks", "Pressure Washing & Exterior Cleaning"</li>
+        <li><strong>Reddit:</strong> Post in r/sweatystartup, r/EntrepreneurRideAlong, r/smallbusiness</li>
+        <li><strong>Strategy:</strong> Week 1 = answer quoting questions only. Week 2+ = mention "I built a tool for this" when natural</li>
+        <li>Never drop links unprompted — wait for someone to ask "what tool?"</li>
+        <li>Share screenshots of the quote page (blurred pricing) as social proof</li>
+      </ul>
+      <div class="roi">Expected: 1-3 warm leads/week. Compounds as your name becomes recognized.</div>
+    </div>
+
+    <!-- Channel 4: SEO & Content -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>4. SEO Blog + Comparison Pages <span class="priority-tag p-soon">MONTH 1</span></h3>
+        <span class="effort-badge effort-med">1 hr/week</span>
+      </div>
+      <p>You already have 7 blog posts. Now add comparison pages that capture high-intent search traffic — people comparing tools are ready to buy.</p>
+      <ul class="action-list">
+        <li>Write "MyBidQuick vs Jobber" comparison page (Jobber is the big name in cleaning software)</li>
+        <li>Write "MyBidQuick vs Housecall Pro" — you know HCP inside and out</li>
+        <li>Write "MyBidQuick vs ResponsiBid" — direct competitor for quoting</li>
+        <li>Each page: honest comparison table + what makes you different (instant quotes, per-lead pricing)</li>
+        <li>Add an ROI calculator page: "How much time does quoting cost you?" → input hours → shows savings</li>
+        <li>Create a free downloadable PDF: "Pricing Guide for Window Cleaning Companies" → email gate → nurture sequence</li>
+      </ul>
+      <div class="roi">Expected: 50-200 organic visits/month within 3 months. Comparison pages convert at 5-10%.</div>
+    </div>
+
+    <!-- Channel 5: YouTube -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>5. Faceless YouTube <span class="priority-tag p-soon">MONTH 2</span></h3>
+        <span class="effort-badge effort-med">2 hrs/month</span>
+      </div>
+      <p>Screen recordings + text overlays. No face, no fancy editing. B2B buyers care about substance, not personality. One video a month.</p>
+      <ul class="action-list">
+        <li><strong>Video 1:</strong> "How to Send Instant Quotes for Your Cleaning Business" — screen record the full quote flow</li>
+        <li><strong>Video 2:</strong> "Stop Texting '$275 lmk' — Here's What Your Customers Actually Want" — show before/after</li>
+        <li><strong>Video 3:</strong> "I Built a Quoting Tool Because Quoting Sucked" — your origin story as text + screen recordings</li>
+        <li>Use free AI voiceover (ElevenLabs free tier) or just text on screen with music</li>
+        <li>Upload to YouTube + repurpose as TikTok/Reels (vertical crop)</li>
+        <li>Tools: OBS (free screen recording) + CapCut (free editing)</li>
+      </ul>
+      <div class="roi">Expected: 100-500 views/video in this niche. YouTube videos rank in Google searches too.</div>
+    </div>
+
+    <!-- Channel 6: Referral Program -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>6. Referral Program <span class="priority-tag p-later">MONTH 3</span></h3>
+        <span class="effort-badge effort-med">4 hrs once + ongoing</span>
+      </div>
+      <p>Turn your existing tenants into a sales team. Every cleaning company owner knows other cleaning company owners.</p>
+      <ul class="action-list">
+        <li><strong>Structure:</strong> Referrer gets 5 free credits ($12.50 value). New signup gets 5 free credits (instead of 3)</li>
+        <li>Give each tenant a unique referral link: mybidquick.com/ref/cloute-cleaning</li>
+        <li>Add a "Refer a Friend" section to the tenant dashboard</li>
+        <li>Email existing tenants monthly: "Know another cleaning company? Send them your link."</li>
+        <li>Later: upgrade to cash payouts ($25/referral) once you have 10+ paying tenants</li>
+      </ul>
+      <div class="roi">Expected: Each active tenant refers 1-2 companies. With 10 tenants = 10-20 new leads organically.</div>
+    </div>
+
+    <!-- Channel 7: Industry Partnerships -->
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>7. Podcasts + Associations <span class="priority-tag p-later">MONTH 3-4</span></h3>
+        <span class="effort-badge effort-low">1 hr/month</span>
+      </div>
+      <p>You don't need to be on camera for podcasts — just your voice. And industry associations give you credibility + distribution for free or cheap.</p>
+      <ul class="action-list">
+        <li><strong>WCR Nation podcast</strong> — window cleaning focused, exactly your audience. Pitch as a guest or sponsor</li>
+        <li><strong>Cleaning Nation / Cleaning Profit Vault</strong> — general cleaning biz podcasts</li>
+        <li><strong>ISSA</strong> (includes former ARCSI) — look into vendor membership for directory listing</li>
+        <li>Podcast sponsorships: $300-$500/month for niche shows (excellent CPM for B2B)</li>
+        <li>Guest appearances: "I'm a cleaning company owner who built a quoting tool" is a great podcast hook</li>
+      </ul>
+      <div class="roi">Expected: 5-10 high-quality leads per podcast appearance. Trust factor is massive.</div>
+    </div>
+  </div>
+
+  <!-- WEEKLY SCHEDULE -->
+  <div class="section">
+    <h2>Your Weekly Schedule (3 Hours)</h2>
+    <p class="subtitle">This is the actual routine. Stick to it and everything compounds.</p>
+
+    <table class="weekly-table">
+      <thead>
+        <tr><th>Day</th><th>Task</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Monday</strong></td>
+          <td>Copy-paste weekly social content from Sunday auto-gen to Buffer/Meta. Post in 1 Facebook Group (answer a quoting question).</td>
+          <td class="time">30 min</td>
+        </tr>
+        <tr>
+          <td><strong>Tuesday</strong></td>
+          <td>Cold email batch (20 emails) — research, draft, send. Check follow-up replies from Apps Script automation.</td>
+          <td class="time">30 min</td>
+        </tr>
+        <tr>
+          <td><strong>Wednesday</strong></td>
+          <td>Post in 1 Facebook Group + 1 Reddit thread. Engage, don't pitch. Answer quoting/pricing questions.</td>
+          <td class="time">20 min</td>
+        </tr>
+        <tr>
+          <td><strong>Thursday</strong></td>
+          <td>Cold email batch (20 emails). Check for warm replies — respond same day to anyone interested.</td>
+          <td class="time">30 min</td>
+        </tr>
+        <tr>
+          <td><strong>Friday</strong></td>
+          <td>Post in 1 Facebook Group. Review outreach tracker — move warm leads to "Demo Scheduled" or "Follow Up."</td>
+          <td class="time">20 min</td>
+        </tr>
+        <tr>
+          <td><strong>Saturday</strong></td>
+          <td>Write or edit 1 blog post / comparison page (every other week). Or record 1 screen demo (monthly).</td>
+          <td class="time">45 min</td>
+        </tr>
+        <tr>
+          <td><strong>Sunday</strong></td>
+          <td>Auto-generated content drops at 8pm. Review it. Weekly total check: leads generated, replies, signups.</td>
+          <td class="time">15 min</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="border-top: 2px solid #3b82f6;">
+          <td></td>
+          <td><strong>Weekly Total</strong></td>
+          <td class="time" style="font-size:1.05rem;">~3 hrs 10 min</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- PAID ADS - OPTIONAL -->
+  <div class="section">
+    <h2>Optional: Google Ads (When Ready)</h2>
+    <p class="subtitle">Not needed now, but here's the playbook for when you want to add fuel.</p>
+
+    <div class="channel-card">
+      <div class="card-header">
+        <h3>Google Search Ads</h3>
+        <span class="effort-badge effort-high">$300-500/mo budget</span>
+      </div>
+      <p>B2B SaaS in the cleaning niche has relatively low competition for paid search. CPC typically runs $6-10 for your keywords.</p>
+      <ul class="action-list">
+        <li><strong>High-intent keywords:</strong> "cleaning company quoting software", "instant quote tool cleaning", "estimate builder cleaning business"</li>
+        <li><strong>Comparison keywords:</strong> "Jobber alternative", "ResponsiBid alternative", "Housecall Pro quoting"</li>
+        <li><strong>Match type:</strong> Exact match only to start — broad match will burn budget fast</li>
+        <li><strong>Landing page:</strong> Don't send to homepage — build a dedicated page with demo video + signup form</li>
+        <li><strong>Budget:</strong> Start at $10/day ($300/mo). Expect 30-50 clicks → 3-5 signups at 10% conversion</li>
+        <li><strong>When to start:</strong> After you have 5+ reviews on G2/Capterra (social proof improves conversion rate)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 90 DAY ROADMAP -->
+  <div class="section">
+    <h2>90-Day Roadmap</h2>
+    <p class="subtitle">What to focus on and when.</p>
+
+    <div class="channel-card" style="border-left: 4px solid #dc2626;">
+      <h3 style="color:#fca5a5;">Weeks 1-2: Foundation</h3>
+      <ul class="action-list">
+        <li>Claim Capterra, G2, GetApp, SourceForge listings</li>
+        <li>Join 3 Facebook Groups + r/sweatystartup</li>
+        <li>Ask Cloute + Cornerstone to leave G2/Capterra reviews</li>
+        <li>Keep daily cold email machine running</li>
+        <li>Close the Dakota's Window Cleaning lead (John)</li>
+      </ul>
+    </div>
+
+    <div class="channel-card" style="border-left: 4px solid #d97706;">
+      <h3 style="color:#fbbf24;">Weeks 3-6: Content + Community</h3>
+      <ul class="action-list">
+        <li>Publish 2 competitor comparison pages (vs Jobber, vs HCP)</li>
+        <li>Build ROI calculator page on mybidquick.com</li>
+        <li>Create lead magnet PDF (pricing guide) with email gate</li>
+        <li>Record first faceless YouTube demo</li>
+        <li>Establish weekly community posting rhythm</li>
+      </ul>
+    </div>
+
+    <div class="channel-card" style="border-left: 4px solid #2563eb;">
+      <h3 style="color:#93c5fd;">Weeks 7-12: Scale + Systematize</h3>
+      <ul class="action-list">
+        <li>Launch referral program in tenant dashboard</li>
+        <li>Pitch 2-3 cleaning industry podcasts</li>
+        <li>Evaluate Google Ads (if 5+ directory reviews exist)</li>
+        <li>Publish ResponsiBid comparison page</li>
+        <li>Hit target: 10 paying tenants</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BOTTOM LINE -->
+  <div class="cta-box">
+    <h2>The Bottom Line</h2>
+    <p>You don't need a personal brand. You need a system. Cold email drives leads now. Directories and communities build pipeline. Content compounds over time. Every channel here works without your face — just your product and your story as a cleaning company owner who built something better.</p>
+  </div>
+
+</div>
+
+</body>
+</html>

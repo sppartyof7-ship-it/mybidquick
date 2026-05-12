@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyBidQuick vs Quoti vs QuoteIQ vs ResponsiBid â Instant Quoting Software for Cleaning Companies</title>
+  <meta name="description" content="Compare MyBidQuick to Quoti, QuoteIQ, and ResponsiBid. See why cleaning companies choose MyBidQuick's white-label quoting platform with per-lead pricing and zero monthly fees.">
+  <meta name="keywords" content="MyBidQuick vs Quoti, MyBidQuick vs QuoteIQ, MyBidQuick vs ResponsiBid, cleaning quoting software, instant quoting tool, home service quoting">
+  <link rel="canonical" href="https://www.mybidquick.com/compare">
+  <style>
+    :root {
+      --brand: #2563eb;
+      --brand-dark: #1e40af;
+      --green: #16a34a;
+      --red: #dc2626;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-600: #4b5563;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--gray-800);
+      line-height: 1.6;
+      background: #fff;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      background: #fff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav .container { display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 22px; font-weight: 700; color: var(--brand); text-decoration: none; }
+    .logo span { color: var(--gray-900); }
+    .nav-cta {
+      background: var(--brand);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .nav-cta:hover { background: var(--brand-dark); }
+
+    /* Hero */
+    .hero {
+      padding: 64px 0 48px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+    }
+    .hero h1 em { font-style: normal; color: var(--brand); }
+    .hero p {
+      font-size: 18px;
+      color: var(--gray-600);
+      max-width: 680px;
+      margin: 0 auto 32px;
+    }
+
+    /* Comparison Table */
+    .table-wrap {
+      overflow-x: auto;
+      margin-bottom: 64px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    thead th {
+      background: var(--gray-50);
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid var(--gray-200);
+      white-space: nowrap;
+    }
+    thead th:first-child { min-width: 200px; }
+    thead th.highlight {
+      background: var(--brand);
+      color: #fff;
+      border-radius: 8px 8px 0 0;
+    }
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: top;
+    }
+    tbody td.highlight {
+      background: #eff6ff;
+      font-weight: 600;
+    }
+    tbody tr:hover { background: var(--gray-50); }
+    .check { color: var(--green); font-weight: 700; }
+    .cross { color: var(--red); font-weight: 700; }
+    .partial { color: #d97706; font-weight: 600; }
+    .feature-label { font-weight: 600; color: var(--gray-900); }
+
+    /* Sections */
+    .section {
+      padding: 48px 0;
+      border-top: 1px solid var(--gray-200);
+    }
+    .section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--gray-900);
+    }
+    .section h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 24px 0 8px;
+      color: var(--gray-900);
+    }
+    .section p { color: var(--gray-600); margin-bottom: 16px; max-width: 740px; }
+    .section ul { margin: 0 0 16px 20px; color: var(--gray-600); }
+    .section li { margin-bottom: 6px; }
+
+    /* Competitor Cards */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      margin-top: 32px;
+    }
+    .comp-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 28px;
+    }
+    .comp-card h3 { margin-top: 0; }
+    .comp-card .price-tag {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--red);
+      margin-bottom: 8px;
+    }
+    .comp-card .price-note { font-size: 13px; color: var(--gray-600); margin-bottom: 16px; }
+    .comp-card ul { font-size: 14px; }
+
+    /* CTA Block */
+    .cta-block {
+      background: var(--gray-900);
+      color: #fff;
+      padding: 56px 0;
+      text-align: center;
+      margin-top: 48px;
+    }
+    .cta-block h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; color: #fff; }
+    .cta-block p { color: #9ca3af; font-size: 18px; margin: 0 auto 28px; max-width: 560px; }
+    .cta-btn {
+      display: inline-block;
+      background: var(--brand);
+      color: #fff;
+      padding: 14px 40px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 18px;
+      transition: background 0.2s;
+    }
+    .cta-btn:hover { background: var(--brand-dark); }
+    .cta-sub { color: #6b7280; font-size: 14px; margin-top: 12px; }
+
+    /* Footer */
+    footer {
+      padding: 32px 0;
+      text-align: center;
+      color: var(--gray-600);
+      font-size: 14px;
+      border-top: 1px solid var(--gray-200);
+    }
+    footer a { color: var(--brand); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 28px; }
+      .comp-grid { grid-template-columns: 1fr; }
+      thead th, tbody td { padding: 10px 8px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="https://www.mybidquick.com" class="logo">MyBid<span>Quick</span></a>
+      <a href="https://www.mybidquick.com/#/signup" class="nav-cta">Start Free â 3 Credits Included</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <h1>MyBidQuick vs the Competition:<br>Why Cleaning Companies <em>Switch</em></h1>
+      <p>See how MyBidQuick stacks up against Quoti, QuoteIQ, and ResponsiBid. No monthly fees, no setup costs, no lock-in â just pay per lead.</p>
+    </section>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="highlight">MyBidQuick</th>
+            <th>Quoti</th>
+            <th>QuoteIQ</th>
+            <th>ResponsiBid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feature-label">Pricing Model</td>
+            <td class="highlight">Pay per lead (from $2.50/lead)</td>
+            <td>Monthly subscription</td>
+            <td>$29.99â$399/mo</td>
+            <td>$225/mo + $829 setup</td>
+          </tr>
+          <tr>
+            <td class="feature-label">Setup Fee</td>
+            <td class="highlight"><span class="check">$0</span></td>
+            <td>Free trial</td>
+            <td>$0</td>
+            <td><span class="cross">$829</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Monthly Fee</td>
+            <td class="highlight"><span class="check">$0 â pay only for leads</span></td>
+            <td>Unknown (new app)</td>
+            <td>$29.99â$399/mo</td>
+            <td>$225/mo</td>
+          </tr>
+          <tr>
+            <td class="feature-label">White-Label Branding</td>
+            <td class="highlight"><span class="check">â</span> Your brand, your subdomain</td>
+            <td><span class="cross">â</span> Quoti-branded</td>
+            <td><span class="partial">Partial</span> â iframe embed</td>
+            <td><span class="partial">Partial</span> â customizable but not white-label</td>
+          </tr>
+          <tr>
+            <td class="feature-label">Custom Subdomain</td>
+            <td class="highlight"><span class="check">â</span> yourcompany.mybidquick.com</td>
+            <td><span class="cross">â</span></td>
+            <td><span class="cross">â</span></td>
+            <td><span class="cross">â</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Instant Customer Quotes</td>
+            <td class="highlight"><span class="check">â</span></td>
+            <td><span class="check">â</span></td>
+            <td><span class="check">â</span> (InstaQuote)</td>
+            <td><span class="check">â</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Tiered Packages (Good/Better/Best)</td>
+            <td class="highlight"><span class="check">â</span> Standard / Premium / Platinum</td>
+            <td><span class="check">â</span> Up to 3 options</td>
+            <td><span class="check">â</span></td>
+            <td><span class="check">â</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Smart Upsell Cascade</td>
+            <td class="highlight"><span class="check">â</span> HouseâWindowâGutter</td>
+            <td><span class="cross">â</span></td>
+            <td><span class="cross">â</span></td>
+            <td><span class="partial">Limited</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Built-in Lead CRM</td>
+            <td class="highlight"><span class="check">â</span> Drag-and-drop Kanban</td>
+            <td><span class="partial">Basic</span> â client list</td>
+            <td><span class="check">â</span></td>
+            <td><span class="cross">â</span> Requires Jobber</td>
+          </tr>
+          <tr>
+            <td class="feature-label">Auto Follow-Up Emails</td>
+            <td class="highlight"><span class="check">â</span> Day 1/3/7 sequence</td>
+            <td><span class="cross">â</span></td>
+            <td><span class="partial">With AI credits</span></td>
+            <td><span class="check">â</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">QR Codes for Print Marketing</td>
+            <td class="highlight"><span class="check">â</span> Auto-generated per tenant</td>
+            <td><span class="cross">â</span></td>
+            <td><span class="cross">â</span></td>
+            <td><span class="cross">â</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Embed on Your Website</td>
+            <td class="highlight"><span class="check">â</span> 3 embed options</td>
+            <td><span class="check">â</span> Link sharing</td>
+            <td><span class="check">â</span> iframe</td>
+            <td><span class="check">â</span> Widget</td>
+          </tr>
+          <tr>
+            <td class="feature-label">Mobile-Friendly Quoting</td>
+            <td class="highlight"><span class="check">â</span></td>
+            <td><span class="check">â</span> (app-first)</td>
+            <td><span class="check">â</span></td>
+            <td><span class="check">â</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Scheduling / Job Management</td>
+            <td class="highlight">Coming soon</td>
+            <td><span class="check">â</span> Built-in</td>
+            <td><span class="check">â</span></td>
+            <td><span class="cross">â</span> Requires integration</td>
+          </tr>
+          <tr>
+            <td class="feature-label">Contract / Lock-In</td>
+            <td class="highlight"><span class="check">None</span></td>
+            <td>None</td>
+            <td>None</td>
+            <td><span class="cross">Setup fee is non-refundable</span></td>
+          </tr>
+          <tr>
+            <td class="feature-label">Best For</td>
+            <td class="highlight">Cleaning companies wanting branded lead gen with zero overhead</td>
+            <td>Solo window cleaners wanting a phone app</td>
+            <td>Large service companies wanting an all-in-one CRM</td>
+            <td>Established companies with budget for premium quoting</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section class="section">
+      <h2>What Makes MyBidQuick Different</h2>
+      <p>Most quoting tools charge you every month whether you get leads or not. MyBidQuick flips that model â you only pay when a customer actually submits a quote request. Here's what that means for your business:</p>
+
+      <h3>Zero Risk to Get Started</h3>
+      <p>No setup fee. No monthly subscription. Sign up, get 3 free credits, and start generating quotes from your own branded page in minutes. If it doesn't work for you, you've spent nothing.</p>
+
+      <h3>Your Brand, Not Ours</h3>
+      <p>Every tenant gets a custom subdomain (yourcompany.mybidquick.com) with their own branding. When customers get a quote, they see your company â not a third-party tool. Upload your logo, pick your colors, and make it yours.</p>
+
+      <h3>Smart Upsells That Grow Your Revenue</h3>
+      <p>Our cascade upsell system automatically suggests related services. A customer who came for a house wash sees window cleaning options. Then gutter cleaning. Each with Standard, Premium, and Platinum tiers. Your average ticket goes up without any extra work.</p>
+
+      <h3>Built-In Lead Management</h3>
+      <p>Every quote flows into a drag-and-drop Kanban board. Track leads from New to Contacted to Won or Lost. Automatic follow-up email drafts go out on Day 1, 3, and 7 so no lead falls through the cracks.</p>
+    </section>
+
+    <section class="section">
+      <h2>The Competition, Side by Side</h2>
+      <div class="comp-grid">
+        <div class="comp-card">
+          <h3>Quoti</h3>
+          <div class="price-tag">~$??/mo</div>
+          <div class="price-note">New app, pricing unclear. 14-day trial available.</div>
+          <p style="font-size:14px; color: var(--gray-600); margin-bottom: 12px;">A mobile app for solo home service pros. Good for individual window cleaners who want quoting + scheduling on their phone.</p>
+          <strong style="font-size:13px;">Where it falls short vs MyBidQuick:</strong>
+          <ul>
+            <li>No white-label branding â customers see Quoti, not you</li>
+            <li>No custom subdomain for your company</li>
+            <li>No upsell cascade to increase ticket size</li>
+            <li>No built-in follow-up email system</li>
+            <li>Brand new with zero reviews â unproven</li>
+            <li>Phone-app-only management (no web dashboard)</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <h3>QuoteIQ</h3>
+          <div class="price-tag">$29.99â$399/mo</div>
+          <div class="price-note">5 tiers. AI credits included. 14-day free trial.</div>
+          <p style="font-size:14px; color: var(--gray-600); margin-bottom: 12px;">A full-service CRM for home service businesses. Feature-rich, but complex and expensive for companies that just need quoting.</p>
+          <strong style="font-size:13px;">Where it falls short vs MyBidQuick:</strong>
+          <ul>
+            <li>Monthly fees whether you get leads or not</li>
+            <li>No true white-label â InstaQuote embeds as iframe</li>
+            <li>No custom branded subdomain</li>
+            <li>Overkill for cleaning companies that already have scheduling software</li>
+            <li>AI features burn through credits that cost extra at higher usage</li>
+            <li>No QR code generation for offline marketing</li>
+          </ul>
+        </div>
+
+        <div class="comp-card">
+          <h3>ResponsiBid</h3>
+          <div class="price-tag">$225/mo + $829 setup</div>
+          <div class="price-note">Non-refundable setup fee. $1,054 before month 2.</div>
+          <p style="font-size:14px; color: var(--gray-600); margin-bottom: 12px;">The veteran in this space. Good follow-up automation and high close rates, but the price tag is steep for most cleaning companies.</p>
+          <strong style="font-size:13px;">Where it falls short vs MyBidQuick:</strong>
+          <ul>
+            <li>$1,054+ before you get a single lead</li>
+            <li>$225/month locked in whether you're busy or not</li>
+            <li>Only integrates seamlessly with Jobber</li>
+            <li>No built-in CRM â requires third-party tool</li>
+            <li>Complex setup (users report steep learning curve)</li>
+            <li>No white-label subdomain option</li>
+            <li>Multi-property customers require workarounds</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Who MyBidQuick Is Built For</h2>
+      <p>MyBidQuick is purpose-built for cleaning companies â house washing, window cleaning, gutter cleaning, and pressure washing businesses that want to convert website visitors and social media traffic into paying customers without overpaying for software they don't need.</p>
+      <p>If you already have scheduling software (Jobber, Housecall Pro, etc.) and just need a fast, branded way to generate and manage leads â MyBidQuick is exactly what you're looking for.</p>
+    </section>
+
+    <section class="section">
+      <h2>Frequently Asked Questions</h2>
+
+      <h3>How much does MyBidQuick cost?</h3>
+      <p>There's no monthly fee. You buy lead credit packs starting at $25 for 10 credits (that's $2.50 per lead). Every account starts with 3 free credits so you can test it at zero risk.</p>
+
+      <h3>What's a "credit"?</h3>
+      <p>Each time a customer submits a quote through your branded page, one credit is deducted. You get the customer's name, email, phone, address, and the services they selected â a full qualified lead.</p>
+
+      <h3>Do my customers see the MyBidQuick brand?</h3>
+      <p>No. Your customers see your company name, your logo, and your brand colors. The quote page lives at yourcompany.mybidquick.com, reinforcing your brand â not ours.</p>
+
+      <h3>Can I embed the quoting tool on my existing website?</h3>
+      <p>Yes. We offer three embed options â a full-page embed, a button that opens the quote form, or a link you can share anywhere (social media, text messages, email, QR codes on flyers).</p>
+
+      <h3>How is this different from just using Jobber or Housecall Pro?</h3>
+      <p>Those are great for scheduling and invoicing. MyBidQuick is specifically for the front-end of your sales process â turning a website visitor into a qualified lead with an instant quote. Use both together for the full pipeline.</p>
+    </section>
+  </div>
+
+  <div class="cta-block">
+    <div class="container">
+      <h2>Ready to See It in Action?</h2>
+      <p>Sign up in 2 minutes. Get 3 free credits. Start generating branded quotes for your cleaning company today.</p>
+      <a href="https://www.mybidquick.com/#/signup" class="cta-btn">Get Started Free</a>
+      <div class="cta-sub">No credit card required. No setup fee. No monthly commitment.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 MyBidQuick. All rights reserved. | <a href="https://www.mybidquick.com">mybidquick.com</a> | <a href="mailto:tim@mybidquick.com">tim@mybidquick.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyBidQuick - Gartner Resubmission Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.7; }
+  .container { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 22px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  h3 { font-size: 17px; font-weight: 700; margin: 24px 0 8px; color: #334155; }
+  p { margin-bottom: 12px; }
+  .subtitle { color: #64748b; font-size: 15px; margin-bottom: 32px; }
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 16px 0; }
+  .card-green { border-left: 4px solid #22c55e; }
+  .card-blue { border-left: 4px solid #3b82f6; }
+  .card-amber { border-left: 4px solid #f59e0b; }
+  .card-red { border-left: 4px solid #ef4444; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #16a34a; }
+  .badge-todo { background: #fef3c7; color: #b45309; }
+  .badge-critical { background: #fee2e2; color: #dc2626; }
+  .steps { counter-reset: step; }
+  .step { position: relative; padding-left: 40px; margin-bottom: 16px; }
+  .step::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .checklist { list-style: none; }
+  .checklist li { padding: 8px 0; padding-left: 28px; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 0; font-size: 18px; }
+  .highlight { background: #eff6ff; border-radius: 8px; padding: 16px 20px; margin: 12px 0; font-size: 15px; }
+  code { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 14px; }
+  a { color: #3b82f6; }
+  .person { font-weight: 700; color: #1e40af; }
+  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0; }
+  .copy-block { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; margin: 12px 0; font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Gartner Resubmission Game Plan</h1>
+<p class="subtitle">Everything needed to get MyBidQuick listed on Capterra, GetApp, and Software Advice</p>
+
+<!-- ============ SECTION 1: WHY REJECTED ============ -->
+<h2>Why We Got Rejected</h2>
+
+<div class="card card-red">
+  <h3>Most Likely Reasons</h3>
+  <ul class="checklist">
+    <li><strong>No Privacy Policy or Terms of Service</strong> — Gartner requires a "working website" with legitimate business signals. Missing legal pages = red flag.</li>
+    <li><strong>No reviews on Gartner's platform</strong> — Products need at least 1 verified review within the first year. Our site testimonials don't count.</li>
+    <li><strong>Incomplete product profile</strong> — Screenshots, detailed descriptions, and feature lists may have been sparse in the submission.</li>
+    <li><strong>Category mismatch</strong> — If submitted under the wrong category, Gartner flags it as "doesn't fit within the scope."</li>
+  </ul>
+</div>
+
+<!-- ============ SECTION 2: SITE FIXES ============ -->
+<h2>Site Fixes <span class="badge badge-done">DONE</span></h2>
+
+<div class="card card-green">
+  <p><strong>Privacy Policy</strong> — Live at <code>mybidquick.com/privacy</code></p>
+  <p><strong>Terms of Service</strong> — Live at <code>mybidquick.com/terms</code></p>
+  <p><strong>Footer links</strong> — Privacy Policy, Terms of Service, and Contact now in footer</p>
+  <p style="margin:0;color:#64748b;font-size:14px;">Push to GitHub and Vercel will auto-deploy these.</p>
+</div>
+
+<!-- ============ SECTION 3: REVIEWS ============ -->
+<h2>Getting 3 Reviews on Gartner <span class="badge badge-critical">CRITICAL</span></h2>
+
+<p>This is the single biggest factor for approval. Gartner wants <strong>verified reviews from real users</strong> submitted through their platform. Here's exactly how to get reviews from your three people.</p>
+
+<h3>How Gartner Reviews Work</h3>
+<div class="highlight">
+  Reviews are submitted at <a href="https://www.gartner.com/reviews" target="_blank">gartner.com/reviews</a>. The reviewer needs a <strong>business email</strong> (not Gmail/Yahoo), fills out a 10-15 minute survey, verifies their email, and the review enters a 3-5 business day moderation period. Gartner verifies the reviewer is a real professional.
+</div>
+
+<!-- PERSON 1: TIM / CLOUTE -->
+<div class="card card-blue">
+  <h3>Review #1: You (Cloute Cleaning) <span class="person">Tim</span></h3>
+  <p>Yes, you can absolutely review your own product through your Cloute account — Cloute is a legitimate tenant/customer of MyBidQuick.</p>
+
+  <div class="steps">
+    <div class="step">Go to <a href="https://www.gartner.com/reviews" target="_blank">gartner.com/reviews</a></div>
+    <div class="step">Search for "MyBidQuick" — if it's not listed yet, you may need to search the category "Quoting Software" or "Field Service Management Software" and submit a review that names MyBidQuick</div>
+    <div class="step">Sign in or create a Gartner account using <strong>tim.sullivan@clouteinc.com</strong> (business email required!)</div>
+    <div class="step">Fill out the review form — be specific about how Cloute uses MyBidQuick:
+      <ul style="margin-top:8px;padding-left:20px;">
+        <li>How long you've used it (since launch)</li>
+        <li>What problem it solves (instant quoting for house wash, windows, gutters)</li>
+        <li>Specific results (leads captured, time saved, upsell rate)</li>
+        <li>What you like most (white-label branding, smart cascade upsell)</li>
+        <li>What could improve (be honest — reviewers that say "nothing" get flagged)</li>
+      </ul>
+    </div>
+    <div class="step">Verify your email when prompted, then submit</div>
+  </div>
+</div>
+
+<!-- PERSON 2: NOAH -->
+<div class="card card-blue">
+  <h3>Review #2: Noah Baldry (Cornerstone) <span class="person">Noah</span></h3>
+  <p>Noah is an active tenant — perfect reviewer. Send him something like this:</p>
+
+  <div class="copy-block">Hey Noah — quick favor that would help MyBidQuick a ton. We're getting listed on Capterra/Gartner (big software directories) and need a couple reviews from real users.
+
+Would you mind leaving a quick review? Takes about 10 min:
+
+1. Go to gartner.com/reviews
+2. Search "MyBidQuick" (or the category if it's not listed yet)
+3. Sign in with your business email
+4. Write an honest review about your experience
+
+Your Cornerstone quote page at cornerstone.mybidquick.com is the perfect example to reference. Just mention how you use it and what's worked for you.
+
+Huge help — thanks man!</div>
+
+  <p style="color:#64748b;font-size:14px;">Noah needs to use a <strong>business email</strong> for his Gartner account, not a personal Gmail.</p>
+</div>
+
+<!-- PERSON 3: STEVEN -->
+<div class="card card-blue">
+  <h3>Review #3: Steven (County Wide) <span class="person">Steven</span></h3>
+  <p>Even though Steven hasn't fully signed up yet, if he's used the quote page or seen a demo, he can still leave a review. Message him something like:</p>
+
+  <div class="copy-block">Hey Steven — I'm getting MyBidQuick listed on some big software directories and could use a quick review from someone who's seen the platform.
+
+Would you mind taking 10 min to leave a review?
+
+1. Go to gartner.com/reviews
+2. Search "MyBidQuick"
+3. Sign in with your business email
+4. Share your honest experience — even if you're still getting set up, you can talk about what drew you to it and first impressions
+
+Would really appreciate it!</div>
+
+  <p style="color:#64748b;font-size:14px;"><strong>Important:</strong> Steven's review carries more weight if he's actually signed up as a tenant first. Consider getting him onboarded before he submits.</p>
+</div>
+
+<div class="highlight">
+  <strong>Timing tip:</strong> Submit all 3 reviews within the same week. Gartner's moderation takes 3-5 business days. Aim to have all reviews submitted by <strong>April 14</strong> so they're approved before you resubmit the listing.
+</div>
+
+<!-- ============ SECTION 4: SCREENSHOTS ============ -->
+<h2>Product Screenshots Needed <span class="badge badge-todo">TO DO</span></h2>
+
+<p>Gartner's listing needs real product screenshots. Take these from the live site:</p>
+
+<ul class="checklist">
+  <li><strong>Customer quote page</strong> — Show the branded Cloute or Cornerstone quote page with address entry</li>
+  <li><strong>Service selection / cascade upsell</strong> — Show the house wash → windows → gutters flow</li>
+  <li><strong>Quote results with tiers</strong> — Show Standard/Premium/Platinum options (final prices only, no formulas!)</li>
+  <li><strong>Tenant dashboard</strong> — Show the main dashboard with leads/credits overview</li>
+  <li><strong>Kanban CRM</strong> — Show the drag-and-drop lead pipeline</li>
+  <li><strong>Mobile view</strong> — Screenshot the quote page on a phone (or use Chrome DevTools mobile view)</li>
+</ul>
+
+<h3>How to Take Good Screenshots</h3>
+<div class="steps">
+  <div class="step">Open Chrome, go to the page you want to screenshot</div>
+  <div class="step">Press <code>F12</code> to open DevTools, then <code>Ctrl+Shift+P</code> and type "screenshot"</div>
+  <div class="step">Select "Capture full size screenshot" or "Capture area screenshot"</div>
+  <div class="step">For mobile: click the phone icon in DevTools toolbar, pick "iPhone 14 Pro" or similar, then screenshot</div>
+  <div class="step">Save as PNG — aim for at least 1280px wide for desktop shots</div>
+</ul>
+</div>
+
+<!-- ============ SECTION 5: CORRECT CATEGORY ============ -->
+<h2>Correct Category for Submission <span class="badge badge-todo">TO DO</span></h2>
+
+<div class="card card-amber">
+  <h3>Best category options (in order of fit):</h3>
+  <ol style="padding-left: 20px; margin-top: 8px;">
+    <li><strong>Quoting Software</strong> — Most direct match. MyBidQuick generates quotes.</li>
+    <li><strong>Carpet Cleaning Software</strong> — Capterra has this as a specific category, and cleaning business tools fit here.</li>
+    <li><strong>Field Service Management Software</strong> — Broader category, but quoting is a core feature they list.</li>
+    <li><strong>Lead Capture Software</strong> — Secondary fit since every quote = a captured lead.</li>
+  </ol>
+  <p style="margin-top:12px;color:#64748b;font-size:14px;">Submit under <strong>Quoting Software</strong> as primary. If that category doesn't exist, go with <strong>Carpet Cleaning Software</strong> or <strong>Field Service Management Software</strong>.</p>
+</div>
+
+<!-- ============ SECTION 6: RESUBMISSION CHECKLIST ============ -->
+<h2>Resubmission Checklist</h2>
+
+<div class="card card-green">
+  <h3>Before You Resubmit</h3>
+  <ul class="checklist">
+    <li>Privacy Policy page live at mybidquick.com/privacy</li>
+    <li>Terms of Service page live at mybidquick.com/terms</li>
+    <li>Footer links to Privacy, Terms, and Contact visible</li>
+    <li>At least 1 review approved on Gartner (3 is ideal)</li>
+    <li>5-6 product screenshots prepared and ready to upload</li>
+    <li>Product description written (use the landing page copy as base)</li>
+    <li>Correct category selected (Quoting Software or Carpet Cleaning Software)</li>
+    <li>Live demo URL ready: mybidquick.com/demo/quote</li>
+    <li>Free trial CTA confirmed working (signup flow)</li>
+  </ul>
+</div>
+
+<h3>Suggested Product Description for Gartner</h3>
+<div class="card">
+  <p><strong>MyBidQuick</strong> is a white-label instant quoting platform built for cleaning companies. Cleaning businesses sign up, customize their branded quote page with their logo and colors, and share a link with potential customers. When a homeowner visits the page, they enter their address, select services (house washing, window cleaning, gutter cleaning), and receive a professional quote in under 60 seconds — with Standard, Premium, and Platinum tier options.</p>
+  <p>Every quote submission automatically captures the lead's full contact information and notifies the cleaning company in real time. The platform includes a built-in CRM with drag-and-drop Kanban pipeline, automated follow-up email sequences, and usage analytics.</p>
+  <p>MyBidQuick operates on a pay-per-lead credit model — companies only pay when they receive a quote submission. No monthly fees on the Growth plan. Setup takes under 5 minutes.</p>
+  <p><strong>Key Features:</strong> Instant automated quoting, white-label branding, Google-powered address autocomplete, smart cascade upsell, tiered pricing (Standard/Premium/Platinum), lead capture and CRM, automated follow-up emails, mobile-first responsive design, QR code generation, embeddable quote widget.</p>
+</div>
+
+<hr class="divider">
+
+<h2>Timeline</h2>
+<div class="card">
+  <table style="width:100%;border-collapse:collapse;">
+    <tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:8px 0;font-weight:700;width:140px;">Today (Apr 9)</td>
+      <td style="padding:8px 0;">Push Privacy Policy + Terms of Service to GitHub → auto-deploys to Vercel</td>
+    </tr>
+    <tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:8px 0;font-weight:700;">Apr 9-11</td>
+      <td style="padding:8px 0;">You, Noah, and Steven submit Gartner reviews</td>
+    </tr>
+    <tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:8px 0;font-weight:700;">Apr 9-11</td>
+      <td style="padding:8px 0;">Take product screenshots (6 images)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #e2e8f0;">
+      <td style="padding:8px 0;font-weight:700;">Apr 14-16</td>
+      <td style="padding:8px 0;">Reviews should be approved by now (3-5 biz day moderation)</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 0;font-weight:700;">Apr 16-17</td>
+      <td style="padding:8px 0;">Resubmit to Gartner with full profile + screenshots + reviews</td>
+    </tr>
+  </table>
+</div>
+
+<hr class="divider">
+<p style="color:#94a3b8;font-size:13px;text-align:center;">MyBidQuick Gartner Resubmission Guide — April 2026</p>
+
+</div>
+</body>
+</html>

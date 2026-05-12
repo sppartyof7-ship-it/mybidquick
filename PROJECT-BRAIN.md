@@ -47,10 +47,10 @@ Two repos (both under MyBidQuick):
 - **Frontend**: React + Vite (SPA with HashRouter)
 - **Styling**: Custom CSS with CSS variables (in index.css)
 - **Icons**: Lucide React
-- **Hosting**: Vercel (LIVE and deployed)
+- **Hosting**: Vercel **Pro plan** (upgraded 2026-04-17 — Hobby's 12-function cap was blocking deploys)
 - **Database**: Supabase (PostgreSQL with RLS) — tenant storage, leads, billing
 - **Payments**: Stripe (per-lead credit billing via Checkout + Customer Portal)
-- **Serverless API**: Vercel Functions (10 endpoints in `/api/`)
+- **Serverless API**: Vercel Functions (14 endpoints in `/api/`)
 - **Domains**: mybidquick.com, mybidquick.io, mybidquick.org (all purchased via Vercel, all connected)
 - **Vercel URL**: mybidquick.vercel.app
 
@@ -87,10 +87,11 @@ mybidquick/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml          # GitHub Actions CI — runs `npm run build` on every push to main
-├── api/                    # Vercel Serverless Functions (11 endpoints)
+├── api/                    # Vercel Serverless Functions (14 endpoints)
 │   ├── _lib/
 │   │   ├── encryption.js       # AES-256-GCM encrypt/decrypt for OAuth tokens
 │   │   └── supabase-admin.js   # Supabase client with service_role_key (bypasses RLS)
+│   ├── admin-login.js          # Server-side admin password check (uses ADMIN_PASSWORD, no VITE_ prefix) — CORS + constant-time compare
 │   ├── billing-status.js       # GET billing info (credits, purchases, charges)
 │   ├── create-calendar-event.js # Creates Google Calendar event from lead scheduling prefs
 │   ├── create-checkout.js      # Creates Stripe Checkout sessions for credit packs
@@ -98,9 +99,12 @@ mybidquick/
 │   ├── google-auth-callback.js # OAuth callback — exchanges code → tokens → encrypts → stores
 │   ├── google-auth-start.js    # Initiates Google OAuth flow (Calendar + email scopes)
 │   ├── google-disconnect.js    # Revokes Google tokens + cleans up integration record
-│   ├── send-quote-confirmation.js # Sends confirmation email to customer after quote submission (Resend)
+│   ├── send-lead-notification.js # Sends "you have a new lead!" email to tenant when customer submits a quote (Resend) — replaces legacy Web3Forms path (2026-05-01). All Resend `from:` addresses now use `send.mybidquick.com` subdomain — apex domain SPF only authorizes ImprovMX so root-domain sends bounced silently (2026-05-10)
+│   ├── send-quote-confirmation.js # Sends confirmation email to customer after quote submission (Resend, `from: *@send.mybidquick.com`) — uses friendly service names from tenant.config.services + per-service prices from lead.servicePrices (2026-05-01)
+│   ├── send-welcome-email.js   # Sends Day-0 welcome email at signup (called from Onboarding.jsx after createTenant) — Resend `from: *@send.mybidquick.com`
 │   ├── webhook.js              # Stripe webhook (fulfills credit purchases) — endpoint: /api/webhook
-│   └── weekly-pipeline-email.js # Weekly pipeline summary email to tenants (scheduled Monday 8am ET via Resend)
+│   ├── welcome-drip.js         # Daily cron — walks tenants through Day 1/3/5/7 welcome emails (uses tenants.welcome_step) — Resend `from: *@send.mybidquick.com`
+│   └── weekly-pipeline-email.js # Weekly pipeline summary email to tenants (scheduled Monday 8am ET via Resend, `from: *@send.mybidquick.com`)
 ├── docs/                   # Marketing, planning, and reference docs (not deployed)
 │   ├── client-acquisition-playbook.html  # Interactive playbook: cold DM templates, FB group posts, directory links
 │   ├── directory-listings.md             # Software directory submission guide + links
@@ -121,6 +125,7 @@ mybidquick/
 │   ├── billing-schema.sql      # Billing tables (lead_charges, credit_purchases)
 │   ├── integrations-schema.sql # OAuth token storage (integrations table, RLS server-only)
 │   ├── scheduling-schema.sql   # Adds 'scheduled' status + preferred_days/time columns to leads
+│   ├── add-welcome-step.sql    # welcome_step smallint column on tenants (0-4) for Day 1/3/5/7 drip (applied 2026-04-17)
 │   ├── rls-hardening.sql       # 12 scoped RLS policies replacing open "Allow public *" policies
 │   ├── rls-rollback.sql        # Rollback script to restore pre-hardening policies
 │   └── RLS-TEST-CHECKLIST.md   # Manual test checklist for verifying RLS policies
@@ -144,7 +149,7 @@ mybidquick/
 │       ├── LandingPage.jsx     # Marketing landing page
 │       ├── Login.jsx           # Email + password login (Supabase Auth) with forgot password
 │       ├── Onboarding.jsx      # 3-step signup wizard (includes upsell config)
-│       ├── AdminDashboard.jsx  # Tim's admin panel (password via VITE_ADMIN_PASSWORD env var)
+│       ├── AdminDashboard.jsx  # Tim's admin panel — auth via POST /api/admin-login (server-side ADMIN_PASSWORD env var); demo tenants gated by VITE_SHOW_DEMO_TENANTS
 │       ├── QuoteDemo.jsx       # Customer-facing quote demo with upsell
 │       ├── TenantDashboard.jsx # Tenant admin panel (Leads + Admin + Billing + Analytics tabs)
 │       ├── BlogPost.jsx        # Blog index + individual post pages (10 SEO articles incl. competitor comparisons)
@@ -183,10 +188,10 @@ On launch, creates tenant in Supabase via `createTenant()` from db.js (with loca
 Ocean Blue, Forest Green, Royal Purple, Sunset Orange, Slate, Crimson
 
 ## Admin Dashboard
-- **Password**: Set via `VITE_ADMIN_PASSWORD` env var in Vercel (hardcoded admin123 fallback removed 2026-04-01)
+- **Auth**: Server-side password check via `POST /api/admin-login` (ADMIN_PASSWORD env var, no VITE_ prefix — keeps the secret off the client JS bundle). Uses constant-time compare to prevent timing attacks. Migrated from client-side VITE_ADMIN_PASSWORD on 2026-04-17. Session persists via sessionStorage flag.
 - **Tabs**: Overview, Tenants, Revenue, Analytics, Settings
-- **Demo Tenants**: 5 sample companies including Cloute Cleaning (Tim is managing partner) and Cornerstone Exterior (Noah Baldry)
-- Loads real tenants from Supabase via `getAllTenants()`, merges with demo data (deduplicates by email)
+- **Demo Tenants**: 5 sample companies (Cloute Cleaning, Cornerstone Exterior, + 3 others) — **gated behind `VITE_SHOW_DEMO_TENANTS` env var** (2026-04-17). Defaults to OFF in production so only real Supabase tenants appear. Flip on for screenshots/demos.
+- Loads real tenants from Supabase via `getAllTenants()`; demo data merged only when flag is enabled (deduplicates by email)
 
 ## Smart Cascade Upsell Feature
 Multi-step upsell flow built into the QuoteDemo page:
@@ -282,6 +287,16 @@ Full admin panel for each tenant (cleaning company customer). Login via Supabase
 - [x] Multi-story upcharge controls in tenant dashboard (2-story/3-story multipliers)
 - [x] Minimum charge floors per service in tenant dashboard
 - [x] Scheduled status in CRM pipeline (5th stage between Contacted and Won)
+- [x] Server-side admin password check — `/api/admin-login` with ADMIN_PASSWORD env var (password no longer ships to client bundle) (2026-04-17)
+- [x] Demo tenants gated behind `VITE_SHOW_DEMO_TENANTS` env var — production shows only real tenants (2026-04-17)
+- [x] Automated welcome email sequence — Day-0 at signup + Day 1/3/5/7 drip via Vercel Cron (2026-04-17)
+- [x] Vercel Pro upgrade — lifted 12-function cap that was blocking deploys (2026-04-17)
+- [x] `mergeWithDefaults()` in TenantDashboard so old tenant rows get DEFAULT_CONFIG fallbacks for newer fields — fixed Noah's dashboard (2026-04-30)
+- [x] Resend env-var casing fallback (`RESEND_API_KEY` || `resend_api_key`) across all 4 email senders + diagnostic logging in welcome-drip (2026-04-30)
+- [x] Resend-based tenant lead notifications — new `api/send-lead-notification.js` endpoint replaces legacy Web3Forms path; tenants no longer need a third-party access key (2026-05-01)
+- [x] Customer quote-confirmation email upgrade — friendly service names (looked up from `tenant.config.services`) + per-service final prices (from `lead.servicePrices`); honors the no-formulas-to-customers rule (2026-05-01)
+- [x] Resend `from:` subdomain fix — all 5 senders moved from `*@mybidquick.com` → `*@send.mybidquick.com` (apex SPF only authorizes ImprovMX; sends from root were failing SPF silently). Fixed Noah's missing emails (2026-05-10)
+- [x] Restored truncated bytes on 5 API files left behind by prior Edit-tool bug + added `node --check` to pre-push verification routine (2026-05-10)
 
 ### SOFT LAUNCH FIXES (from QA audit — March 27, 2026)
 See SOFT-LAUNCH-ISSUES.md for full details (15 issues, severity-ranked).
@@ -412,14 +427,21 @@ BlogPost.jsx contains 10 SEO-optimized articles with structured data (JSON-LD), 
 - "MyBidQuick vs ResponsiBid" (competitor comparison, 2026-04-05)
 Also includes `robots.txt` and `sitemap.xml` in `/public/`.
 
-## Welcome Email Sequence (5 emails, created 2026-04-05)
-Gmail drafts for new tenant onboarding. Use with automation or send manually:
-1. **Day 0** — Welcome + 3 free credits + quote page URL
+## Welcome Email Sequence (5 emails — FULLY AUTOMATED as of 2026-04-17)
+Automated Day 0/1/3/5/7 drip for new tenant onboarding. Content source: `docs/welcome-email-sequence.md`.
+1. **Day 0** — Welcome + free credits + quote page URL. Sent synchronously by `api/send-welcome-email.js` at signup (called from Onboarding.jsx after createTenant succeeds — best-effort, doesn't fail onboarding)
 2. **Day 1** — Setup nudge (logo, colors, embed widget)
 3. **Day 3** — First lead tips (respond fast, use CRM)
 4. **Day 5** — Credit pack intro (pricing, LAUNCH20 discount)
 5. **Day 7** — Growth tips (QR codes, embed, share link)
-All signed from tim@mybidquick.com. Templates in Gmail drafts (tim-clouteinc account).
+
+### How the Drip Works (`api/welcome-drip.js`)
+- Runs daily via Vercel Cron at 13:00 UTC (see `vercel.json` `crons`)
+- Uses `tenants.welcome_step` (smallint, 0-4) to track progress: 0=Day-1 next, 1=Day-3 next, 2=Day-5 next, 3=Day-7 next, 4=complete
+- For each tenant with `welcome_step < 4` and `email_opt_out != true`, checks `daysSince(created_at)` against the step's `minDays` threshold
+- Sends at most ONE email per tenant per run (safe pacing if a run is missed)
+- Respects `email_opt_out` column on tenants
+- All emails sent from tim@mybidquick.com via Resend, reply-to same
 
 ## mybidquick-engine (formerly Cleanbid) — Full Details
 
@@ -584,9 +606,13 @@ MyBidQuick gradient: 135deg, #3b9cff → #6dd19e
 | 2026-04-09 | **Legal pages for directory listings**: Added Privacy Policy (`/privacy`) and Terms of Service (`/terms`) pages — required for Gartner Digital Markets (Capterra/GetApp/SoftwareAdvice) listing approval. New files: `PrivacyPolicy.jsx`, `TermsOfService.jsx`. Footer links added to LandingPage.jsx. 2 new routes in App.jsx (commit `98adcd1`). **SEO audit v2**: Updated audit (seo-audit-2026-04-09.md) — ~200 organic visits/mo, big gap vs QuoteIQ (15-25K) and Jobber (20-35K). Nobody owns "white-label quoting" or "per-lead pricing" content yet. Quick wins: optimize homepage title/meta, add schema markup, fix internal linking. **Blog rewrite**: Replaced generic "How to Price Pressure Washing Jobs" with Tim's authentic voice version. **County Wide website audit V2**: Full PageSpeed + technical SEO + conversion audit delivered as docx for Steven. |
 | 2026-04-10 | **State of project review + client acquisition playbook**: Reviewed full project status — product is solid, bottleneck is tenant acquisition. Built interactive client acquisition playbook (`docs/client-acquisition-playbook.html`) with 4 cold DM/email templates for solo pressure washers, 5 Facebook group value posts (ready to paste), 8 software directory submission links with steps, weekly action plan (<2 hrs/week), and positioning guide (4 differentiators vs Jobber/HCP/ResponsiBid). **Gartner Peer Insights submitted**: MyBidQuick listed under "Configure, Price and Quote Applications" in Sales market. Submitted with Cloute + Cornerstone as customer links. Under review 2-5 business days. **PROJECT-BRAIN.md major update**: Added follow_up_logs table, updated tenant roster (3 active: Cloute, Cornerstone W&W, County Wide), added Scheduled Tasks section, added Client Acquisition section, documented all 7 Supabase tables with key columns, updated file tree with docs/ contents, verified API count at 10. |
 | 2026-04-11 | **Sitemap update + merge cleanup**: Added `/privacy` and `/terms` to `public/sitemap.xml` — now **14 URLs total** (commits `aca6710`, `8dd8e01`). Resolved merge conflict between Privacy/Terms pages branch (`98adcd1`) and automated follow-up email branch (`8c2e74f`) — both features now fully in main. No new feature code shipped today; maintenance-only. |
+| 2026-04-17 | **Launch blockers cleared + Vercel Pro upgrade**: (1) **Server-side admin auth** — created `api/admin-login.js` which reads `ADMIN_PASSWORD` (no VITE_ prefix, so it stays server-only and never ships to the client JS bundle). Uses constant-time string compare to prevent timing attacks + CORS allowlist for mybidquick.com + subdomains. AdminDashboard.jsx migrated from client-side `VITE_ADMIN_PASSWORD` check to `POST /api/admin-login`; session still persisted via sessionStorage flag. (2) **Demo-gated tenants** — hardcoded demo tenants in AdminDashboard are now gated behind `VITE_SHOW_DEMO_TENANTS` env var (defaults OFF in production). Live admin dashboard now shows only real Supabase tenants. (3) **Day-0 welcome email** — new `api/send-welcome-email.js` endpoint sends the welcome email immediately after new tenant signup. Called from Onboarding.jsx after `createTenant()` succeeds; best-effort (doesn't fail onboarding if Resend is down). Content pulled from `docs/welcome-email-sequence.md` Email 1. Commit `d8919e6`. (4) **Day 1/3/5/7 drip cron** — new `api/welcome-drip.js` runs daily at 13:00 UTC via Vercel Cron (`vercel.json` `crons`). Walks each tenant through the 4-step drip using `tenants.welcome_step` (smallint 0-4). Sends at most ONE email per tenant per run, respects `email_opt_out`, checks `daysSince(created_at)` against per-step thresholds (1/3/5/7 days). Added `supabase/add-welcome-step.sql` migration — applied to production via Supabase MCP. Commit `5620cdc`. (5) **Vercel Pro upgrade** — Hobby plan's 12-function cap was blocking the drip deploy (we now have 13 API endpoints). Team upgraded, trigger redeploy commit `3ab98ed`. Welcome drip now fully automated end-to-end. |
+| 2026-05-01 | **Resend lead notifications + customer email upgrade**: (1) **`api/send-lead-notification.js`** — new Vercel Function that emails the tenant ("you have a new lead!") whenever a customer submits a quote on `slug.mybidquick.com`. Mirrors `send-quote-confirmation.js` but the audience is the cleaning company, not the customer. CORS allowlists every `*.mybidquick.com` subdomain so the engine can call it. Replaces the legacy Web3Forms path in mybidquick-engine — tenants no longer need a third-party access key, they just set `leadEmail` in their dashboard (commit `dbe725d`). (2) **Customer quote-confirmation email upgrade** — `send-quote-confirmation.js` now derives friendly service names from `tenant.config.services` (so customers see "House Washing" instead of `house_washing`), and pairs each row with its individual final price from `lead.servicePrices`. Falls back to title-cased IDs when no match exists. Stays inside the no-rates-to-customers rule — only final dollars, never per-sqft formulas (commit `a7db971`). (3) **Defensive merge committed** — the `mergeWithDefaults()` work captured in yesterday's entry landed in commit `dbe725d` along with the lead-notification endpoint. API endpoint count is now 14 (was 13). |
+| 2026-04-30 | **Tenant-config defaults backfill + Resend env-var casing fallback** (uncommitted in working tree as of this entry): (1) **`mergeWithDefaults()` in TenantDashboard.jsx** — older tenant rows in Supabase were saved before some `DEFAULT_CONFIG` fields existed (e.g., newer marketing/followUp/storiesMultipliers/minimumCharges sub-objects), so reading `tenant.config` directly left those keys `undefined` and crashed parts of the dashboard. New `mergeWithDefaults()` does a deep merge of the loaded config on top of `DEFAULT_CONFIG` (arrays in the saved config replace defaults entirely; nested objects fall through). All three load paths in TenantDashboard now use it: the early auto-load, the post-auth load, and the email-lookup fallback. This bit Noah Baldry on Cornerstone's dashboard today and is the fix. **Lesson** (saved to memory): adding new fields to `DEFAULT_CONFIG` doesn't auto-apply to old tenant rows — either backfill in Supabase or merge on read. (2) **Resend env-var casing fallback** — Vercel was historically storing the key as lowercase `resend_api_key`, while the code read `process.env.RESEND_API_KEY`. Updated all four Resend senders to accept either casing: `api/welcome-drip.js`, `api/send-welcome-email.js`, `api/send-quote-confirmation.js`, `api/weekly-pipeline-email.js`. `welcome-drip.js` also gained a diagnostic that logs which RESEND-ish keys are present (names only, no values) when neither casing resolves, so future env misses are easy to debug. (3) **GitHub auth migrated** to Git Credential Manager — no more PAT in URLs or `.github-token` files; plain `git push` from Git Bash now works (saved to memory as `feedback_github_push_workflow.md` + `reference_github_token.md`). |
+| 2026-05-10 | **Resend `from:` subdomain fix + Edit-tool truncation cleanup**: (1) **Silent delivery failure to Noah diagnosed** — emails from `*@mybidquick.com` (apex) were being accepted by Resend but failing downstream SPF/DMARC because the apex SPF record only authorizes ImprovMX (the inbound forwarder), not Resend. Resend is authorized on the `send.mybidquick.com` subdomain only. Updated all five Resend senders to send from `*@send.mybidquick.com`: `api/send-lead-notification.js` (now `MyBidQuick Leads <leads@send.mybidquick.com>`), `api/send-quote-confirmation.js`, `api/send-welcome-email.js`, `api/welcome-drip.js`, `api/weekly-pipeline-email.js`. Reply-to addresses unchanged so customer replies still land in the tenant's real inbox. Saved to memory as `reference_resend_send_subdomain.md` so this doesn't get re-broken (commit `9418932`). (2) **Edit-tool truncation cleanup** — discovered that the prior batch edit silently dropped the final byte(s) of five API files (closing parens, braces, comment-period). Files ended with `\ No newline at end of file` mid-statement. Restored the trailing bytes on `send-lead-notification.js`, `send-quote-confirmation.js`, `send-welcome-email.js`, `welcome-drip.js`, `weekly-pipeline-email.js`. Verified each file parses with `node --check` before pushing — Vercel was happily marking deploys "READY" even though the modules would have thrown `SyntaxError` at runtime. Saved two feedback memories: `feedback_edit_tool_truncation_bug.md` (use `sed` for production edits) and `feedback_verify_deploy_with_node_check.md` (always `node --check` edited API files pre-push) (commit `01bde06`). |
 
 ## Scheduled Tasks (Automation)
-These run automatically via Cowork scheduled tasks:
+These run automatically via Cowork scheduled tasks and Vercel Cron:
 | Task | Schedule | What It Does |
 |------|----------|-------------|
 | mybidquick-lead-sync | Every 4 hours | Syncs leads from Supabase, generates sync report |
@@ -595,6 +621,7 @@ These run automatically via Cowork scheduled tasks:
 | mybidquick-health-check | Daily | Checks site uptime and API endpoint health |
 | daily-tenant-update | Daily | Pulls tenant data, creates Google Sheet report, emails Tim |
 | update-project-brain | Periodic | Auto-updates PROJECT-BRAIN.md with recent session work |
+| /api/welcome-drip (Vercel Cron) | Daily 13:00 UTC | Walks tenants through Day 1/3/5/7 welcome emails (via `vercel.json` `crons`) |
 
 ## Client Acquisition (as of April 10, 2026)
 **Target customer**: Solo pressure washers (1-person operations, no website, price-sensitive)
@@ -685,12 +712,14 @@ Cloute Cleaning is a **customer/tenant** of MyBidQuick. Tim Sullivan is managing
 - `GOOGLE_CLIENT_ID` — Google OAuth client ID (for Calendar integration)
 - `GOOGLE_CLIENT_SECRET` — Google OAuth client secret
 - `INTEGRATION_ENCRYPTION_KEY` — 64-char hex string (32 bytes) for AES-256-GCM token encryption
-- `RESEND_API_KEY` — Resend API key for sending transactional emails (quote confirmations, weekly pipeline)
+- `RESEND_API_KEY` — Resend API key for sending transactional emails (quote confirmations, welcome drip, weekly pipeline)
+- `ADMIN_PASSWORD` — Server-side admin panel password (consumed by `/api/admin-login`, no VITE_ prefix — stays off client bundle). Added 2026-04-17.
+- `VITE_SHOW_DEMO_TENANTS` — Optional client-side flag; set to `"true"` to show hardcoded demo tenants in AdminDashboard. OFF in production (added 2026-04-17).
 
 ### Supabase
 - **Project**: Mybidquick (eccuaztubjdxicylcwrh)
 - **Tables** (7 total):
-  - `tenants` — company profiles, configs, billing info, auth linkage. Key columns: slug, config (JSONB), lead_credits (default 25), stripe_customer_id, auth_user_id, is_launch_customer, email_opt_out
+  - `tenants` — company profiles, configs, billing info, auth linkage. Key columns: slug, config (JSONB), lead_credits (default 25), stripe_customer_id, auth_user_id, is_launch_customer, email_opt_out, welcome_step (smallint 0-4, drives welcome drip cron — added 2026-04-17)
   - `leads` — customer quote submissions. Key columns: status (new/contacted/scheduled/won/lost), service_details (JSONB), package_prices (JSONB), address, preferred_days/time, follow_ups_sent (int array)
   - `lead_charges` — per-lead billing records (1 credit deducted per quote)
   - `credit_purchases` — Stripe checkout purchase records (pending/completed/failed)

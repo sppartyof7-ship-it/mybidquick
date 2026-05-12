@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Photo Estimator | MyBidQuick Test</title>
+  <style>
+    /* --- RESET & BASE --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* --- HEADER --- */
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid #334155;
+      padding: 1.5rem 2rem;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 1.5rem;
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .header p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+    .badge {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #38bdf8;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* --- MAIN CONTAINER --- */
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* --- UPLOAD ZONE --- */
+    .upload-zone {
+      border: 2px dashed #475569;
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #1e293b;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: #38bdf8;
+      background: #1e3a5f;
+    }
+    .upload-zone.has-image {
+      border-style: solid;
+      border-color: #38bdf8;
+      padding: 1rem;
+    }
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .upload-zone h2 {
+      font-size: 1.2rem;
+      color: #f1f5f9;
+      margin-bottom: 0.5rem;
+    }
+    .upload-zone p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    .upload-zone input[type="file"] {
+      display: none;
+    }
+    .browse-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.6rem 1.5rem;
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .browse-btn:hover { background: #7dd3fc; }
+
+    /* --- IMAGE PREVIEW --- */
+    .preview-container {
+      display: none;
+      position: relative;
+    }
+    .preview-container.visible { display: block; }
+    .preview-img {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+    .remove-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* --- ANALYZE BUTTON --- */
+    .analyze-btn {
+      display: none;
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .analyze-btn.visible { display: block; }
+    .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3); }
+    .analyze-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* --- LOADING --- */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 3rem;
+    }
+    .loading.visible { display: block; }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #334155;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p { color: #94a3b8; font-size: 0.95rem; }
+
+    /* --- RESULTS --- */
+    .results {
+      display: none;
+      margin-top: 2rem;
+    }
+    .results.visible { display: block; }
+
+    .result-summary {
+      background: linear-gradient(135deg, #1e3a5f, #1e293b);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .result-summary h3 {
+      color: #38bdf8;
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+    .result-summary p {
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .result-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 640px) {
+      .result-cards { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: #475569; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .card-icon { font-size: 1.5rem; }
+    .card-title { font-weight: 700; font-size: 1rem; }
+
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #1e293b;
+      font-size: 0.85rem;
+    }
+    .card-row:last-child { border-bottom: none; }
+    .card-label { color: #94a3b8; }
+    .card-value { color: #f1f5f9; font-weight: 500; }
+
+    .tier-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .tier-standard { background: #065f46; color: #6ee7b7; }
+    .tier-premium { background: #1e3a5f; color: #93c5fd; }
+    .tier-platinum { background: #581c87; color: #d8b4fe; }
+
+    .confidence-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+    .conf-high { background: #22c55e; }
+    .conf-medium { background: #eab308; }
+    .conf-low { background: #ef4444; }
+
+    /* --- PROPERTY OVERVIEW BAR --- */
+    .overview-bar {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (min-width: 640px) {
+      .overview-bar { grid-template-columns: repeat(4, 1fr); }
+    }
+    .overview-stat {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .overview-stat .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .overview-stat .stat-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+    }
+
+    /* --- ISSUES LIST --- */
+    .issues-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+    .issue-tag {
+      background: #451a03;
+      color: #fbbf24;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+    }
+
+    /* --- METADATA --- */
+    .metadata {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #1e293b;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #64748b;
+      text-align: center;
+    }
+
+    /* --- ERROR --- */
+    .error {
+      display: none;
+      background: #451a03;
+      border: 1px solid #92400e;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+    .error.visible { display: block; }
+    .error p { color: #fbbf24; }
+
+    /* --- NEW PHOTO BTN --- */
+    .new-photo-btn {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.75rem 2rem;
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .new-photo-btn:hover { background: #475569; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>AI Photo Estimator <span class="badge">TEST BUILD</span></h1>
+    <p>Upload a property photo — AI analyzes it for house wash, windows & gutters</p>
+  </div>
+
+  <div class="container">
+
+    <!-- UPLOAD ZONE -->
+    <div class="upload-zone" id="uploadZone">
+      <div id="uploadPrompt">
+        <div class="upload-icon">📸</div>
+        <h2>Drop a house photo here</h2>
+        <p>or click to browse — JPEG, PNG, WebP up to 20MB</p>
+        <button class="browse-btn" onclick="document.getElementById('fileInput').click()">Browse Photos</button>
+      </div>
+      <div class="preview-container" id="previewContainer">
+        <img id="previewImg" class="preview-img" alt="Property photo preview">
+        <button class="remove-btn" id="removeBtn" title="Remove photo">✕</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif">
+    </div>
+
+    <!-- ANALYZE BUTTON -->
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyzePhoto()">
+      🔍 Analyze This Property
+    </button>
+
+    <!-- LOADING STATE -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Claude is analyzing your photo...</p>
+      <p style="font-size: 0.8rem; margin-top: 0.5rem; color: #64748b;">This usually takes 5-10 seconds</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div class="error" id="error">
+      <p id="errorMsg">Something went wrong</p>
+      <button class="new-photo-btn" onclick="resetAll()" style="margin-top: 1rem;">Try Again</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results" id="results">
+
+      <!-- AI Summary -->
+      <div class="result-summary" id="summaryCard">
+        <h3>🤖 AI Analysis Summary</h3>
+        <p id="aiSummary"></p>
+      </div>
+
+      <!-- Overview Stats -->
+      <div class="overview-bar" id="overviewBar"></div>
+
+      <!-- Service Cards -->
+      <div class="result-cards" id="serviceCards"></div>
+
+      <!-- Metadata -->
+      <div class="metadata" id="metadata"></div>
+
+      <!-- New Photo -->
+      <div style="text-align: center;">
+        <button class="new-photo-btn" onclick="resetAll()">📸 Analyze Another Photo</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // =============================================
+    // STATE
+    // =============================================
+    let selectedFile = null;
+
+    // =============================================
+    // DOM REFERENCES
+    // =============================================
+    const uploadZone = document.getElementById('uploadZone');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImg = document.getElementById('previewImg');
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const results = document.getElementById('results');
+
+    // =============================================
+    // DRAG & DROP + FILE SELECT
+    // =============================================
+
+    // Prevent the browser from opening the file if dropped outside the zone
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => {
+      document.body.addEventListener(event, e => { e.preventDefault(); e.stopPropagation(); });
+    });
+
+    // Visual feedback when dragging over the upload zone
+    uploadZone.addEventListener('dragover', () => uploadZone.classList.add('dragover'));
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+
+    // Handle the actual drop
+    uploadZone.addEventListener('drop', (e) => {
+      uploadZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) handleFile(files[0]);
+    });
+
+    // Handle clicking to browse
+    uploadZone.addEventListener('click', (e) => {
+      // Don't trigger file browse if clicking the remove button
+      if (e.target.id === 'removeBtn' || e.target.closest('#removeBtn')) return;
+      if (!selectedFile) fileInput.click();
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) handleFile(fileInput.files[0]);
+    });
+
+    // Remove photo button
+    document.getElementById('removeBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetUpload();
+    });
+
+    /**
+     * handleFile — Called when a file is selected or dropped.
+     * Shows a preview of the image and reveals the analyze button.
+     */
+    function handleFile(file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+        alert('Please upload a JPEG, PNG, WebP, or GIF image.');
+        return;
+      }
+
+      selectedFile = file;
+
+      // Show image preview using FileReader
+      // FileReader reads the file from disk and converts it to a data URL
+      // that we can use as the src of an <img> tag
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        uploadPrompt.style.display = 'none';
+        previewContainer.classList.add('visible');
+        uploadZone.classList.add('has-image');
+        analyzeBtn.classList.add('visible');
+      };
+      reader.readAsDataURL(file);
+
+      // Hide any previous results/errors
+      results.classList.remove('visible');
+      error.classList.remove('visible');
+    }
+
+    function resetUpload() {
+      selectedFile = null;
+      fileInput.value = '';
+      previewImg.src = '';
+      uploadPrompt.style.display = '';
+      previewContainer.classList.remove('visible');
+      uploadZone.classList.remove('has-image');
+      analyzeBtn.classList.remove('visible');
+    }
+
+    function resetAll() {
+      resetUpload();
+      results.classList.remove('visible');
+      error.classList.remove('visible');
+      loading.classList.remove('visible');
+    }
+
+    // =============================================
+    // ANALYZE PHOTO — Send to our server
+    // =============================================
+    async function analyzePhoto() {
+      if (!selectedFile) return;
+
+      // Show loading, hide everything else
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = '⏳ Analyzing...';
+      loading.classList.add('visible');
+      results.classList.remove('visible');
+      error.classList.remove('visible');
+
+      try {
+        // FormData lets us send a file upload via fetch()
+        // It's like submitting a <form> with an <input type="file">
+        const formData = new FormData();
+        formData.append('photo', selectedFile);
+
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Analysis failed');
+        }
+
+        // Render the results
+        renderResults(data.analysis, data.metadata);
+
+      } catch (err) {
+        document.getElementById('errorMsg').textContent = err.message;
+        error.classList.add('visible');
+      } finally {
+        loading.classList.remove('visible');
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = '🔍 Analyze This Property';
+      }
+    }
+
+    // =============================================
+    // RENDER RESULTS
+    // =============================================
+    function renderResults(analysis, metadata) {
+      const a = analysis;
+
+      // --- AI Summary ---
+      document.getElementById('aiSummary').textContent = a.ai_summary;
+
+      // --- Overview Stats ---
+      const overview = a.property_overview;
+      document.getElementById('overviewBar').innerHTML = `
+        <div class="overview-stat">
+          <div class="stat-value">${overview.stories}</div>
+          <div class="stat-label">Stories</div>
+        </div>
+        <div class="overview-stat">
+          <div class="stat-value">${overview.estimated_sqft?.toLocaleString() || '?'}</div>
+          <div class="stat-label">Est. Sq Ft</div>
+        </div>
+        <div class="overview-stat">
+          <div class="stat-value">${capitalize(overview.property_type?.replace('_', ' '))}</div>
+          <div class="stat-label">Type</div>
+        </div>
+        <div class="overview-stat">
+          <div class="stat-value">${capitalize(overview.overall_condition)}</div>
+          <div class="stat-label">Condition</div>
+        </div>
+      `;
+
+      // --- Service Cards ---
+      let cardsHTML = '';
+
+      // House Wash Card
+      const hw = a.house_wash;
+      cardsHTML += `
+        <div class="card">
+          <div class="card-header">
+            <span class="card-icon">🏠</span>
+            <span class="card-title">House Wash</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Siding</span>
+            <span class="card-value">${confidenceDot(hw.siding_confidence)} ${capitalize(hw.siding_type?.replace('_', ' '))}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Condition</span>
+            <span class="card-value">${capitalize(hw.siding_condition?.replace(/_/g, ' '))}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Tier</span>
+            <span class="card-value">${tierBadge(hw.recommendation)}</span>
+          </div>
+          ${hw.visible_issues?.length ? `
+            <div style="margin-top: 0.5rem;">
+              <span class="card-label" style="font-size: 0.8rem;">Visible Issues:</span>
+              <div class="issues-list">
+                ${hw.visible_issues.map(i => `<span class="issue-tag">${i}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #94a3b8; font-style: italic;">
+            ${hw.recommendation_reason || ''}
+          </div>
+        </div>
+      `;
+
+      // Windows Card
+      const w = a.windows;
+      cardsHTML += `
+        <div class="card">
+          <div class="card-header">
+            <span class="card-icon">🪟</span>
+            <span class="card-title">Windows</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Count</span>
+            <span class="card-value">${confidenceDot(w.count_confidence)} ~${w.estimated_count}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Condition</span>
+            <span class="card-value">${capitalize(w.window_condition?.replace(/_/g, ' '))}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Screens</span>
+            <span class="card-value">${capitalize(w.has_screens)}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Tier</span>
+            <span class="card-value">${tierBadge(w.recommendation)}</span>
+          </div>
+          <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #94a3b8; font-style: italic;">
+            ${w.recommendation_reason || ''}
+          </div>
+        </div>
+      `;
+
+      // Gutters Card
+      const g = a.gutters;
+      cardsHTML += `
+        <div class="card">
+          <div class="card-header">
+            <span class="card-icon">🏗️</span>
+            <span class="card-title">Gutters</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Has Gutters</span>
+            <span class="card-value">${g.has_gutters ? 'Yes' : 'No'}</span>
+          </div>
+          ${g.has_gutters ? `
+            <div class="card-row">
+              <span class="card-label">Material</span>
+              <span class="card-value">${capitalize(g.gutter_material)}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Condition</span>
+              <span class="card-value">${capitalize(g.gutter_condition)}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Debris Visible</span>
+              <span class="card-value">${g.visible_debris ? '⚠️ Yes' : 'No'}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Guards</span>
+              <span class="card-value">${capitalize(g.has_gutter_guards)}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Tier</span>
+              <span class="card-value">${tierBadge(g.recommendation)}</span>
+            </div>
+          ` : ''}
+          <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #94a3b8; font-style: italic;">
+            ${g.recommendation_reason || ''}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('serviceCards').innerHTML = cardsHTML;
+
+      // --- Metadata ---
+      if (metadata) {
+        document.getElementById('metadata').innerHTML =
+          `Model: ${metadata.model} · Tokens: ${metadata.input_tokens} in / ${metadata.output_tokens} out · ${metadata.filename} (${(metadata.filesize / 1024 / 1024).toFixed(2)}MB)`;
+      }
+
+      // Show results
+      results.classList.add('visible');
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // =============================================
+    // HELPERS
+    // =============================================
+    function capitalize(str) {
+      if (!str) return '—';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function tierBadge(tier) {
+      if (!tier) return '—';
+      return `<span class="tier-badge tier-${tier}">${tier}</span>`;
+    }
+
+    function confidenceDot(level) {
+      if (!level) return '';
+      return `<span class="confidence-dot conf-${level}" title="${level} confidence"></span>`;
+    }
+  </script>
+
+</body>
+</html>

@@ -1297,12 +1297,31 @@ export default function TenantDashboard() {
                                   </div>
                                 )}
 
-                                {/* Photos count */}
-                                {lead.photos && lead.photos.length > 0 && (
-                                  <div style={{ marginBottom: 6, fontSize: 10, color: '#7a9bbc' }}>
-                                    📷 {lead.photos.length} photo{lead.photos.length !== 1 ? 's' : ''} uploaded
-                                  </div>
-                                )}
+                                {/* Photos — show real thumbnails when URLs exist, fallback to broken-upload warning */}
+                                {lead.photos && lead.photos.length > 0 && (() => {
+                                  const withUrls = lead.photos.filter(p => p && p.url)
+                                  if (withUrls.length > 0) {
+                                    return (
+                                      <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+                                        {withUrls.slice(0, 4).map((p, i) => (
+                                          <a key={i} href={p.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                                            <img src={p.url} alt={p.name || 'photo'} style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 4, border: '1px solid #d4e4f7' }} />
+                                          </a>
+                                        ))}
+                                        {withUrls.length > 4 && (
+                                          <div style={{ width: 36, height: 36, borderRadius: 4, background: '#f0f4fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#4a6d94', fontWeight: 600 }}>
+                                            +{withUrls.length - 4}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  }
+                                  return (
+                                    <div style={{ marginBottom: 6, fontSize: 10, color: '#b45309', background: '#fef3c7', padding: '4px 6px', borderRadius: 4 }}>
+                                      ⚠️ {lead.photos.length} photo{lead.photos.length !== 1 ? 's' : ''} — upload failed
+                                    </div>
+                                  )
+                                })()}
 
                                 {/* Quick-move buttons */}
                                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
@@ -1493,12 +1512,32 @@ export default function TenantDashboard() {
                               </div>
                             )}
 
-                            {/* Photos */}
-                            {lead.photos && lead.photos.length > 0 && (
-                              <div style={{ marginBottom: 16, fontSize: 13, color: '#4a6d94' }}>
-                                📷 {lead.photos.length} photo{lead.photos.length !== 1 ? 's' : ''} uploaded by customer
-                              </div>
-                            )}
+                            {/* Photos — thumbnail grid with click-to-fullsize */}
+                            {lead.photos && lead.photos.length > 0 && (() => {
+                              const withUrls = lead.photos.filter(p => p && p.url)
+                              if (withUrls.length > 0) {
+                                return (
+                                  <div style={{ marginBottom: 16 }}>
+                                    <div style={{ fontWeight: 600, fontSize: 12, color: '#1e3a5f', marginBottom: 8 }}>
+                                      📷 Customer Photos ({withUrls.length})
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                      {withUrls.map((p, i) => (
+                                        <a key={i} href={p.url} target="_blank" rel="noopener noreferrer">
+                                          <img src={p.url} alt={p.name || `photo ${i + 1}`} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #d4e4f7', cursor: 'pointer' }} />
+                                        </a>
+                                      ))}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: '#7a9bbc', marginTop: 6 }}>Click any photo to view full size.</div>
+                                  </div>
+                                )
+                              }
+                              return (
+                                <div style={{ marginBottom: 16, fontSize: 13, color: '#b45309', background: '#fef3c7', padding: '8px 12px', borderRadius: 6, borderLeft: '3px solid #f59e0b' }}>
+                                  ⚠️ Customer attempted to attach {lead.photos.length} photo{lead.photos.length !== 1 ? 's' : ''}, but the upload didn't complete. Ask them to re-send via text or email.
+                                </div>
+                              )
+                            })()}
 
                             {/* Move buttons */}
                             <div style={{ display: 'flex', gap: 8 }}>
