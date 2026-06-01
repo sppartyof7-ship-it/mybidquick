@@ -6,7 +6,7 @@ import {
   ChevronDown, MapPin, Heart, Loader, CreditCard, ShoppingCart, ExternalLink, Gift,
   BarChart3, Users, Target, Calendar, GripVertical, Palette, Upload, Image
 } from 'lucide-react'
-import { getTenantByEmail, updateTenantConfig, updateTenantProfile, uploadLogo, getLeads, updateLeadStatus, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
+import { getTenantByEmail, updateTenantConfig, updateTenantProfile, uploadLogo, getLeads, updateLeadStatus, markLeadPaid, updateLeadTotal, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
 import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS, LAUNCH_PACKS, getPacksForTenant } from '../lib/billing'
 
 // ============================================================================
@@ -247,10 +247,10 @@ const DEFAULT_CONFIG = {
     reviewBadge: { enabled: false, count: 200, rating: 4.8 },
   },
   followUp: [
-    { id: 'fu-1', delay: 0, type: 'email', subject: 'Your Quote is Ready!', body: 'Hi {{name}},\n\nYour {{services}} quote is {{total}}.\n\nLook forward to helping {{business}}!', active: true },
-    { id: 'fu-2', delay: 2, type: 'sms', subject: '', body: 'Hi {{name}}! Just checking in on your {{services}} quote. Reply with any questions!', active: true },
-    { id: 'fu-3', delay: 5, type: 'email', subject: 'Ready to Book?', body: 'Hi {{name}},\n\nYour {{services}} project is waiting. Let\'s get started!\n\nTotal: {{total}}', active: true },
-    { id: 'fu-4', delay: 14, type: 'email', subject: 'Last Chance!', body: 'Hi {{name}},\n\nThis offer won\'t last much longer. Book your {{services}} service today!', active: false },
+    { id: 'fu-1', delay: 0, type: 'email', subject: 'Your Quote is Ready!', body: 'Hi [Customer Name],\n\nYour [Services] quote is [Quote Total].\n\nLook forward to helping you out — [Your Business].', active: true },
+    { id: 'fu-2', delay: 2, type: 'sms', subject: '', body: 'Hi [Customer Name]! Just checking in on your [Services] quote. Reply with any questions!', active: true },
+    { id: 'fu-3', delay: 5, type: 'email', subject: 'Ready to Book?', body: 'Hi [Customer Name],\n\nYour [Services] project is waiting. Let\'s get started!\n\nTotal: [Quote Total]', active: true },
+    { id: 'fu-4', delay: 14, type: 'email', subject: 'Last Chance!', body: 'Hi [Customer Name],\n\nThis offer won\'t last much longer. Book your [Services] service today!', active: false },
   ],
   leadSources: ['Google', 'Facebook', 'Referral', 'Direct'],
   leadEmail: 'leads@example.com',
@@ -349,6 +349,11 @@ export default function TenantDashboard() {
   const [gcalConnecting, setGcalConnecting] = useState(false)
   const [gcalToast, setGcalToast] = useState(null)
   const [calendarCreating, setCalendarCreating] = useState(null) // leadId currently being added
+  // Manual price edit state — tenant can adjust a lead's total inline.
+  // Stores the lead id currently in edit mode and the draft value.
+  const [editingPriceLeadId, setEditingPriceLeadId] = useState(null)
+  const [priceDraft, setPriceDraft] = useState('')
+  const [savingPrice, setSavingPrice] = useState(false)
 
   // URL params (for billing success/cancel return from Stripe)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -672,6 +677,111 @@ export default function TenantDashboard() {
   // ========================================================================
 
   const filteredLeads = leadsFilter === 'all' ? leads : leads.filter(l => l.status === leadsFilter)
+
+  // ====== Mark Paid ======
+  // Tenant clicks "Mark Paid" on a lead -> POST /api/send-payment-receipt.
+  // Server stamps paid_at, sends the customer a receipt, BCCs the tenant.
+  // Optimistically update local state for instant feedback; revert on error.
+  const handleMarkPaid = async (lead) => {
+    if (!lead || !lead.id || !tenant?.id) return
+    if (lead.paid_at) return // already paid
+
+    const ok = window.confirm(
+      'Mark this lead as PAID?\n\n' +
+      'Customer: ' + (lead.name || 'Unknown') + '\n' +
+      'Amount: ' + (lead.total ? '$' + Number(lead.total).toLocaleString() : '(no total)') + '\n\n' +
+      'This will send ' + (lead.email || 'the customer') + ' a receipt email and BCC you a copy. ' +
+      "Only do this AFTER you've actually received their payment (cash, Venmo, Square, etc.)."
+    )
+    if (!ok) return
+
+    const stampedAt = new Date().toISOString()
+    setLeads((curr) => curr.map((l) =>
+      l.id === lead.id
+        ? { ...l, paid_at: stampedAt, status: l.status === 'lost' ? l.status : 'won' }
+        : l
+    ))
+
+    try {
+      const result = await markLeadPaid(lead.id, tenant.id)
+      if (result.paid_at) {
+        setLeads((curr) => curr.map((l) =>
+          l.id === lead.id ? { ...l, paid_at: result.paid_at } : l
+        ))
+      }
+      if (lead.status !== 'won' && lead.status !== 'lost') {
+        try { await updateLeadStatus(lead.id, 'won') } catch (_) { /* non-fatal */ }
+      }
+      if (result.email_sent) {
+        alert('Marked paid. Receipt emailed to ' + result.to + '.')
+      } else {
+        alert('Marked paid. (No receipt email - ' + (result.reason || 'customer has no email on file') + '.)')
+      }
+    } catch (err) {
+      setLeads((curr) => curr.map((l) =>
+        l.id === lead.id ? { ...l, paid_at: null } : l
+      ))
+      alert('Failed to mark paid: ' + (err.message || err))
+    }
+  }
+
+  // ====== Price Edit ======
+  // Tenant clicks the pencil next to a lead's Quote Total -> inline input ->
+  // Save. We never email the customer (per Tim's spec) — this is purely the
+  // tenant correcting/negotiating the number on their side. The original
+  // customer-submitted value is snapshotted to lead.original_total on the
+  // first edit so we can always show "edited from $X."
+  const handleStartPriceEdit = (lead) => {
+    if (!lead || !lead.id) return
+    setEditingPriceLeadId(lead.id)
+    setPriceDraft(lead.total != null ? String(Math.round(Number(lead.total))) : '')
+  }
+  const handleCancelPriceEdit = () => {
+    setEditingPriceLeadId(null)
+    setPriceDraft('')
+    setSavingPrice(false)
+  }
+  const handleSavePrice = async (lead) => {
+    if (!lead || !lead.id) return
+    const n = Number(priceDraft)
+    if (!isFinite(n) || n < 0) {
+      alert('Please enter a valid non-negative number (no dollar sign needed).')
+      return
+    }
+    if (n === Number(lead.total)) {
+      handleCancelPriceEdit()
+      return
+    }
+
+    setSavingPrice(true)
+    const previousTotal = lead.total
+    const originalForBadge = lead.original_total != null ? lead.original_total : previousTotal
+
+    // Optimistic local update so the new number shows instantly.
+    setLeads((curr) => curr.map((l) =>
+      l.id === lead.id
+        ? { ...l, total: n, original_total: originalForBadge, total_edited_at: new Date().toISOString() }
+        : l
+    ))
+
+    try {
+      const result = await updateLeadTotal(lead.id, n)
+      // Reconcile with whatever the server actually persisted.
+      setLeads((curr) => curr.map((l) =>
+        l.id === lead.id
+          ? { ...l, total: result.total, original_total: result.original_total, total_edited_at: result.total_edited_at }
+          : l
+      ))
+      handleCancelPriceEdit()
+    } catch (err) {
+      // Roll back optimistic update on failure.
+      setLeads((curr) => curr.map((l) =>
+        l.id === lead.id ? { ...l, total: previousTotal } : l
+      ))
+      alert('Failed to update price: ' + (err.message || err))
+      setSavingPrice(false)
+    }
+  }
 
   const handleLeadStatus = async (leadId, newStatus) => {
     setLeads(leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l))
@@ -1323,6 +1433,30 @@ export default function TenantDashboard() {
                                   )
                                 })()}
 
+                                {/* Mark Paid (or green Paid badge if already paid) */}
+                                {lead.paid_at ? (
+                                  <div style={{
+                                    marginTop: 8, padding: '6px 10px', borderRadius: 6,
+                                    background: '#dcfce7', color: '#166534', fontSize: 11,
+                                    fontWeight: 700, display: 'inline-block',
+                                  }}>
+                                    {'✓'} Paid on {new Date(lead.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleMarkPaid(lead) }}
+                                    style={{
+                                      marginTop: 8, padding: '6px 12px', borderRadius: 6,
+                                      background: '#16a34a', color: '#ffffff',
+                                      border: 'none', cursor: 'pointer',
+                                      fontWeight: 700, fontSize: 11, width: '100%',
+                                    }}
+                                    title="Click after the customer has paid you. Sends them a receipt."
+                                  >
+                                    {'💵'} Mark Paid + Send Receipt
+                                  </button>
+                                )}
+
                                 {/* Quick-move buttons */}
                                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
                                   {PIPELINE_STAGES.filter(s => s.id !== lead.status).map(s => (
@@ -1457,6 +1591,94 @@ export default function TenantDashboard() {
                               )}
                             </div>
 
+                            {/* Quote Total — tenant-editable. Customer never hears about it. */}
+                            <div style={{
+                              marginBottom: 16, padding: '14px 16px', borderRadius: 10,
+                              background: 'white', border: '1px solid #d4e4f7',
+                              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                            }}>
+                              <div style={{ flex: 1, minWidth: 200 }}>
+                                <div style={{ fontWeight: 600, fontSize: 11, color: '#7a9bbc', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                                  Quote Total
+                                </div>
+                                {editingPriceLeadId === lead.id ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 22, fontWeight: 800, color: '#1e3a5f' }}>$</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={priceDraft}
+                                      onChange={(e) => setPriceDraft(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSavePrice(lead)
+                                        if (e.key === 'Escape') handleCancelPriceEdit()
+                                      }}
+                                      autoFocus
+                                      style={{
+                                        width: 120, padding: '6px 10px',
+                                        border: '2px solid #3b9cff', borderRadius: 8,
+                                        fontSize: 20, fontWeight: 800, color: '#1e3a5f',
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 22, fontWeight: 800, color: '#1e3a5f' }}>
+                                      ${Number(lead.total || 0).toLocaleString()}
+                                    </span>
+                                    {lead.original_total != null && Number(lead.original_total) !== Number(lead.total) && (
+                                      <span title={lead.total_edited_at ? `Edited ${new Date(lead.total_edited_at).toLocaleString()}` : 'Edited from original'} style={{
+                                        fontSize: 11, fontWeight: 600, color: '#7a9bbc',
+                                        background: '#f0f4f8', padding: '3px 8px', borderRadius: 6,
+                                      }}>
+                                        Edited · was ${Number(lead.original_total).toLocaleString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              {editingPriceLeadId === lead.id ? (
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <button
+                                    onClick={() => handleSavePrice(lead)}
+                                    disabled={savingPrice}
+                                    style={{
+                                      padding: '8px 16px', borderRadius: 8,
+                                      background: '#16a34a', color: 'white', border: 'none',
+                                      fontWeight: 700, fontSize: 13,
+                                      cursor: savingPrice ? 'not-allowed' : 'pointer',
+                                      opacity: savingPrice ? 0.6 : 1,
+                                    }}
+                                  >{savingPrice ? 'Saving…' : 'Save'}</button>
+                                  <button
+                                    onClick={handleCancelPriceEdit}
+                                    disabled={savingPrice}
+                                    style={{
+                                      padding: '8px 14px', borderRadius: 8,
+                                      background: 'white', color: '#64748b',
+                                      border: '1px solid #d4e4f7',
+                                      fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                                    }}
+                                  >Cancel</button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleStartPriceEdit(lead)}
+                                  title="Manually adjust this quote total. Customer is not notified."
+                                  style={{
+                                    padding: '8px 14px', borderRadius: 8,
+                                    background: '#f0f7ff', color: '#3b9cff',
+                                    border: '1px solid #d4e4f7',
+                                    fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                  }}
+                                >
+                                  ✏️ Edit Price
+                                </button>
+                              )}
+                            </div>
+
                             {/* Package price breakdown */}
                             {lead.packagePrices && Object.keys(lead.packagePrices).length > 0 && (
                               <div style={{ marginBottom: 16 }}>
@@ -1538,6 +1760,42 @@ export default function TenantDashboard() {
                                 </div>
                               )
                             })()}
+
+                            {/* Mark Paid (or paid receipt block if already paid) */}
+                            {lead.paid_at ? (
+                              <div style={{
+                                marginBottom: 16, padding: '12px 16px', borderRadius: 10,
+                                background: '#dcfce7', border: '1px solid #86efac',
+                                color: '#166534',
+                              }}>
+                                <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>
+                                  {'✓'} Paid on {new Date(lead.paid_at).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </div>
+                                <div style={{ fontSize: 12, opacity: 0.85 }}>
+                                  Receipt was emailed to the customer. You were BCC'd.
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ marginBottom: 16 }}>
+                                <button
+                                  onClick={() => handleMarkPaid(lead)}
+                                  style={{
+                                    padding: '10px 20px', borderRadius: 10,
+                                    background: '#16a34a', color: '#ffffff',
+                                    border: 'none', cursor: 'pointer',
+                                    fontWeight: 700, fontSize: 14,
+                                    boxShadow: '0 1px 2px rgba(22,163,74,0.3)',
+                                  }}
+                                  title="Click after the customer has paid you. Sends them a receipt email and BCCs you."
+                                >
+                                  {'💵'} Mark Paid + Send Receipt
+                                </button>
+                                <div style={{ marginTop: 6, fontSize: 11, color: '#7a9bbc' }}>
+                                  Only click after the customer has actually paid you (cash, Venmo, Square, etc.).
+                                  The customer gets a receipt email and you get a BCC.
+                                </div>
+                              </div>
+                            )}
 
                             {/* Move buttons */}
                             <div style={{ display: 'flex', gap: 8 }}>
@@ -2608,7 +2866,7 @@ export default function TenantDashboard() {
                 border: '1px solid #d4e4f7',
               }}>
                 <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, color: '#1e3a5f' }}>Follow-Up Sequences</h2>
-                <p style={{ color: '#7a9bbc', fontSize: 14, marginBottom: 24 }}>{"Create email and SMS follow-ups. Template variables: {{name}}, {{business}}, {{total}}, {{services}}"}</p>
+                <p style={{ color: '#7a9bbc', fontSize: 14, marginBottom: 24 }}>Create email and SMS follow-ups. Use [Customer Name], [Your Business], [Quote Total], or [Services] anywhere in your message — we'll fill them in automatically when each follow-up sends.</p>
 
                 {config.followUp.map((step, sidx) => (
                   <div key={step.id} style={{
@@ -2749,7 +3007,7 @@ export default function TenantDashboard() {
                       delay: 7,
                       type: 'email',
                       subject: 'Follow-up',
-                      body: 'Hi {{name}}, checking in on your quote.',
+                      body: 'Hi [Customer Name], checking in on your quote.',
                       active: true,
                     }]
                     updateConfig('followUp', newFollowUp)

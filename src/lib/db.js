@@ -187,6 +187,89 @@ export async function updateLeadStatus(leadId, status) {
 }
 
 /**
+ * Manually adjust a lead's quote total (tenant-only action — the customer
+ * never hears about it; this is purely the tenant correcting/negotiating
+ * the number on their side).
+ *
+ * The first time a lead is edited, we snapshot the customer-submitted
+ * value into `original_total` so the dashboard can show "Edited from $X"
+ * forever after — that audit trail is intentional, so a tenant can't
+ * confuse themselves about what the customer originally saw.
+ *
+ * @param {string} leadId
+ * @param {number} newTotal  Must be a finite, non-negative number
+ * @returns the updated row
+ */
+export async function updateLeadTotal(leadId, newTotal) {
+  const n = Number(newTotal)
+  if (!isFinite(n) || n < 0) {
+    throw new Error('Invalid total — must be a non-negative number')
+  }
+
+  if (!isSupabaseConnected()) {
+    // Demo mode: component state handles this; nothing to persist.
+    return { id: leadId, total: n }
+  }
+
+  // Read first so we know whether to snapshot original_total.
+  const { data: existing, error: readErr } = await supabase
+    .from('leads')
+    .select('id, total, original_total')
+    .eq('id', leadId)
+    .single()
+  if (readErr) throw readErr
+  if (!existing) throw new Error('Lead not found')
+
+  const patch = {
+    total: n,
+    total_edited_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  // Only snapshot on the FIRST edit. Subsequent edits leave original alone.
+  if (existing.original_total == null) {
+    patch.original_total = existing.total
+  }
+
+  const { data, error } = await supabase
+    .from('leads')
+    .update(patch)
+    .eq('id', leadId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Mark a lead as paid. Calls the server endpoint which:
+ *   1. Stamps lead.paid_at = now() in Supabase (idempotent)
+ *   2. Sends a branded receipt email to the customer
+ *   3. BCCs the tenant on the receipt
+ *
+ * Payment itself happens OUTSIDE MyBidQuick — this just records that it
+ * happened and sends the customer a thank-you receipt.
+ *
+ * @returns the JSON response from the endpoint
+ * @throws if the request fails
+ */
+export async function markLeadPaid(leadId, tenantId, paymentMethod) {
+  const response = await fetch('/api/send-payment-receipt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      lead_id: leadId,
+      tenant_id: tenantId,
+      payment_method: paymentMethod || null,
+    }),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(data.error || `Mark paid failed (HTTP ${response.status})`)
+  }
+  return data
+}
+
+/**
  * Create a new lead (from customer quote submission)
  * Also deducts 1 lead credit from the tenant and logs the charge.
  */
@@ -482,5 +565,6 @@ function rowToLead(row) {
     updatedAt: row.updated_at,
     preferredDays: row.preferred_days || null,
     preferredTime: row.preferred_time || null,
+    paid_at: row.paid_at || null,
   }
 }
