@@ -10,8 +10,9 @@
 //   reason — UI keeps the toggle so we can wire Twilio later without churn.
 // - Idempotent: tracks sent step IDs in leads.follow_ups_sent and won't
 //   re-send a step it's already fired.
-// - Skips leads with status='won' or 'lost' (no point harassing closed deals)
-//   and leads marked paid_at.
+// - Skips leads in any TERMINAL_STATUSES (won, lost, scheduled, booked,
+//   complete, paid) and leads marked paid_at. Once a deal is won/accepted the
+//   lead drops off follow-ups automatically — no manual step required.
 // - Respects step.active toggle. If a tenant deactivates a step mid-run,
 //   it's skipped on the next cron.
 //
@@ -26,6 +27,12 @@ import { supabase } from './_lib/supabase-admin.js'
 import { substituteTemplate } from './_lib/followup-template.js'
 
 const MAX_LEAD_AGE_DAYS = 60
+
+// Statuses that mean the deal is closed/accepted — these leads must NEVER
+// receive follow-ups. A won/scheduled customer who keeps getting "ready to
+// book?" nudges is the exact bug this list prevents. Extend here if the CRM
+// adds new "accepted" stages. Matching is case-insensitive (see below).
+const TERMINAL_STATUSES = ['won', 'lost', 'scheduled', 'booked', 'complete', 'completed', 'paid']
 
 const ALLOWED_ORIGINS = [
   'https://www.mybidquick.com',
@@ -82,7 +89,7 @@ export default async function handler(req, res) {
         .select('id, name, email, phone, address, services, total, status, created_at, paid_at, follow_ups_sent, last_follow_up_at')
         .eq('tenant_id', tenant.id)
         .not('email', 'is', null)
-        .not('status', 'in', '("won","lost")')
+        .not('status', 'in', '(' + TERMINAL_STATUSES.map((s) => '"' + s + '"').join(',') + ')')
         .is('paid_at', null)
 
       if (leadErr) {
@@ -94,6 +101,12 @@ export default async function handler(req, res) {
       // ---- 3. For each lead, find the first eligible step ------------------
       for (const lead of leads) {
         try {
+          // Belt-and-suspenders: never follow up a closed/accepted lead, even
+          // if the DB filter above is ever loosened. Case-insensitive match.
+          if (lead.status && TERMINAL_STATUSES.includes(String(lead.status).toLowerCase())) {
+            continue
+          }
+
           const alreadySent = Array.isArray(lead.follow_ups_sent) ? lead.follow_ups_sent : []
           const createdMs = new Date(lead.created_at).getTime()
           const ageDays = (now - createdMs) / (1000 * 60 * 60 * 24)
