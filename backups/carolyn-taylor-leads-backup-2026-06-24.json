@@ -1,0 +1,39 @@
+{
+  "backup_reason": "Tim requested removal of duplicate Carolyn Taylor leads from Cornerstone (slug: cornerstone, tenant c321ad5a-9ea4-4698-afaf-4dfc38df4818). Both records deleted 2026-06-24. This is a restore point.",
+  "deleted_leads": [
+    {
+      "id": "7d462c10-e66f-4eda-9236-c65b5cc84c4c",
+      "name": "Carolyn Taylor",
+      "email": "Carolyn.taylor@me.com",
+      "phone": "(763)291-4430",
+      "total": 1334,
+      "status": "contacted",
+      "package": "premium",
+      "services": ["window_cleaning", "pressure_washing", "concrete_cleaning"],
+      "tenant_id": "c321ad5a-9ea4-4698-afaf-4dfc38df4818",
+      "created_at": "2026-05-26T15:04:36.267217+00:00",
+      "package_prices": {"elite": 1468.6440146, "premium": 1469.5006409999999, "standard": 1050.0716282},
+      "photos": []
+    },
+    {
+      "id": "0e1cf25a-08f1-48d6-88bd-3a121278f788",
+      "name": "Carolyn Taylor",
+      "email": "Carolyn.taylor@me.com",
+      "phone": "763-291-4430",
+      "total": 1613,
+      "status": "lost",
+      "package": "premium",
+      "services": ["pressure_washing", "window_cleaning", "concrete_cleaning"],
+      "address": "38 Horseshoe Lp, Bozeman, MT 59718, USA",
+      "source": "Facebook",
+      "tenant_id": "c321ad5a-9ea4-4698-afaf-4dfc38df4818",
+      "created_at": "2026-05-25T16:49:41.221248+00:00",
+      "package_prices": {"elite": 1475.7089746, "premium": 1476.565601, "standard": 1057.1365882},
+      "photos": [{"url": "https://eccuaztubjdxicylcwrh.supabase.co/storage/v1/object/public/lead-photos/c321ad5a-9ea4-4698-afaf-4dfc38df4818/0a4cf013-589d-4515-9fc6-d8b0b80dd90f/1779727778186-0-image.png", "name": "image.png", "path": "c321ad5a-9ea4-4698-afaf-4dfc38df4818/0a4cf013-589d-4515-9fc6-d8b0b80dd90f/1779727778186-0-image.png", "size": 1472150}]
+    }
+  ],
+  "deleted_lead_charges": [
+    {"id": "2a8b5b25-3afb-441c-83a1-4fc38f078bd3", "lead_id": "0e1cf25a-08f1-48d6-88bd-3a121278f788", "amount_cents": 0, "status": "charged"},
+    {"id": "ddff0242-6779-4fea-92f0-46a36f8a6827", "lead_id": "7d462c10-e66f-4eda-9236-c65b5cc84c4c", "amount_cents": 0, "status": "charged"}
+  ]
+}

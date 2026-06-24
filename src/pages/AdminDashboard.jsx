@@ -4,9 +4,22 @@ import {
   LayoutDashboard, Users, BarChart3, Settings, LogOut,
   Plus, Search, DollarSign, TrendingUp, FileText, Eye,
   MoreVertical, ChevronRight, Zap, Clock, AlertCircle,
-  CheckCircle2, XCircle, ExternalLink, ArrowRight
+  CheckCircle2, XCircle, ExternalLink, ArrowRight, Receipt, X
 } from 'lucide-react'
-import { getAllTenants } from '../lib/db'
+import { getAllTenants, getLeads } from '../lib/db'
+
+// ---- Quote-reader helpers (admin-only; never shown to customers) ----
+const SERVICE_NAMES = {
+  house_washing: 'House Washing', window_cleaning: 'Window Cleaning',
+  pressure_washing: 'Pressure Washing', gutter_cleaning: 'Gutter Cleaning',
+  gutter_guard: 'Gutter Guard Install', gutter_guard_install: 'Gutter Guard Install',
+  roof_cleaning: 'Roof Cleaning', driveway_cleaning: 'Driveway Cleaning',
+  concrete_cleaning: 'Concrete Cleaning', deck_patio: 'Deck & Patio Cleaning',
+  deck_cleaning: 'Deck Cleaning',
+}
+const adminSvcName = (id) => SERVICE_NAMES[id] || String(id || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+const adminMoney = (v) => (v == null || v === '' ? '—' : `$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+const adminCap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1)
 
 // Demo data for tenants
 const DEMO_TENANTS = [
@@ -95,6 +108,7 @@ const DEMO_TENANTS = [
 const SIDEBAR_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'tenants', label: 'Tenants', icon: Users },
+  { id: 'quotes', label: 'Quotes & Pricing', icon: Receipt },
   { id: 'revenue', label: 'Revenue', icon: DollarSign },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -206,6 +220,288 @@ function RevenueChart({ tenants }) {
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>${values[i]}</div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// QUOTES & PRICING (admin-only quote reader + pricing matrix)
+// Lets Tim read any tenant's quotes and see exactly how they're priced, without
+// asking Claude. NEVER customer-facing — this lives behind the admin password.
+// ============================================================================
+function QuotesPanel({ tenants }) {
+  // Only tenants backed by a real DB row (UUID id) can have leads/config.
+  const realTenants = tenants.filter((t) => typeof t.id === 'string' && t.id.length >= 32)
+  const [tenantId, setTenantId] = useState(realTenants[0]?.id || null)
+  const [leads, setLeads] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [openLead, setOpenLead] = useState(null)
+
+  const tenant = realTenants.find((t) => t.id === tenantId) || null
+  const config = tenant?.config || {}
+  const services = Array.isArray(config.services) ? config.services : []
+  const packages = config.packages || {}
+
+  useEffect(() => {
+    if (!tenantId) return
+    let cancelled = false
+    setLoading(true); setError(''); setLeads([]); setOpenLead(null)
+    getLeads(tenantId)
+      .then((rows) => { if (!cancelled) setLeads(Array.isArray(rows) ? rows : []) })
+      .catch((err) => { if (!cancelled) setError(err.message || 'Failed to load quotes') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [tenantId])
+
+  if (realTenants.length === 0) {
+    return <p style={{ color: 'var(--text-muted)' }}>No live tenants found yet.</p>
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>Quotes &amp; Pricing</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>Read any tenant's quotes and see exactly how they're priced. Internal only — customers never see this.</p>
+      </div>
+
+      {/* Tenant picker */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+        {realTenants.map((t) => (
+          <button key={t.id} onClick={() => setTenantId(t.id)} style={{
+            padding: '8px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600,
+            border: t.id === tenantId ? '2px solid var(--accent)' : '1px solid var(--border)',
+            background: t.id === tenantId ? 'var(--accent)' : 'white',
+            color: t.id === tenantId ? 'white' : 'var(--text)',
+          }}>{t.businessName}</button>
+        ))}
+      </div>
+
+      {/* Pricing matrix */}
+      <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 24, border: '1px solid var(--border)', marginBottom: 24 }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>Pricing Matrix — {tenant?.businessName}</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>The rates the quote engine uses to build every quote for this tenant.</p>
+
+        {services.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>No service pricing configured for this tenant.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: 'var(--text-muted)', borderBottom: '2px solid var(--border)' }}>
+                  <th style={{ padding: '8px 10px' }}>Service</th>
+                  <th style={{ padding: '8px 10px' }}>Base</th>
+                  <th style={{ padding: '8px 10px' }}>/ sq ft</th>
+                  <th style={{ padding: '8px 10px' }}>/ window</th>
+                  <th style={{ padding: '8px 10px' }}>/ lin ft</th>
+                  <th style={{ padding: '8px 10px' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {services.map((s) => (
+                  <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', opacity: s.enabled ? 1 : 0.45 }}>
+                    <td style={{ padding: '8px 10px', fontWeight: 600 }}>{s.name || adminSvcName(s.id)}</td>
+                    <td style={{ padding: '8px 10px' }}>{adminMoney(s.basePrice)}</td>
+                    <td style={{ padding: '8px 10px' }}>{s.perSqFt ? `$${s.perSqFt}` : '—'}</td>
+                    <td style={{ padding: '8px 10px' }}>{s.perWindow ? `$${s.perWindow}` : '—'}</td>
+                    <td style={{ padding: '8px 10px' }}>{s.perLinFt ? `$${s.perLinFt}` : '—'}</td>
+                    <td style={{ padding: '8px 10px' }}>{s.enabled ? <span className="badge badge-success">On</span> : <span className="badge" style={{ background: '#f1f5f9', color: '#94a3b8' }}>Off</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Multipliers & adjustments */}
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 18 }}>
+          {Object.keys(packages).length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Package multipliers</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {Object.entries(packages).map(([k, v]) => (
+                  <span key={k} style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--bg-alt)', fontSize: 12, fontWeight: 600 }}>{adminCap(k)} ×{v.multiplier ?? v}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {config.storiesMultipliers && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Story multipliers</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {Object.entries(config.storiesMultipliers).map(([k, v]) => (
+                  <span key={k} style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--bg-alt)', fontSize: 12, fontWeight: 600 }}>{k}-story ×{v}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {config.priceAdjustment != null && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Global adjustment</div>
+              <span style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--bg-alt)', fontSize: 12, fontWeight: 600 }}>{config.priceAdjustment > 0 ? '+' : ''}{config.priceAdjustment}%</span>
+            </div>
+          )}
+          {config.bundleDiscounts && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Bundle discounts</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {Object.entries(config.bundleDiscounts).map(([k, v]) => (
+                  <span key={k} style={{ padding: '4px 10px', borderRadius: 8, background: 'var(--bg-alt)', fontSize: 12, fontWeight: 600 }}>{k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())}: {v}%</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quotes list */}
+      <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 24, border: '1px solid var(--border)' }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>Quotes ({leads.length})</h3>
+        {loading && <p style={{ color: 'var(--text-muted)' }}>Loading quotes…</p>}
+        {error && <p style={{ color: '#dc2626' }}>{error}</p>}
+        {!loading && !error && leads.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No quotes for this tenant yet.</p>}
+        {!loading && leads.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: 'var(--text-muted)', borderBottom: '2px solid var(--border)' }}>
+                  <th style={{ padding: '8px 10px' }}>Customer</th>
+                  <th style={{ padding: '8px 10px' }}>Date</th>
+                  <th style={{ padding: '8px 10px' }}>Services</th>
+                  <th style={{ padding: '8px 10px' }}>Package</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total</th>
+                  <th style={{ padding: '8px 10px' }}>Status</th>
+                  <th style={{ padding: '8px 10px' }} />
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((l) => (
+                  <tr key={l.id} style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }} onClick={() => setOpenLead(l)}>
+                    <td style={{ padding: '8px 10px', fontWeight: 600 }}>{l.name}</td>
+                    <td style={{ padding: '8px 10px', color: 'var(--text-muted)' }}>{l.date}</td>
+                    <td style={{ padding: '8px 10px' }}>{(l.services || []).map(adminSvcName).join(', ')}</td>
+                    <td style={{ padding: '8px 10px', textTransform: 'capitalize' }}>{l.package || '—'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
+                      {adminMoney(l.total)}
+                      {l.original_total != null && Number(l.original_total) !== Number(l.total) && (
+                        <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>was {adminMoney(l.original_total)}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '8px 10px', textTransform: 'capitalize' }}>{l.status}</td>
+                    <td style={{ padding: '8px 10px', color: 'var(--accent)' }}><Eye size={16} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {openLead && <QuoteDetailModal lead={openLead} onClose={() => setOpenLead(null)} />}
+    </div>
+  )
+}
+
+// Full read-only breakdown of a single quote.
+function QuoteDetailModal({ lead, onClose }) {
+  const sd = lead.serviceDetails || {}
+  const inputs = sd.inputs || {}
+  const tiers = sd.tiers || {}
+  const prices = sd.prices || {}
+  const pkgPrices = lead.packagePrices || {}
+  const lines = lead.quoteLines && Array.isArray(lead.quoteLines.lines) ? lead.quoteLines.lines : null
+  const row = { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-light)', fontSize: 13 }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }} onClick={onClose}>
+      <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', padding: 28, maxWidth: 620, width: '100%', maxHeight: '88vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div>
+            <h3 style={{ fontSize: 20, fontWeight: 800 }}>{lead.name}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{[lead.email, lead.phone].filter(Boolean).join(' · ')}</p>
+            {lead.address && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{lead.address}</p>}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+          <div style={{ padding: '10px 16px', background: 'var(--bg-alt)', borderRadius: 'var(--radius)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Total</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{adminMoney(lead.total)}</div>
+            {lead.original_total != null && Number(lead.original_total) !== Number(lead.total) && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>was {adminMoney(lead.original_total)}{lead.total_edited_at ? ` · edited ${new Date(lead.total_edited_at).toLocaleDateString()}` : ''}</div>
+            )}
+          </div>
+          <div style={{ padding: '10px 16px', background: 'var(--bg-alt)', borderRadius: 'var(--radius)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Package</div>
+            <div style={{ fontSize: 16, fontWeight: 700, textTransform: 'capitalize' }}>{lead.package || '—'}</div>
+          </div>
+          <div style={{ padding: '10px 16px', background: 'var(--bg-alt)', borderRadius: 'var(--radius)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Status</div>
+            <div style={{ fontSize: 16, fontWeight: 700, textTransform: 'capitalize' }}>{lead.status}</div>
+          </div>
+        </div>
+
+        {/* Tenant-edited line items (if the quote was rebuilt) */}
+        {lines && lines.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>Edited line items</div>
+            {lines.map((l, i) => (
+              <div key={l.id || i} style={row}><span>{l.label}</span><span style={{ fontWeight: 700 }}>{adminMoney(l.amount)}</span></div>
+            ))}
+          </div>
+        )}
+
+        {/* Per-service engine breakdown */}
+        {Object.keys(prices).length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>How each service was priced</div>
+            {Object.keys(prices).map((id) => (
+              <div key={id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>{adminSvcName(id)}{tiers[id] ? ` · ${adminCap(tiers[id])}` : ''}</span>
+                  <span style={{ fontWeight: 700 }}>{adminMoney(prices[id])}</span>
+                </div>
+                {inputs[id] && (
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                    {Object.entries(inputs[id]).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`).join(' · ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* All tier prices */}
+        {Object.keys(pkgPrices).length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>All tier prices (as quoted)</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {Object.entries(pkgPrices).map(([k, v]) => (
+                <div key={k} style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--bg-alt)', textAlign: 'center', minWidth: 90 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'capitalize' }}>{k}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{adminMoney(v)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {lead.bundleApplied && (
+          <div style={{ marginBottom: 14, padding: '8px 14px', borderRadius: 8, background: '#f0fdf4', color: '#16a34a', fontWeight: 600, fontSize: 13 }}>
+            Bundle applied: {lead.bundleApplied.name || `${lead.bundleApplied.discount}% off`}
+          </div>
+        )}
+        {lead.notes && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Customer notes</div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, fontStyle: 'italic', margin: 0 }}>"{lead.notes}"</p>
+          </div>
+        )}
+        {Array.isArray(lead.photos) && lead.photos.length > 0 && (
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{lead.photos.length} photo(s) attached</div>
+        )}
       </div>
     </div>
   )
@@ -537,6 +833,9 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* Quotes & Pricing Tab */}
+        {activeTab === 'quotes' && <QuotesPanel tenants={tenants} />}
 
         {/* Revenue Tab */}
         {activeTab === 'revenue' && (

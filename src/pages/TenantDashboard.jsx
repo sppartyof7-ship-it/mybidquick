@@ -6,7 +6,7 @@ import {
   ChevronDown, MapPin, Heart, Loader, CreditCard, ShoppingCart, ExternalLink, Gift,
   BarChart3, Users, Target, Calendar, GripVertical, Palette, Upload, Image
 } from 'lucide-react'
-import { getTenantByEmail, updateTenantConfig, updateTenantProfile, uploadLogo, getLeads, updateLeadStatus, markLeadPaid, updateLeadTotal, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
+import { getTenantByEmail, updateTenantConfig, updateTenantProfile, uploadLogo, getLeads, updateLeadStatus, markLeadPaid, updateLeadTotal, updateLeadQuote, getCurrentUser, getMyTenant, signOut, onAuthStateChange } from '../lib/db'
 import { getBillingStatus, buyLeadCredits, openCustomerPortal, LEAD_PACKS, LAUNCH_PACKS, getPacksForTenant } from '../lib/billing'
 
 // ============================================================================
@@ -354,6 +354,12 @@ export default function TenantDashboard() {
   const [editingPriceLeadId, setEditingPriceLeadId] = useState(null)
   const [priceDraft, setPriceDraft] = useState('')
   const [savingPrice, setSavingPrice] = useState(false)
+  // Full quote editor (line-item builder) — lets the tenant rebuild HOW a quote
+  // is composed (per-service lines, extras, discounts) before it goes out, not
+  // just nudge the final number. Only one lead is edited at a time.
+  const [editingQuoteLeadId, setEditingQuoteLeadId] = useState(null)
+  const [quoteLinesDraft, setQuoteLinesDraft] = useState([])
+  const [savingQuote, setSavingQuote] = useState(false)
 
   // URL params (for billing success/cancel return from Stripe)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -780,6 +786,106 @@ export default function TenantDashboard() {
       ))
       alert('Failed to update price: ' + (err.message || err))
       setSavingPrice(false)
+    }
+  }
+
+  // ====== Full Quote Editor (line items) ======
+  // "Change how it's quoted, not just a % off." The tenant edits a list of
+  // line items; the total is always their sum. Saved to leads.quote_lines +
+  // leads.total. Customer is never notified (same rule as the total edit).
+  const newLineId = () => (typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : 'l' + Math.random().toString(36).slice(2))
+
+  const cap = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1)
+
+  // Build the starting line items from the best data we have on the lead.
+  const seedQuoteLines = (lead) => {
+    // 1. Re-editing a quote that was already rebuilt line-by-line.
+    if (lead.quoteLines && Array.isArray(lead.quoteLines.lines) && lead.quoteLines.lines.length) {
+      return lead.quoteLines.lines.map((l) => ({
+        id: l.id || newLineId(),
+        label: l.label || 'Line item',
+        amount: Number(l.amount) || 0,
+      }))
+    }
+    // 2. Per-service prices from the engine breakdown (newer leads carry these).
+    const sd = lead.serviceDetails || {}
+    const prices = sd.prices || {}
+    const tiers = sd.tiers || {}
+    const ids = Object.keys(prices)
+    if (ids.length) {
+      return ids.map((id) => ({
+        id: newLineId(),
+        label: svcName(id) + (tiers[id] ? ` · ${cap(tiers[id])}` : ''),
+        amount: Math.round(Number(prices[id]) || 0),
+      }))
+    }
+    // 3. Fallback (older leads with no per-service breakdown): one editable line
+    //    at the current total so nothing is lost. Tenant can split it via "Add a
+    //    service" below.
+    return [{ id: newLineId(), label: 'Quote total', amount: Math.round(Number(lead.total) || 0) }]
+  }
+
+  const draftTotal = quoteLinesDraft.reduce((s, l) => s + (Number(l.amount) || 0), 0)
+
+  const handleStartQuoteEdit = (lead) => {
+    if (!lead || !lead.id) return
+    setEditingQuoteLeadId(lead.id)
+    setQuoteLinesDraft(seedQuoteLines(lead))
+  }
+  const handleCancelQuoteEdit = () => {
+    setEditingQuoteLeadId(null)
+    setQuoteLinesDraft([])
+    setSavingQuote(false)
+  }
+  const updateDraftLine = (id, field, value) => {
+    setQuoteLinesDraft((curr) => curr.map((l) => (l.id === id ? { ...l, [field]: value } : l)))
+  }
+  const addDraftLine = (label = '', amount = '') => {
+    setQuoteLinesDraft((curr) => [...curr, { id: newLineId(), label, amount }])
+  }
+  const removeDraftLine = (id) => {
+    setQuoteLinesDraft((curr) => curr.filter((l) => l.id !== id))
+  }
+  // "Switch tier" — replace the quote with that engine-computed tier total.
+  const applyTierToDraft = (tierKey, price) => {
+    setQuoteLinesDraft([{ id: newLineId(), label: `${cap(tierKey)} package`, amount: Math.round(Number(price) || 0) }])
+  }
+  const handleSaveQuote = async (lead) => {
+    if (!lead || !lead.id) return
+    const lines = quoteLinesDraft.map((l) => ({
+      id: l.id,
+      label: String(l.label || '').trim() || 'Line item',
+      amount: Number(l.amount) || 0,
+    }))
+    const newTotal = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100
+    if (!isFinite(newTotal) || newTotal < 0) {
+      alert('Total must be a non-negative number.')
+      return
+    }
+    setSavingQuote(true)
+    const prevLead = lead
+    const originalForBadge = lead.original_total != null ? lead.original_total : lead.total
+    // Optimistic update so the new breakdown shows instantly.
+    setLeads((curr) => curr.map((l) =>
+      l.id === lead.id
+        ? { ...l, total: newTotal, quoteLines: { lines }, original_total: originalForBadge, total_edited_at: new Date().toISOString() }
+        : l
+    ))
+    try {
+      const result = await updateLeadQuote(lead.id, lines)
+      setLeads((curr) => curr.map((l) =>
+        l.id === lead.id
+          ? { ...l, total: result.total, quoteLines: result.quote_lines || { lines }, original_total: result.original_total, total_edited_at: result.total_edited_at }
+          : l
+      ))
+      handleCancelQuoteEdit()
+    } catch (err) {
+      // Roll back to the pre-edit lead on failure.
+      setLeads((curr) => curr.map((l) => (l.id === lead.id ? prevLead : l)))
+      alert('Failed to save quote: ' + (err.message || err))
+      setSavingQuote(false)
     }
   }
 
@@ -1591,38 +1697,109 @@ export default function TenantDashboard() {
                               )}
                             </div>
 
-                            {/* Quote Total — tenant-editable. Customer never hears about it. */}
-                            <div style={{
-                              marginBottom: 16, padding: '14px 16px', borderRadius: 10,
-                              background: 'white', border: '1px solid #d4e4f7',
-                              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-                            }}>
-                              <div style={{ flex: 1, minWidth: 200 }}>
-                                <div style={{ fontWeight: 600, fontSize: 11, color: '#7a9bbc', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
-                                  Quote Total
+                            {/* Quote Total / full line-item editor — tenant-editable.
+                                Customer is never notified. "Edit Quote" rebuilds HOW the
+                                quote is composed, not just the final number. */}
+                            {editingQuoteLeadId === lead.id ? (
+                              <div style={{ marginBottom: 16, padding: 16, borderRadius: 10, background: 'white', border: '2px solid #3b9cff' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1e3a5f' }}>Edit Quote — adjust each line before it goes out</div>
+                                  <div style={{ fontSize: 11, color: '#7a9bbc' }}>Customer is not notified</div>
                                 </div>
-                                {editingPriceLeadId === lead.id ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontSize: 22, fontWeight: 800, color: '#1e3a5f' }}>$</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      value={priceDraft}
-                                      onChange={(e) => setPriceDraft(e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSavePrice(lead)
-                                        if (e.key === 'Escape') handleCancelPriceEdit()
-                                      }}
-                                      autoFocus
-                                      style={{
-                                        width: 120, padding: '6px 10px',
-                                        border: '2px solid #3b9cff', borderRadius: 8,
-                                        fontSize: 20, fontWeight: 800, color: '#1e3a5f',
-                                      }}
-                                    />
+
+                                {/* Tier shortcuts straight from the engine-computed prices */}
+                                {lead.packagePrices && Object.keys(lead.packagePrices).length > 0 && (
+                                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
+                                    <span style={{ fontSize: 11, color: '#7a9bbc' }}>Use a tier total:</span>
+                                    {Object.entries(lead.packagePrices).map(([pkg, price]) => (
+                                      <button key={pkg} type="button" onClick={() => applyTierToDraft(pkg, price)} style={{
+                                        padding: '4px 10px', borderRadius: 8, border: '1px solid #d4e4f7',
+                                        background: '#f0f7ff', color: '#1e3a5f', fontSize: 12, fontWeight: 600,
+                                        cursor: 'pointer', textTransform: 'capitalize',
+                                      }}>{pkg} {fmtMoney(price)}</button>
+                                    ))}
                                   </div>
-                                ) : (
+                                )}
+
+                                {/* Editable line items */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                                  {quoteLinesDraft.map((line) => (
+                                    <div key={line.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                      <input
+                                        value={line.label}
+                                        onChange={(e) => updateDraftLine(line.id, 'label', e.target.value)}
+                                        placeholder="Line item"
+                                        style={{ flex: 1, minWidth: 120, padding: '7px 10px', border: '1px solid #d4e4f7', borderRadius: 8, fontSize: 13, color: '#1e3a5f' }}
+                                      />
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span style={{ color: '#7a9bbc', fontWeight: 700 }}>$</span>
+                                        <input
+                                          type="number" min="0" step="1"
+                                          value={line.amount}
+                                          onChange={(e) => updateDraftLine(line.id, 'amount', e.target.value)}
+                                          style={{ width: 100, padding: '7px 10px', border: '1px solid #d4e4f7', borderRadius: 8, fontSize: 13, fontWeight: 700, color: '#1e3a5f' }}
+                                        />
+                                      </div>
+                                      <button type="button" onClick={() => removeDraftLine(line.id)} title="Remove line" style={{
+                                        width: 30, height: 30, borderRadius: 8, border: '1px solid #f0d4d4',
+                                        background: '#fff5f5', color: '#dc2626', cursor: 'pointer', fontWeight: 700, lineHeight: 1,
+                                      }}>×</button>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Add a blank line or a configured service */}
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                                  <button type="button" onClick={() => addDraftLine()} style={{
+                                    padding: '6px 12px', borderRadius: 8, border: '1px dashed #b8d4f0',
+                                    background: 'white', color: '#3b9cff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                  }}>+ Add line</button>
+                                  {(config?.services || []).filter((s) => s.enabled).length > 0 && (
+                                    <select
+                                      value=""
+                                      onChange={(e) => {
+                                        const svc = (config.services || []).find((s) => s.id === e.target.value)
+                                        if (svc) addDraftLine(svc.name || svcName(svc.id), Math.round(Number(svc.basePrice) || 0))
+                                        e.target.value = ''
+                                      }}
+                                      style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #d4e4f7', background: 'white', color: '#1e3a5f', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                    >
+                                      <option value="">+ Add a service…</option>
+                                      {(config.services || []).filter((s) => s.enabled).map((s) => (
+                                        <option key={s.id} value={s.id}>{(s.name || svcName(s.id))} (base {fmtMoney(s.basePrice)})</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+
+                                {/* Live total + Save/Cancel */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderTop: '1px solid #eef4fa', paddingTop: 12 }}>
+                                  <div>
+                                    <div style={{ fontSize: 11, color: '#7a9bbc', textTransform: 'uppercase', letterSpacing: 0.5 }}>New Total</div>
+                                    <div style={{ fontSize: 24, fontWeight: 800, color: '#1e3a5f' }}>{fmtMoney(draftTotal)}</div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <button type="button" onClick={() => handleSaveQuote(lead)} disabled={savingQuote} style={{
+                                      padding: '9px 18px', borderRadius: 8, background: '#16a34a', color: 'white', border: 'none',
+                                      fontWeight: 700, fontSize: 13, cursor: savingQuote ? 'not-allowed' : 'pointer', opacity: savingQuote ? 0.6 : 1,
+                                    }}>{savingQuote ? 'Saving…' : 'Save Quote'}</button>
+                                    <button type="button" onClick={handleCancelQuoteEdit} disabled={savingQuote} style={{
+                                      padding: '9px 14px', borderRadius: 8, background: 'white', color: '#64748b',
+                                      border: '1px solid #d4e4f7', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                                    }}>Cancel</button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{
+                                marginBottom: 16, padding: '14px 16px', borderRadius: 10,
+                                background: 'white', border: '1px solid #d4e4f7',
+                                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                              }}>
+                                <div style={{ flex: 1, minWidth: 200 }}>
+                                  <div style={{ fontWeight: 600, fontSize: 11, color: '#7a9bbc', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                                    Quote Total
+                                  </div>
                                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                                     <span style={{ fontSize: 22, fontWeight: 800, color: '#1e3a5f' }}>
                                       ${Number(lead.total || 0).toLocaleString()}
@@ -1635,37 +1812,16 @@ export default function TenantDashboard() {
                                         Edited · was ${Number(lead.original_total).toLocaleString()}
                                       </span>
                                     )}
+                                    {lead.quoteLines && Array.isArray(lead.quoteLines.lines) && lead.quoteLines.lines.length > 0 && (
+                                      <span style={{ fontSize: 11, fontWeight: 600, color: '#3b9cff', background: '#f0f7ff', padding: '3px 8px', borderRadius: 6 }}>
+                                        {lead.quoteLines.lines.length} line items
+                                      </span>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                              {editingPriceLeadId === lead.id ? (
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                  <button
-                                    onClick={() => handleSavePrice(lead)}
-                                    disabled={savingPrice}
-                                    style={{
-                                      padding: '8px 16px', borderRadius: 8,
-                                      background: '#16a34a', color: 'white', border: 'none',
-                                      fontWeight: 700, fontSize: 13,
-                                      cursor: savingPrice ? 'not-allowed' : 'pointer',
-                                      opacity: savingPrice ? 0.6 : 1,
-                                    }}
-                                  >{savingPrice ? 'Saving…' : 'Save'}</button>
-                                  <button
-                                    onClick={handleCancelPriceEdit}
-                                    disabled={savingPrice}
-                                    style={{
-                                      padding: '8px 14px', borderRadius: 8,
-                                      background: 'white', color: '#64748b',
-                                      border: '1px solid #d4e4f7',
-                                      fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                                    }}
-                                  >Cancel</button>
                                 </div>
-                              ) : (
                                 <button
-                                  onClick={() => handleStartPriceEdit(lead)}
-                                  title="Manually adjust this quote total. Customer is not notified."
+                                  onClick={() => handleStartQuoteEdit(lead)}
+                                  title="Rebuild this quote line-by-line. Customer is not notified."
                                   style={{
                                     padding: '8px 14px', borderRadius: 8,
                                     background: '#f0f7ff', color: '#3b9cff',
@@ -1674,10 +1830,10 @@ export default function TenantDashboard() {
                                     display: 'inline-flex', alignItems: 'center', gap: 6,
                                   }}
                                 >
-                                  ✏️ Edit Price
+                                  ✏️ Edit Quote
                                 </button>
-                              )}
-                            </div>
+                              </div>
+                            )}
 
                             {/* Package price breakdown */}
                             {lead.packagePrices && Object.keys(lead.packagePrices).length > 0 && (

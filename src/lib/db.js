@@ -241,6 +241,74 @@ export async function updateLeadTotal(leadId, newTotal) {
 }
 
 /**
+ * Rebuild a lead's quote from individual line items (the full quote editor).
+ *
+ * This is the "actually change how it's quoted" path — instead of just nudging
+ * the final total, the tenant edits a list of line items (one per service,
+ * extras, discounts, etc.). We persist BOTH:
+ *   - the line breakdown -> leads.quote_lines  (so it's re-editable next time)
+ *   - the summed total    -> leads.total       (the single number everything
+ *                                               else in the app already reads)
+ *
+ * Same audit rule as updateLeadTotal: the very first time a quote is edited we
+ * snapshot the customer-submitted value into original_total. The customer is
+ * never notified — this is internal only.
+ *
+ * @param {string} leadId
+ * @param {Array<{id?:string,label:string,amount:number}>} lines
+ * @returns the updated row
+ */
+export async function updateLeadQuote(leadId, lines) {
+  if (!Array.isArray(lines)) {
+    throw new Error('lines must be an array')
+  }
+  // Normalise + total the lines. Blank amounts count as 0.
+  const cleanLines = lines
+    .map((l) => ({
+      id: l.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)),
+      label: String(l.label ?? '').trim() || 'Line item',
+      amount: Number(l.amount) || 0,
+    }))
+  const total = Math.round(cleanLines.reduce((s, l) => s + l.amount, 0) * 100) / 100
+  if (!isFinite(total) || total < 0) {
+    throw new Error('Quote total must be a non-negative number')
+  }
+
+  if (!isSupabaseConnected()) {
+    // Demo mode: component state handles this; nothing to persist.
+    return { id: leadId, total, quote_lines: { lines: cleanLines } }
+  }
+
+  const { data: existing, error: readErr } = await supabase
+    .from('leads')
+    .select('id, total, original_total')
+    .eq('id', leadId)
+    .single()
+  if (readErr) throw readErr
+  if (!existing) throw new Error('Lead not found')
+
+  const now = new Date().toISOString()
+  const patch = {
+    total,
+    quote_lines: { lines: cleanLines, savedAt: now },
+    total_edited_at: now,
+    updated_at: now,
+  }
+  if (existing.original_total == null) {
+    patch.original_total = existing.total
+  }
+
+  const { data, error } = await supabase
+    .from('leads')
+    .update(patch)
+    .eq('id', leadId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+/**
  * Mark a lead as paid. Calls the server endpoint which:
  *   1. Stamps lead.paid_at = now() in Supabase (idempotent)
  *   2. Sends a branded receipt email to the customer
@@ -443,11 +511,21 @@ export async function getMyTenant() {
 
 /**
  * Send password reset email.
+ *
+ * IMPORTANT: redirectTo is pinned to production www.mybidquick.com so the
+ * email link works regardless of which URL the user clicked "Forgot password"
+ * from. Previously we used window.location.origin, which baked in localhost
+ * (dev server) or a tenant subdomain — neither of which the user can reach
+ * when opening the email on their phone. Bit Tim 2026-05-31.
  */
 export async function resetPassword(email) {
   if (!isSupabaseConnected()) return
+  const isLocalDev = typeof window !== 'undefined'
+    && window.location
+    && /^(localhost|127\.0\.0\.1)/.test(window.location.hostname)
+  const baseUrl = isLocalDev ? window.location.origin : 'https://www.mybidquick.com'
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/#/dashboard`,
+    redirectTo: `${baseUrl}/#/dashboard`,
   })
   if (error) throw error
 }
@@ -559,6 +637,7 @@ function rowToLead(row) {
     selectedExtras: row.selected_extras || {},
     packagePrices: row.package_prices || {},
     bundleApplied: row.bundle_applied || null,
+    quoteLines: row.quote_lines || null,
     leadSource: row.lead_source || row.source || null,
     photos: row.photos || [],
     createdAt: row.created_at,
@@ -566,5 +645,9 @@ function rowToLead(row) {
     preferredDays: row.preferred_days || null,
     preferredTime: row.preferred_time || null,
     paid_at: row.paid_at || null,
+    // Audit fields for the manual price/quote editor so the "Edited · was $X"
+    // badge survives a page reload (these come straight off the row).
+    original_total: row.original_total ?? null,
+    total_edited_at: row.total_edited_at || null,
   }
 }
