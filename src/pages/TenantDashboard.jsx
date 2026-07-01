@@ -335,7 +335,7 @@ export default function TenantDashboard() {
   const [leadsFilter, setLeadsFilter] = useState('all')
   const [selectedQrSource, setSelectedQrSource] = useState('yard-sign')
   const [expandedLead, setExpandedLead] = useState(null)
-  const [leads, setLeads] = useState(DEMO_LEADS)
+  const [leads, setLeads] = useState([])
   const [kanbanView, setKanbanView] = useState('board') // 'board' or 'list'
   const [draggedLead, setDraggedLead] = useState(null)
   const [dragOverStage, setDragOverStage] = useState(null)
@@ -435,9 +435,10 @@ export default function TenantDashboard() {
             setConfig(mergeWithDefaults(myTenant.config))
             setIsLoggedIn(true)
 
-            // Load leads
+            // Load leads. Always set (fall back to empty) so a failed/empty
+            // fetch can never leave stale demo data on a real dashboard.
             const dbLeads = await getLeads(myTenant.id)
-            if (dbLeads) setLeads(dbLeads)
+            setLeads(dbLeads || [])
 
             // Load billing (non-blocking)
             getBillingStatus(myTenant.id)
@@ -478,8 +479,10 @@ export default function TenantDashboard() {
       let found = await getTenantByEmail(loginEmail)
 
       // If not found in DB, check hardcoded demo tenants
+      let isDemoTenant = false
       if (!found) {
         found = DEMO_TENANTS.find(t => t.email?.toLowerCase() === loginEmail.toLowerCase())
+        isDemoTenant = !!found
       }
 
       if (found) {
@@ -487,9 +490,14 @@ export default function TenantDashboard() {
         setConfig(mergeWithDefaults(found.config))
         setIsLoggedIn(true)
 
-        // Load leads from Supabase if available
-        const dbLeads = await getLeads(found.id)
-        if (dbLeads) setLeads(dbLeads)
+        // Only the hardcoded demo tenants get sample leads. Real tenants
+        // always get their actual data (or an empty list) — never demo data.
+        if (isDemoTenant) {
+          setLeads(DEMO_LEADS)
+        } else {
+          const dbLeads = await getLeads(found.id)
+          setLeads(dbLeads || [])
+        }
 
         // Load billing status (non-blocking)
         getBillingStatus(found.id)
